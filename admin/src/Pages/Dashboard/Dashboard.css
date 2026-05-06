@@ -1,0 +1,57 @@
+.dashboard-container {
+  padding: 20px;
+  background: #0f172a;
+  min-height: 100vh;
+  color: white;
+}
+
+.heading {
+  font-size: 28px;
+  margin-bottom: 20px;
+  font-weight: bold;
+}
+
+.card-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 20px;
+}
+
+.card {
+  background: #1e293b;
+  padding: 20px;
+  border-radius: 12px;
+  transition: 0.3s;
+  cursor: pointer;
+  border: 1px solid #334155;
+}
+
+.card h3 {
+  font-size: 16px;
+  color: #94a3b8;
+}
+
+.card p {
+  font-size: 22px;
+  font-weight: bold;
+  margin-top: 10px;
+  color: #ffffff;
+}
+
+.card:hover {
+  transform: translateY(-5px);
+  background: #334155;
+}
+
+/* Responsive */
+@media (max-width: 1024px) {
+  .card-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (max-width: 600px) {
+  .card-grid {
+    grid-template-columns: repeat(1, 1fr);
+  }
+}

@@ -1,0 +1,152 @@
+/* --- 1. THEME & BACKGROUND --- */
+.kyc-body {
+    background: linear-gradient(180deg, #f0f4ff 0%, #ffffff 100%);
+    margin: 0;
+    font-family: 'Poppins', sans-serif;
+    color: #2d3436;
+}
+
+/* --- 2. HEADER: Vibrant Gradient --- */
+.support-header {
+    background: linear-gradient(135deg, #6c5ce7, #a29bfe); /* Purple to Light Blue */
+    padding: 20px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    color: white;
+    border-radius: 0 0 25px 25px;
+    box-shadow: 0 4px 15px rgba(108, 92, 231, 0.3);
+}
+
+.secure-badge {
+    background: rgba(255, 255, 255, 0.2);
+    padding: 5px 12px;
+    border-radius: 50px;
+    font-size: 11px;
+    font-weight: bold;
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    backdrop-filter: blur(5px);
+}
+
+/* --- 3. THE KYC CARD --- */
+.support-card {
+    background: white;
+    margin: 20px 15px;
+    padding: 25px;
+    border-radius: 20px;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.05);
+    border: 1px solid #eef2f7;
+}
+
+.text-content h2 {
+    color: #2d3436;
+    font-size: 22px;
+    margin-bottom: 8px;
+    background: linear-gradient(to right, #6c5ce7, #00cec9);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+}
+
+/* --- 4. COLORFUL FORM INPUTS --- */
+.input-group-kyc label {
+    color: #636e72;
+    font-size: 12px;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    font-weight: 700;
+}
+
+.input-group-kyc select, 
+.input-group-kyc input {
+    background: #f8faff;
+    border: 2px solid #e0e6ed;
+    color: #2d3436;
+    font-weight: 500;
+    transition: 0.3s;
+}
+
+.input-group-kyc {
+    margin-bottom: 20px; /* Space between fields */
+}
+
+.input-group-kyc label {
+    display: block;
+    font-size: 12px;
+    font-weight: 800; /* Extra bold like your screenshot */
+    color: #4b4b4b;
+    margin-bottom: 8px;
+    text-transform: uppercase; /* Matching your screen */
+}
+
+.input-group-kyc input, 
+.input-group-kyc select {
+    width: 100%;
+    padding: 12px;
+    border: 1.5px solid #d1d8e0;
+    border-radius: 8px;
+    font-size: 14px;
+    background: #fff;
+}
+
+/* --- 5. NEUMORPHIC UPLOAD BOX --- */
+.upload-box {
+    border: 2px dashed #a29bfe;
+    background: #f1f3ff;
+    padding: 40px 20px;
+    border-radius: 15px;
+    transition: 0.3s ease;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+.upload-box:hover {
+    background: #e9ecff;
+    border-color: #6c5ce7;
+    transform: scale(1.02);
+}
+
+.upload-box i {
+    font-size: 40px;
+    color: #6c5ce7;
+    margin-bottom: 15px;
+    filter: drop-shadow(0 4px 6px rgba(108, 92, 231, 0.3));
+}
+
+/* --- 6. SHINY SUBMIT BUTTON --- */
+.kyc-submit-btn {
+    width: 100%;
+    padding: 16px;
+    background: linear-gradient(135deg, #00cec9, #0984e3); /* Teal to Blue */
+    color: white;
+    border: none;
+    border-radius: 12px;
+    font-size: 16px;
+    font-weight: 700;
+    cursor: pointer;
+    box-shadow: 0 6px 20px rgba(9, 132, 227, 0.3);
+    transition: 0.3s;
+}
+
+.kyc-submit-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 25px rgba(9, 132, 227, 0.4);
+}
+
+/* --- 7. FOOTER TIPS --- */
+.support-footer {
+    background: #fdf2f2;
+    padding: 12px;
+    border-radius: 10px;
+    border-left: 4px solid #fab1a0;
+    margin-top: 20px;
+}
+
+.support-footer p {
+    color: #d63031;
+    font-size: 12px;
+    margin: 0;
+    font-weight: 500;
+}

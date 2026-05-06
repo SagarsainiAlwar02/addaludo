@@ -1,0 +1,161 @@
+body {
+    margin: 0;
+    font-family: Arial, sans-serif;
+    background-color: #f5f6fa;
+    padding-bottom: 100px;
+}
+
+/* Header */
+.header-main {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 10px 15px;
+    background: #fff;
+}
+.logo-section { display: flex; align-items: center; gap: 5px; }
+.brand-name { font-weight: bold; font-size: 14px; color: #333; }
+.download-btn {
+    background-color: #27ae60;
+    color: white;
+    border: none;
+    padding: 8px 15px;
+    border-radius: 6px;
+    font-weight: bold;
+}
+.user-stats { display: flex; gap: 8px; }
+.stat-item {
+    background: #f1f2f6;
+    padding: 5px 10px;
+    border-radius: 4px;
+    font-size: 13px;
+    border: 1px solid #dfe4ea;
+    font-weight: bold;
+}
+
+/* Hindi Banner */
+.info-banner {
+    background-color: #1e272e;
+    color: #fff;
+    text-align: center;
+    padding: 15px;
+    font-size: 14px;
+    margin: 10px;
+    border-radius: 4px;
+    line-height: 1.4;
+}
+
+/* Create Battle Card */
+.create-battle-card {
+    background: #fff;
+    margin: 10px;
+    padding: 15px;
+    border-radius: 10px;
+    border: 1px solid #333;
+}
+.card-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 15px;
+}
+.card-header h3 { margin: 0; font-size: 16px; }
+.rules-green {
+    background: #5ab95a;
+    color: white;
+    border: none;
+    padding: 5px 10px;
+    border-radius: 5px;
+    font-size: 14px;
+}
+
+.input-group {
+    display: flex;
+    border: 1px solid #333;
+    border-radius: 8px;
+    overflow: hidden;
+}
+.input-group input {
+    flex: 1;
+    border: none;
+    padding: 12px;
+    outline: none;
+}
+.set-btn {
+    background: #1e272e;
+    color: white;
+    border: none;
+    padding: 0 25px;
+    font-weight: bold;
+    cursor: pointer;
+}
+
+/* Section Dividers */
+.section-divider {
+    background: linear-gradient(to right, #7f8c8d, #34495e, #7f8c8d);
+    color: white;
+    padding: 10px 15px;
+    margin: 15px 10px;
+    border-radius: 5px;
+    font-weight: bold;
+    font-size: 14px;
+    text-align: left;
+}
+
+/* Challenge Cards */
+.challenge-card {
+    background-color: #b2e2e2;
+    margin: 10px;
+    border-radius: 10px;
+    overflow: hidden;
+    border: 1px solid #95afaf;
+}
+.challenge-user {
+    padding: 10px 15px;
+    font-weight: bold;
+    font-size: 14px;
+    border-bottom: 1px solid rgba(0,0,0,0.1);
+}
+.card-body {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 15px;
+}
+.fee-info p, .prize-info p { margin: 0; font-size: 12px; color: #444; }
+.fee-info strong, .prize-info strong { font-size: 18px; display: flex; align-items: center; gap: 5px;}
+
+.play-red-btn {
+    background: linear-gradient(to bottom, #e74c3c, #c0392b);
+    color: white;
+    border: none;
+    padding: 10px 25px;
+    border-radius: 8px;
+    font-weight: bold;
+    box-shadow: 0 4px #962d22;
+}
+
+/* Bottom Nav */
+.footer-nav { position: fixed; bottom: 20px; left: 0; right: 0; padding: 0 20px; }
+.nav-holder {
+    background: white;
+    height: 60px;
+    border-radius: 40px;
+    display: flex;
+    justify-content: space-around;
+    align-items: center;
+    box-shadow: 0 0 20px rgba(0,0,0,0.1);
+}
+.home-circle {
+    background: #00cec9;
+    width: 60px;
+    height: 60px;
+    border-radius: 50%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    border: 5px solid white;
+    margin-top: -40px;
+}
+.nav-holder a { color: #2f3542; font-size: 20px; }
+.home-circle a { color: white; }

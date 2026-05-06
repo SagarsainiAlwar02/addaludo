@@ -1,0 +1,128 @@
+/* --- New Refer Page Styles --- */
+.refer-body {
+    background-color: #f0f4f8;
+    margin: 0;
+    font-family: 'Poppins', sans-serif;
+}
+
+.refer-header {
+    background: linear-gradient(90deg, #74b9ff, #0984e3);
+    padding: 20px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    color: white;
+    border-radius: 0 0 20px 20px;
+}
+
+.refer-header h1 { font-size: 18px; margin: 0; }
+.online-indicator { font-size: 12px; opacity: 0.8; }
+
+.main-container { padding: 15px; }
+
+/* Promo Card */
+.promo-card {
+    background: white;
+    border-radius: 20px;
+    padding: 15px;
+    text-align: center;
+    box-shadow: 0 10px 20px rgba(0,0,0,0.05);
+    margin-bottom: 20px;
+}
+
+.promo-img { width: 100%; border-radius: 15px; }
+
+.promo-badge {
+    background: #2d3436;
+    color: #fdcb6e;
+    display: inline-block;
+    padding: 5px 15px;
+    border-radius: 50px;
+    font-size: 12px;
+    font-weight: bold;
+    margin-top: -20px;
+    position: relative;
+    border: 2px solid white;
+}
+
+/* Link Box */
+.action-card {
+    background: white;
+    border-radius: 20px;
+    padding: 20px;
+    box-shadow: 0 10px 20px rgba(0,0,0,0.05);
+    text-align: center;
+}
+
+.link-box {
+    background: #f1f2f6;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 10px 15px;
+    border-radius: 12px;
+    margin: 15px 0;
+}
+
+.ref-code { font-weight: bold; color: #2d3436; font-size: 18px; }
+
+.copy-btn {
+    background: #00b894;
+    color: white;
+    border: none;
+    padding: 8px 20px;
+    border-radius: 8px;
+    font-weight: bold;
+}
+
+/* Social Buttons */
+.social-grid { display: flex; gap: 10px; margin-top: 15px; }
+
+.social-btn {
+    flex: 1;
+    text-decoration: none;
+    color: white;
+    padding: 12px;
+    border-radius: 10px;
+    font-weight: bold;
+    font-size: 14px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+}
+
+.whatsapp { background: #2ecc71; }
+.telegram { background: #0984e3; }
+
+/* Earnings Section */
+.earnings-section { margin-top: 30px; }
+.section-title { font-size: 18px; color: #2d3436; margin-bottom: 15px; }
+
+.stats-row { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; }
+
+.stat-pill {
+    background: white;
+    padding: 15px;
+    border-radius: 15px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    box-shadow: 0 5px 15px rgba(0,0,0,0.03);
+}
+
+.icon-box {
+    width: 40px;
+    height: 40px;
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 18px;
+}
+
+.user-icon { background: #ffeaa7; color: #d63031; }
+.money-icon { background: #dff9fb; color: #2ecc71; }
+
+.label { display: block; font-size: 11px; color: #636e72; }
+.count { font-size: 16px; font-weight: bold; color: #2d3436; }

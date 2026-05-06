@@ -1,0 +1,198 @@
+import React, { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
+
+export default function Profile({ onLogout }) {
+  const navigate = useNavigate();
+
+  const [isEditing, setIsEditing] = useState(false);
+  const [profile, setProfile] = useState({
+    userName: "Player",
+    phone: "",
+    totalWon: 0,
+    matches: 0,
+    kycStatus: "Pending",
+  });
+
+  const [tempName, setTempName] = useState("");
+
+  useEffect(() => {
+    const storedUser = JSON.parse(localStorage.getItem("user"));
+
+    if (storedUser) {
+      setProfile({
+        userName: storedUser.name || "Player",
+        phone: storedUser.phone || "",
+        totalWon: storedUser.totalWon || 0,
+        matches: storedUser.matches || 0,
+        kycStatus: storedUser.kycStatus || "Pending",
+      });
+
+      setTempName(storedUser.name || "Player");
+    }
+  }, []);
+
+  const saveProfile = () => {
+    const user = JSON.parse(localStorage.getItem("user")) || {};
+
+    const updatedUser = {
+      ...user,
+      name: tempName || "Player",
+    };
+
+    localStorage.setItem("user", JSON.stringify(updatedUser));
+
+    setProfile((prev) => ({
+      ...prev,
+      userName: tempName || "Player",
+    }));
+
+    setIsEditing(false);
+  };
+
+  const handleLogout = () => {
+    if (onLogout) return onLogout();
+
+    localStorage.removeItem("token");
+    localStorage.removeItem("user");
+    navigate("/login");
+  };
+
+  const menuItems = [
+    { title: "History", icon: "↶", path: "/history" },
+    { title: "My Wallet", icon: "▣", path: "/wallet" },
+    { title: "Refer & Earn", icon: "🎁", path: "/refer" },
+    { title: "Support", icon: "☏", path: "/support" },
+  ];
+
+  return (
+    <div className="min-h-screen bg-gradient-to-b from-[#f3f4f6] via-[#e5e7eb] to-[#d1d5db] px-4 pb-28 pt-4">
+      <div className="mx-auto max-w-[780px]">
+        
+        {/* Profile Header */}
+        <div className="flex items-center gap-5 rounded-2xl bg-white shadow-md p-7 border border-gray-200">
+          <img
+            src={`https://api.dicebear.com/7.x/avataaars/svg?seed=${profile.userName}`}
+            alt="avatar"
+            className="h-24 w-24 rounded-full border-4 border-slate-200"
+          />
+
+          <div className="flex-1">
+            {isEditing ? (
+              <div className="flex gap-3">
+                <input
+                  value={tempName}
+                  onChange={(e) => setTempName(e.target.value)}
+                  className="w-full rounded-lg border px-4 py-3 text-xl outline-none"
+                />
+
+                <button
+                  onClick={saveProfile}
+                  className="rounded-lg bg-green-500 px-5 text-white"
+                >
+                  ✔
+                </button>
+              </div>
+            ) : (
+              <div className="flex items-center justify-between">
+                <div>
+                  <h2 className="text-2xl font-bold text-gray-800">
+                    {profile.userName}
+                  </h2>
+                  <p className="mt-1 text-lg text-gray-500">
+                    {profile.phone}
+                  </p>
+                </div>
+
+                <button
+                  onClick={() => setIsEditing(true)}
+                  className="flex h-14 w-14 items-center justify-center rounded-full bg-blue-100 text-2xl"
+                >
+                  ✏️
+                </button>
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* Stats */}
+        <div className="mt-6 grid grid-cols-2 gap-5">
+          <div className="rounded-2xl bg-white shadow-md p-6 text-center">
+            <h4 className="text-lg text-gray-500">Total Won</h4>
+            <h2 className="mt-2 text-3xl font-bold text-green-600">
+              ₹ {profile.totalWon}
+            </h2>
+          </div>
+
+          <div className="rounded-2xl bg-white shadow-md p-6 text-center">
+            <h4 className="text-lg text-gray-500">Matches</h4>
+            <h2 className="mt-2 text-3xl font-bold text-blue-600">
+              {profile.matches}
+            </h2>
+          </div>
+        </div>
+
+        {/* KYC */}
+        <div className="mt-6 flex items-center justify-between rounded-2xl bg-white shadow-md p-6">
+          <div>
+            <h4 className="text-xl font-semibold text-gray-700">
+              KYC Status
+            </h4>
+            <p
+              className={`mt-2 text-lg font-medium ${
+                profile.kycStatus === "Verified"
+                  ? "text-green-500"
+                  : "text-orange-500"
+              }`}
+            >
+              {profile.kycStatus}
+            </p>
+          </div>
+
+          <button
+            onClick={() => navigate("/kyc")}
+            className="rounded-lg bg-black px-5 py-2 text-white"
+          >
+            View
+          </button>
+        </div>
+
+        {/* Menu */}
+        <div className="mt-6 rounded-2xl bg-white shadow-md px-6 py-3">
+          {menuItems.map((item) => (
+            <div
+              key={item.title}
+              onClick={() => navigate(item.path)}
+              className="flex cursor-pointer items-center gap-5 border-b border-gray-200 py-5 last:border-none"
+            >
+              <div className="flex h-14 w-14 items-center justify-center rounded-full bg-gray-100 text-2xl">
+                {item.icon}
+              </div>
+
+              <span className="flex-1 text-xl font-medium text-gray-800">
+                {item.title}
+              </span>
+
+              <span className="text-4xl text-gray-400">›</span>
+            </div>
+          ))}
+
+          {/* Logout */}
+          <div
+            onClick={handleLogout}
+            className="flex cursor-pointer items-center gap-5 py-5"
+          >
+            <div className="flex h-14 w-14 items-center justify-center rounded-full bg-red-100 text-2xl text-red-500">
+              ⇱
+            </div>
+
+            <span className="flex-1 text-xl font-medium text-red-500">
+              Logout
+            </span>
+
+            <span className="text-4xl text-gray-400">›</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
