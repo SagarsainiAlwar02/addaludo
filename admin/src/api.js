@@ -1,18 +1,25 @@
 import axios from "axios";
 
+const BASE_URL =
+  process.env.REACT_APP_API_URL || "http://localhost:5000/api";
+
+console.log("ADMIN API BASE URL:", BASE_URL);
+
 const API = axios.create({
-  baseURL: "http://localhost:5000/api",
+  baseURL: BASE_URL,
+  headers: {
+    "Content-Type": "application/json",
+  },
 });
 
-// 🔥 TOKEN AUTO ATTACH
-API.interceptors.request.use((req) => {
+API.interceptors.request.use((config) => {
   const token = localStorage.getItem("adminToken");
 
   if (token) {
-    req.headers.Authorization = `Bearer ${token}`;
+    config.headers.Authorization = `Bearer ${token}`;
   }
 
-  return req;
+  return config;
 });
 
 export default API;

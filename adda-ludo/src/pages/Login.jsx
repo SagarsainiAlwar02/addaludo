@@ -2,6 +2,15 @@ import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import axios from "axios";
 
+// ✅ LIVE FIX:
+// Vercel me VITE_API_URL = https://api.addaludo.com
+// Agar env load na bhi ho, live fallback api.addaludo.com rahega, localhost nahi.
+const API_URL =
+  import.meta.env.VITE_API_URL ||
+  (window.location.hostname === "localhost"
+    ? "http://localhost:5000"
+    : "https://api.addaludo.com");
+
 export default function Login({ onLogin }) {
   const [phone, setPhone] = useState("");
   const [otp, setOtp] = useState("");
@@ -21,7 +30,7 @@ export default function Login({ onLogin }) {
     return () => clearInterval(interval);
   }, [timer]);
 
-  const validatePhone = (num) => num && num.length === 10;
+  const validatePhone = (num) => /^[6-9]\d{9}$/.test(num);
 
   const sendOTP = async () => {
     if (!validatePhone(phone)) {
@@ -33,12 +42,23 @@ export default function Login({ onLogin }) {
       setLoading(true);
       setError("");
 
-      await axios.post("http://localhost:5000/api/send-otp", { phone });
+      console.log("OTP API URL:", `${API_URL}/api/send-otp`);
 
-      setStep(2);
-      setTimer(30);
+      const res = await axios.post(`${API_URL}/api/send-otp`, { phone });
+
+      if (res.data?.success) {
+        setStep(2);
+        setTimer(30);
+      } else {
+        setError(res.data?.msg || "Failed to send OTP");
+      }
     } catch (err) {
-      setError(err.response?.data?.msg || "Failed to send OTP");
+      console.log("OTP SEND ERROR:", err);
+      setError(
+        err.response?.data?.msg ||
+          err.message ||
+          "Failed to send OTP. Please try again."
+      );
     } finally {
       setLoading(false);
     }
@@ -54,11 +74,18 @@ export default function Login({ onLogin }) {
       setLoading(true);
       setError("");
 
-      const res = await axios.post("http://localhost:5000/api/otp-login", {
+      console.log("VERIFY API URL:", `${API_URL}/api/otp-login`);
+
+      const res = await axios.post(`${API_URL}/api/otp-login`, {
         phone,
         otp,
-        referralCode: referralCode.trim().toUpperCase()
+        referralCode: referralCode.trim().toUpperCase(),
       });
+
+      if (!res.data?.success) {
+        setError(res.data?.msg || "Invalid OTP");
+        return;
+      }
 
       localStorage.setItem("token", res.data.token);
       localStorage.setItem("user", JSON.stringify(res.data.user));
@@ -67,7 +94,12 @@ export default function Login({ onLogin }) {
 
       navigate("/");
     } catch (err) {
-      setError(err.response?.data?.msg || "Invalid OTP");
+      console.log("OTP VERIFY ERROR:", err);
+      setError(
+        err.response?.data?.msg ||
+          err.message ||
+          "Invalid OTP. Please try again."
+      );
     } finally {
       setLoading(false);
     }
@@ -76,7 +108,6 @@ export default function Login({ onLogin }) {
   return (
     <div className="min-h-screen flex justify-center bg-[#f8ecd2]">
       <div className="relative w-full max-w-[650px] min-h-screen overflow-hidden bg-gradient-to-b from-[#14061f] via-[#2a0c45] to-[#09040d] px-5 py-8">
-
         <div className="absolute top-[-60px] left-[-60px] h-56 w-56 rounded-full bg-yellow-400/20 blur-3xl"></div>
         <div className="absolute top-40 right-[-70px] h-72 w-72 rounded-full bg-red-500/20 blur-3xl"></div>
         <div className="absolute bottom-0 left-10 h-80 w-80 rounded-full bg-cyan-400/10 blur-3xl"></div>
@@ -117,7 +148,9 @@ export default function Login({ onLogin }) {
                     type="text"
                     placeholder="Enter mobile number"
                     value={phone}
-                    onChange={(e) => setPhone(e.target.value.replace(/\D/g, ""))}
+                    onChange={(e) =>
+                      setPhone(e.target.value.replace(/\D/g, ""))
+                    }
                     maxLength={10}
                     className="w-full bg-transparent px-3 text-lg font-semibold outline-none"
                   />
@@ -131,13 +164,16 @@ export default function Login({ onLogin }) {
                   type="text"
                   placeholder="Enter referral code e.g. BA-438286"
                   value={referralCode}
-                  onChange={(e) => setReferralCode(e.target.value.toUpperCase())}
+                  onChange={(e) =>
+                    setReferralCode(e.target.value.toUpperCase())
+                  }
                   maxLength={12}
                   className="mb-5 w-full rounded-2xl border-2 border-gray-200 px-4 py-4 text-lg font-bold uppercase outline-none focus:border-cyan-500"
                 />
 
                 <p className="mb-5 text-center text-xs leading-5 text-gray-500">
-                  By continuing, you agree to our Legal Terms and confirm you are 18 years or older.
+                  By continuing, you agree to our Legal Terms and confirm you
+                  are 18 years or older.
                 </p>
 
                 <button
@@ -156,6 +192,7 @@ export default function Login({ onLogin }) {
                   <p className="text-sm font-bold text-green-700">
                     OTP sent to +91 {phone}
                   </p>
+
                   {referralCode && (
                     <p className="mt-1 text-xs font-bold text-cyan-700">
                       Referral Applied: {referralCode}

@@ -1,39 +1,47 @@
-
-
-
-
-
-
-
-
-
-
-
 import { useState } from "react";
-import { useNavigate } from "react-router-dom";
 import API from "../../api";
 import "./Login.css";
 
 const Login = () => {
-  const navigate = useNavigate();
-  const [email, setEmail] = useState("");
+  const [email, setEmail] = useState("admin@gmail.com");
   const [password, setPassword] = useState("");
+  const [loading, setLoading] = useState(false);
 
   const handleLogin = async (e) => {
     e.preventDefault();
 
+    if (!email || !password) {
+      alert("Email aur password dono bharna zaroori hai");
+      return;
+    }
+
     try {
+      setLoading(true);
+
       const res = await API.post("/admin-auth/login", {
-        email,
-        password
+        email: email.trim().toLowerCase(),
+        password: password.trim(),
       });
 
+      if (!res.data?.token) {
+        alert("Token nahi mila. Backend response check karo.");
+        return;
+      }
+
       localStorage.setItem("adminToken", res.data.token);
+      localStorage.setItem("adminUser", JSON.stringify(res.data.admin));
 
       window.location.href = "/dashboard";
-
     } catch (err) {
-      alert("Login failed");
+      console.log("LOGIN ERROR:", err.response?.data || err.message);
+
+      alert(
+        err.response?.data?.msg ||
+          err.response?.data?.message ||
+          "Login failed - backend/API URL check karo"
+      );
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -46,6 +54,7 @@ const Login = () => {
           type="email"
           placeholder="Email"
           value={email}
+          autoComplete="email"
           onChange={(e) => setEmail(e.target.value)}
         />
 
@@ -53,10 +62,13 @@ const Login = () => {
           type="password"
           placeholder="Password"
           value={password}
+          autoComplete="current-password"
           onChange={(e) => setPassword(e.target.value)}
         />
 
-        <button type="submit">Login</button>
+        <button type="submit" disabled={loading}>
+          {loading ? "Checking..." : "Login"}
+        </button>
       </form>
     </div>
   );
