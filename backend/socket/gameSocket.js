@@ -1,6 +1,6 @@
 const jwt = require("jsonwebtoken");
 const Wallet = require("../models/wallet");
-const Transaction = require("../models/transaction");
+const Transaction = require("../models/Transaction");
 const User = require("../models/user");
 const Match = require("../models/match");
 
