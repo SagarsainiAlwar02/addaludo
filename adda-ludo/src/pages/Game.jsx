@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { socket } from "../Socket";
+import { socket } from "../socket"
 import { useParams, useNavigate } from "react-router-dom";
 import Board from "../components/board";
 import Dice from "../components/dice";
