@@ -17,68 +17,63 @@ const Wallet = require("./models/wallet");
 
 const app = express();
 
-// ================== UPLOAD FOLDER AUTO CREATE ==================
 const uploadPath = path.join(__dirname, "uploads");
 if (!fs.existsSync(uploadPath)) {
   fs.mkdirSync(uploadPath, { recursive: true });
 }
 
-// ================== ALLOWED ORIGINS ==================
 const allowedOrigins = [
   "http://localhost:5173",
   "http://localhost:3000",
+  "https://addaludo.com",
+  "https://www.addaludo.com",
+  "https://api.addaludo.com",
+  "https://addaludo-admin-6gkuvk98k-sagarsaini8003656-3610s-projects.vercel.app",
   process.env.CLIENT_URL,
   process.env.CLIENT_URL_WWW,
+  process.env.ADMIN_URL,
 ].filter(Boolean);
 
-// ================== CORS ==================
-app.use(
-  cors({
-    origin: function (origin, callback) {
-      if (!origin) return callback(null, true);
+const corsOptions = {
+  origin: function (origin, callback) {
+    if (!origin) return callback(null, true);
 
-      if (allowedOrigins.includes(origin)) {
-        return callback(null, true);
-      }
-
+    if (allowedOrigins.includes(origin)) {
       return callback(null, true);
-    },
-    credentials: true,
-  })
-);
+    }
+
+    if (origin.endsWith(".vercel.app")) {
+      return callback(null, true);
+    }
+
+    return callback(null, true);
+  },
+  methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
+  allowedHeaders: ["Content-Type", "Authorization"],
+  credentials: true,
+};
+
+app.use(cors(corsOptions));
+app.options(/.*/, cors(corsOptions));
 
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-// ================== STATIC UPLOADS ==================
 app.use("/uploads", express.static(uploadPath));
 
-// ================== SERVER ==================
 const server = http.createServer(app);
 
-// ================== SOCKET ==================
 const { Server } = require("socket.io");
 
 const io = new Server(server, {
   cors: {
-    origin: function (origin, callback) {
-      if (!origin) return callback(null, true);
-
-      if (allowedOrigins.includes(origin)) {
-        return callback(null, true);
-      }
-
-      return callback(null, true);
-    },
+    origin: "*",
     methods: ["GET", "POST"],
-    credentials: true,
   },
 });
 
-// ================== SOCKET GAME ==================
 require("./socket/gameSocket")(io);
 
-// ================== ROUTES ==================
 app.use("/api/user", require("./routes/userAuth"));
 app.use("/api/admin-auth", require("./routes/adminAuth"));
 app.use("/api/admin", require("./routes/admin"));
@@ -86,18 +81,12 @@ app.use("/api/wallet", require("./routes/wallet"));
 app.use("/api/deposit", require("./routes/depositRoutes"));
 app.use("/api/redeem", require("./routes/redeemRoutes"));
 app.use("/api/matches", require("./routes/match"));
-
-// ✅ IMPORTANT FIX
-// Tumhari route file ka naam agar backend/routes/battle.js hai to ye line sahi hai
 app.use("/api/battle", require("./routes/battleRoutes"));
-
 app.use("/api/admin/battles", require("./routes/adminBattleRoutes"));
 app.use("/api/match-proof", require("./routes/matchProofRoutes"));
 
-// ================== OTP STORE ==================
 const otpStore = {};
 
-// ================== SEND OTP ==================
 app.post("/api/send-otp", async (req, res) => {
   try {
     let { phone } = req.body;
@@ -162,7 +151,6 @@ app.post("/api/send-otp", async (req, res) => {
   }
 });
 
-// ================== OTP LOGIN / REGISTER ==================
 app.post("/api/otp-login", async (req, res) => {
   try {
     let { phone, otp } = req.body;
@@ -263,7 +251,6 @@ app.post("/api/otp-login", async (req, res) => {
   }
 });
 
-// ================== HEALTH CHECK ==================
 app.get("/", (req, res) => {
   res.send("🚀 Backend Running");
 });
@@ -276,7 +263,6 @@ app.get("/api/health", (req, res) => {
   });
 });
 
-// ================== 404 HANDLER ==================
 app.use((req, res) => {
   res.status(404).json({
     success: false,
@@ -285,7 +271,6 @@ app.use((req, res) => {
   });
 });
 
-// ================== DB + SERVER START ==================
 const PORT = process.env.PORT || 5000;
 
 mongoose
