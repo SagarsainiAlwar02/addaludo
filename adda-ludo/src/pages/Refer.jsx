@@ -1,6 +1,8 @@
 import React, { useEffect, useState } from "react";
 import axios from "axios";
 
+const API = import.meta.env.VITE_API_URL || "http://localhost:5000/api";
+
 export default function Refer() {
   const [refCode, setRefCode] = useState("");
   const [referrals, setReferrals] = useState(0);
@@ -8,35 +10,54 @@ export default function Refer() {
   const [referralBalance, setReferralBalance] = useState(0);
   const [loading, setLoading] = useState(true);
   const [copied, setCopied] = useState(false);
+  const [error, setError] = useState("");
 
   useEffect(() => {
-    const fetchReferralData = async () => {
-      try {
-        setLoading(true);
-
-        const token = localStorage.getItem("token");
-
-        const res = await axios.get("http://localhost:5000/api/user/profile", {
-          headers: {
-            Authorization: `Bearer ${token}`
-          }
-        });
-
-        setRefCode(res.data.referralCode || "");
-        setReferrals(res.data.referralStats?.referrals || 0);
-        setEarned(res.data.referralStats?.earned || 0);
-        setReferralBalance(res.data.referralStats?.referralBalance || 0);
-      } catch (err) {
-        console.log("Referral load error", err.response?.data || err.message);
-      } finally {
-        setLoading(false);
-      }
-    };
-
     fetchReferralData();
   }, []);
 
+  const fetchReferralData = async () => {
+    try {
+      setLoading(true);
+      setError("");
+
+      const token = localStorage.getItem("token");
+
+      if (!token) {
+        setError("Please login again");
+        return;
+      }
+
+      const res = await axios.get(`${API}/user/profile`, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+
+      setRefCode(res.data.referralCode || "");
+      setReferrals(res.data.referralStats?.referrals || 0);
+      setEarned(res.data.referralStats?.earned || 0);
+      setReferralBalance(res.data.referralStats?.referralBalance || 0);
+
+      const oldUser = JSON.parse(localStorage.getItem("user")) || {};
+      localStorage.setItem(
+        "user",
+        JSON.stringify({
+          ...oldUser,
+          ...res.data,
+        })
+      );
+    } catch (err) {
+      console.log("Referral load error:", err.response?.data || err.message);
+      setError(err.response?.data?.msg || "Referral data load failed");
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const copyCode = async () => {
+    if (!refCode) return;
+
     try {
       await navigator.clipboard.writeText(refCode);
       setCopied(true);
@@ -49,9 +70,8 @@ export default function Refer() {
   const shareText = `Join AddaLudo and use my referral code ${refCode} to play and win cash!`;
 
   return (
-    <div className="min-h-screen bg-[#f6f7fb] px-4 py-5">
+    <div className="min-h-screen bg-[#f6f7fb] px-4 py-5 pb-28">
       <div className="mx-auto max-w-[650px]">
-
         <div className="mb-4 rounded-3xl bg-gradient-to-r from-[#101827] to-[#020617] px-5 py-5 text-white shadow-xl">
           <h2 className="text-2xl font-black">Affiliate Program</h2>
           <p className="mt-1 text-sm text-white/70">
@@ -92,6 +112,19 @@ export default function Refer() {
               {copied ? "✔" : "Copy"}
             </button>
           </div>
+
+          {error && (
+            <p className="mt-3 rounded-xl bg-red-50 px-3 py-2 text-sm font-bold text-red-600">
+              {error}
+            </p>
+          )}
+
+          <button
+            onClick={fetchReferralData}
+            className="mt-3 rounded-xl bg-black px-5 py-2 text-sm font-black text-white"
+          >
+            Refresh
+          </button>
 
           <div className="mt-4 grid grid-cols-2 gap-3">
             <a
@@ -143,7 +176,6 @@ export default function Refer() {
             <p>4. Commission referral balance me add hoga.</p>
           </div>
         </div>
-
       </div>
     </div>
   );

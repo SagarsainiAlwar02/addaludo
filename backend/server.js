@@ -41,7 +41,7 @@ app.use(
         return callback(null, true);
       }
 
-      return callback(null, true); // first deploy ke liye open rakha hai
+      return callback(null, true);
     },
     credentials: true,
   })
@@ -68,7 +68,7 @@ const io = new Server(server, {
         return callback(null, true);
       }
 
-      return callback(null, true); // first deploy ke liye open rakha hai
+      return callback(null, true);
     },
     methods: ["GET", "POST"],
     credentials: true,
@@ -86,7 +86,11 @@ app.use("/api/wallet", require("./routes/wallet"));
 app.use("/api/deposit", require("./routes/depositRoutes"));
 app.use("/api/redeem", require("./routes/redeemRoutes"));
 app.use("/api/matches", require("./routes/match"));
+
+// ✅ IMPORTANT FIX
+// Tumhari route file ka naam agar backend/routes/battle.js hai to ye line sahi hai
 app.use("/api/battle", require("./routes/battleRoutes"));
+
 app.use("/api/admin/battles", require("./routes/adminBattleRoutes"));
 app.use("/api/match-proof", require("./routes/matchProofRoutes"));
 
@@ -229,6 +233,7 @@ app.post("/api/otp-login", async (req, res) => {
         balance: 0,
         bonus: 0,
         winnings: 0,
+        referralBalance: 0,
         locked: 0,
       });
 

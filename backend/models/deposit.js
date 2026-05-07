@@ -13,6 +13,14 @@ const depositSchema = new mongoose.Schema(
       type: Number,
       required: true,
       min: 100,
+      max: 100000,
+    },
+
+    paymentMethod: {
+      type: String,
+      enum: ["qr", "upi_bank"],
+      required: true,
+      index: true,
     },
 
     utr: {
@@ -54,4 +62,5 @@ const depositSchema = new mongoose.Schema(
   { timestamps: true }
 );
 
-module.exports = mongoose.model("Deposit", depositSchema);
+module.exports =
+  mongoose.models.Deposit || mongoose.model("Deposit", depositSchema);

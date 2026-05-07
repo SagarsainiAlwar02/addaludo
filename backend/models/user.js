@@ -1,12 +1,18 @@
 const mongoose = require("mongoose");
 
+function makeReferralCode() {
+  return "BA-" + Math.floor(100000 + Math.random() * 900000);
+}
+
 const userSchema = new mongoose.Schema({
   name: { type: String, default: "New User" },
 
   email: {
     type: String,
     unique: true,
-    sparse: true
+    sparse: true,
+    trim: true,
+    lowercase: true
   },
 
   password: {
@@ -17,14 +23,16 @@ const userSchema = new mongoose.Schema({
   phone: {
     type: String,
     required: true,
-    unique: true
+    unique: true,
+    trim: true
   },
 
   referralCode: {
     type: String,
     unique: true,
     sparse: true,
-    index: true
+    index: true,
+    uppercase: true
   },
 
   referredBy: {
@@ -49,7 +57,25 @@ const userSchema = new mongoose.Schema({
     enum: ["active", "blocked"],
     default: "active"
   }
-
 }, { timestamps: true });
+
+userSchema.pre("save", async function (next) {
+  try {
+    if (this.referralCode) return next();
+
+    let code;
+    let exists = true;
+
+    while (exists) {
+      code = makeReferralCode();
+      exists = await mongoose.models.User.findOne({ referralCode: code });
+    }
+
+    this.referralCode = code;
+    next();
+  } catch (err) {
+    next(err);
+  }
+});
 
 module.exports = mongoose.models.User || mongoose.model("User", userSchema);

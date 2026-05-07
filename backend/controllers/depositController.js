@@ -36,11 +36,17 @@ const getOrCreateWallet = async (userId) => {
       balance: 0,
       bonus: 0,
       winnings: 0,
+      referralBalance: 0,
       locked: 0,
     });
   }
 
   return wallet;
+};
+
+const getPaymentMethodByAmount = (amount) => {
+  if (amount <= 2000) return "qr";
+  return "upi_bank";
 };
 
 // ================= USER CREATE DEPOSIT REQUEST =================
@@ -87,11 +93,13 @@ exports.createDepositRequest = async (req, res) => {
       });
     }
 
+    const paymentMethod = getPaymentMethodByAmount(amount);
     const screenshot = `/uploads/${req.file.filename}`;
 
     const deposit = await Deposit.create({
       userId,
       amount,
+      paymentMethod,
       utr,
       screenshot,
       status: "pending",
@@ -99,7 +107,10 @@ exports.createDepositRequest = async (req, res) => {
 
     return res.json({
       success: true,
-      msg: "Deposit request submitted. Admin approval ke baad balance add hoga.",
+      msg:
+        paymentMethod === "qr"
+          ? "QR deposit request submitted. Admin approval ke baad balance add hoga."
+          : "UPI/Bank deposit request submitted. Admin approval ke baad balance add hoga.",
       deposit,
     });
   } catch (err) {
@@ -183,7 +194,9 @@ exports.adminApproveDeposit = async (req, res) => {
 
     const wallet = await getOrCreateWallet(deposit.userId);
 
-    wallet.balance = Number(wallet.balance || 0) + Number(deposit.amount || 0);
+    wallet.balance =
+      Number(wallet.balance || 0) + Number(deposit.amount || 0);
+
     await wallet.save();
 
     deposit.status = "approved";
@@ -197,7 +210,7 @@ exports.adminApproveDeposit = async (req, res) => {
       amount: deposit.amount,
       type: "deposit",
       status: "success",
-      note: `Deposit approved. UTR: ${deposit.utr}`,
+      note: `Deposit approved via ${deposit.paymentMethod}. UTR: ${deposit.utr}`,
       balanceAfter: wallet.balance,
       approvedBy: adminId,
       approvedAt: new Date(),
@@ -249,7 +262,7 @@ exports.adminRejectDeposit = async (req, res) => {
       amount: deposit.amount,
       type: "deposit",
       status: "failed",
-      note: `Deposit rejected. UTR: ${deposit.utr}`,
+      note: `Deposit rejected via ${deposit.paymentMethod}. UTR: ${deposit.utr}`,
       balanceAfter: null,
       approvedBy: adminId,
       approvedAt: new Date(),

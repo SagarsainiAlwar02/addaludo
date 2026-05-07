@@ -10,6 +10,51 @@ function getUserId(req) {
   return String(req.user?._id || req.userData?._id || req.user?.id || req.user);
 }
 
+function validateBattleAmount(amount) {
+  if (!amount || amount < 50) {
+    return "Minimum battle amount ₹50 required";
+  }
+
+  if (amount > 100000) {
+    return "Maximum battle amount ₹100000 allowed";
+  }
+
+  if (amount % 50 !== 0) {
+    return "Battle amount ₹50 ke multiple me hona chahiye";
+  }
+
+  return null;
+}
+
+function calculateBattlePrize(amount, players = 2) {
+  amount = Number(amount);
+  players = Number(players || 2);
+
+  const totalPool = amount * players;
+
+  let commissionPercentPerUser;
+
+  if (amount >= 50 && amount <= 500) {
+    commissionPercentPerUser = 5;
+  } else if (amount > 500 && amount <= 100000) {
+    commissionPercentPerUser = 2.5;
+  } else {
+    throw new Error("Battle amount ₹50 se ₹100000 ke beech hona chahiye");
+  }
+
+  const totalCommissionPercent = commissionPercentPerUser * players;
+  const commission = Math.floor((totalPool * totalCommissionPercent) / 100);
+  const prize = totalPool - commission;
+
+  return {
+    totalPool,
+    commission,
+    prize,
+    commissionPercentPerUser,
+    totalCommissionPercent,
+  };
+}
+
 async function getWallet(userId) {
   let wallet = await Wallet.findOne({ userId });
 
@@ -19,7 +64,8 @@ async function getWallet(userId) {
       balance: 0,
       bonus: 0,
       winnings: 0,
-      locked: 0
+      referralBalance: 0,
+      locked: 0,
     });
   }
 
@@ -29,12 +75,12 @@ async function getWallet(userId) {
 async function lockAmount(userId, amount, roomId) {
   const wallet = await getWallet(userId);
 
-  if (wallet.balance < amount) {
+  if (Number(wallet.balance || 0) < amount) {
     throw new Error("Insufficient wallet balance");
   }
 
-  wallet.balance -= amount;
-  wallet.locked += amount;
+  wallet.balance = Number(wallet.balance || 0) - amount;
+  wallet.locked = Number(wallet.locked || 0) + amount;
   await wallet.save();
 
   await Transaction.create({
@@ -44,7 +90,7 @@ async function lockAmount(userId, amount, roomId) {
     status: "success",
     roomId,
     note: "Battle entry amount locked",
-    balanceAfter: wallet.balance
+    balanceAfter: wallet.balance,
   });
 
   return wallet;
@@ -53,8 +99,8 @@ async function lockAmount(userId, amount, roomId) {
 async function refundAmount(userId, amount, roomId) {
   const wallet = await getWallet(userId);
 
-  wallet.locked = Math.max(0, wallet.locked - amount);
-  wallet.balance += amount;
+  wallet.locked = Math.max(0, Number(wallet.locked || 0) - amount);
+  wallet.balance = Number(wallet.balance || 0) + amount;
   await wallet.save();
 
   await Transaction.create({
@@ -64,7 +110,7 @@ async function refundAmount(userId, amount, roomId) {
     status: "success",
     roomId,
     note: "Battle amount refunded",
-    balanceAfter: wallet.balance
+    balanceAfter: wallet.balance,
   });
 
   return wallet;
@@ -75,37 +121,40 @@ exports.createBattle = async (req, res) => {
     const userId = getUserId(req);
     const amount = Number(req.body.amount);
 
-    if (!amount || amount < 10) {
+    const amountError = validateBattleAmount(amount);
+    if (amountError) {
       return res.status(400).json({
         success: false,
-        msg: "Minimum battle amount ₹10 required"
+        msg: amountError,
       });
     }
 
     const battleId = makeBattleId();
-    const prize = Math.floor(amount * 2 * 0.9);
+    const prizeData = calculateBattlePrize(amount, 2);
 
     await lockAmount(userId, amount, battleId);
 
     const battle = await Battle.create({
       battleId,
       amount,
-      prize,
+      prize: prizeData.prize,
       createdBy: userId,
-      status: "open"
+      status: "open",
     });
 
     return res.json({
       success: true,
       msg: "Battle created successfully",
-      battle
+      commission: prizeData.commission,
+      commissionPercentPerUser: prizeData.commissionPercentPerUser,
+      battle,
     });
   } catch (err) {
     console.log("❌ CREATE BATTLE ERROR:", err);
 
     return res.status(500).json({
       success: false,
-      msg: err.message
+      msg: err.message,
     });
   }
 };
@@ -116,19 +165,19 @@ exports.getOpenBattles = async (req, res) => {
 
     const battles = await Battle.find({
       status: "open",
-      createdBy: { $ne: userId }
+      createdBy: { $ne: userId },
     })
       .populate("createdBy", "name phone")
       .sort({ createdAt: -1 });
 
     return res.json({
       success: true,
-      battles
+      battles,
     });
   } catch (err) {
     return res.status(500).json({
       success: false,
-      msg: err.message
+      msg: err.message,
     });
   }
 };
@@ -138,7 +187,7 @@ exports.getMyBattles = async (req, res) => {
     const userId = getUserId(req);
 
     const battles = await Battle.find({
-      $or: [{ createdBy: userId }, { opponent: userId }]
+      $or: [{ createdBy: userId }, { opponent: userId }],
     })
       .populate("createdBy", "name phone")
       .populate("opponent", "name phone")
@@ -147,12 +196,12 @@ exports.getMyBattles = async (req, res) => {
 
     return res.json({
       success: true,
-      battles
+      battles,
     });
   } catch (err) {
     return res.status(500).json({
       success: false,
-      msg: err.message
+      msg: err.message,
     });
   }
 };
@@ -170,7 +219,7 @@ exports.getSingleBattle = async (req, res) => {
     if (!battle) {
       return res.status(404).json({
         success: false,
-        msg: "Battle not found"
+        msg: "Battle not found",
       });
     }
 
@@ -187,20 +236,20 @@ exports.getSingleBattle = async (req, res) => {
     if (!isPlayer) {
       return res.status(403).json({
         success: false,
-        msg: "You are not part of this battle"
+        msg: "You are not part of this battle",
       });
     }
 
     return res.json({
       success: true,
-      battle
+      battle,
     });
   } catch (err) {
     console.log("❌ SINGLE BATTLE ERROR:", err);
 
     return res.status(500).json({
       success: false,
-      msg: err.message
+      msg: err.message,
     });
   }
 };
@@ -215,21 +264,29 @@ exports.joinBattle = async (req, res) => {
     if (!battle) {
       return res.status(404).json({
         success: false,
-        msg: "Battle not found"
+        msg: "Battle not found",
+      });
+    }
+
+    const amountError = validateBattleAmount(Number(battle.amount));
+    if (amountError) {
+      return res.status(400).json({
+        success: false,
+        msg: amountError,
       });
     }
 
     if (battle.status !== "open") {
       return res.status(400).json({
         success: false,
-        msg: "Battle already joined"
+        msg: "Battle already joined",
       });
     }
 
     if (battle.createdBy.toString() === userId) {
       return res.status(400).json({
         success: false,
-        msg: "You cannot join your own battle"
+        msg: "You cannot join your own battle",
       });
     }
 
@@ -242,14 +299,14 @@ exports.joinBattle = async (req, res) => {
     return res.json({
       success: true,
       msg: "Battle joined successfully",
-      battle
+      battle,
     });
   } catch (err) {
     console.log("❌ JOIN BATTLE ERROR:", err);
 
     return res.status(500).json({
       success: false,
-      msg: err.message
+      msg: err.message,
     });
   }
 };
@@ -260,10 +317,10 @@ exports.submitRoomCode = async (req, res) => {
     const { battleId } = req.params;
     const { roomCode } = req.body;
 
-    if (!roomCode) {
+    if (!roomCode || !String(roomCode).trim()) {
       return res.status(400).json({
         success: false,
-        msg: "Ludo King room code required"
+        msg: "Ludo King room code required",
       });
     }
 
@@ -272,7 +329,7 @@ exports.submitRoomCode = async (req, res) => {
     if (!battle) {
       return res.status(404).json({
         success: false,
-        msg: "Battle not found"
+        msg: "Battle not found",
       });
     }
 
@@ -283,14 +340,14 @@ exports.submitRoomCode = async (req, res) => {
     if (!isPlayer) {
       return res.status(403).json({
         success: false,
-        msg: "You are not part of this battle"
+        msg: "You are not part of this battle",
       });
     }
 
     if (!["running", "room_submitted"].includes(battle.status)) {
       return res.status(400).json({
         success: false,
-        msg: "Room code cannot be submitted now"
+        msg: "Room code cannot be submitted now",
       });
     }
 
@@ -301,12 +358,12 @@ exports.submitRoomCode = async (req, res) => {
     return res.json({
       success: true,
       msg: "Room code submitted",
-      battle
+      battle,
     });
   } catch (err) {
     return res.status(500).json({
       success: false,
-      msg: err.message
+      msg: err.message,
     });
   }
 };
@@ -321,7 +378,7 @@ exports.submitResult = async (req, res) => {
     if (!battle) {
       return res.status(404).json({
         success: false,
-        msg: "Battle not found"
+        msg: "Battle not found",
       });
     }
 
@@ -332,14 +389,14 @@ exports.submitResult = async (req, res) => {
     if (!isPlayer) {
       return res.status(403).json({
         success: false,
-        msg: "You are not part of this battle"
+        msg: "You are not part of this battle",
       });
     }
 
     if (!req.file) {
       return res.status(400).json({
         success: false,
-        msg: "Screenshot required"
+        msg: "Screenshot required",
       });
     }
 
@@ -351,12 +408,12 @@ exports.submitResult = async (req, res) => {
     return res.json({
       success: true,
       msg: "Result submitted. Waiting for admin approval.",
-      battle
+      battle,
     });
   } catch (err) {
     return res.status(500).json({
       success: false,
-      msg: err.message
+      msg: err.message,
     });
   }
 };
@@ -371,21 +428,21 @@ exports.cancelBattle = async (req, res) => {
     if (!battle) {
       return res.status(404).json({
         success: false,
-        msg: "Battle not found"
+        msg: "Battle not found",
       });
     }
 
     if (battle.createdBy.toString() !== userId) {
       return res.status(403).json({
         success: false,
-        msg: "Only battle creator can cancel"
+        msg: "Only battle creator can cancel",
       });
     }
 
     if (battle.status !== "open") {
       return res.status(400).json({
         success: false,
-        msg: "Joined battle cannot be cancelled"
+        msg: "Joined battle cannot be cancelled",
       });
     }
 
@@ -397,12 +454,12 @@ exports.cancelBattle = async (req, res) => {
     return res.json({
       success: true,
       msg: "Battle cancelled and amount refunded",
-      battle
+      battle,
     });
   } catch (err) {
     return res.status(500).json({
       success: false,
-      msg: err.message
+      msg: err.message,
     });
   }
 };

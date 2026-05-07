@@ -2,7 +2,7 @@ import React, { useEffect, useState } from "react";
 import axios from "axios";
 import { useNavigate } from "react-router-dom";
 
-const API_BASE = "http://localhost:5000";
+const API_BASE = import.meta.env.VITE_API_URL || "http://localhost:5000/api";
 
 export default function Wallet() {
   const navigate = useNavigate();
@@ -10,6 +10,7 @@ export default function Wallet() {
 
   const MIN_AMOUNT = 100;
   const MAX_AMOUNT = 100000;
+  const QR_LIMIT = 2000;
 
   const [wallet, setWallet] = useState({
     balance: 0,
@@ -37,7 +38,7 @@ export default function Wallet() {
   }, [token, navigate]);
 
   const loadWallet = async () => {
-    const res = await axios.get(`${API_BASE}/api/wallet`, authHeader);
+    const res = await axios.get(`${API_BASE}/wallet`, authHeader);
     setWallet({
       balance: res.data.balance || 0,
       winnings: res.data.winnings || 0,
@@ -47,10 +48,10 @@ export default function Wallet() {
 
   const loadDeposits = async () => {
     try {
-      const res = await axios.get(`${API_BASE}/api/deposit/my`, authHeader);
+      const res = await axios.get(`${API_BASE}/deposit/my`, authHeader);
       setDeposits(res.data.deposits || []);
     } catch (err) {
-      console.log(err);
+      console.log("Deposit load error:", err.response?.data || err.message);
     }
   };
 
@@ -66,6 +67,7 @@ export default function Wallet() {
         setPageLoading(false);
       }
     };
+
     init();
     // eslint-disable-next-line
   }, []);
@@ -74,12 +76,14 @@ export default function Wallet() {
     if (!showPayment) return;
 
     setTimeLeft(300);
+
     const interval = setInterval(() => {
       setTimeLeft((prev) => {
         if (prev <= 1) {
           clearInterval(interval);
           return 0;
         }
+
         return prev - 1;
       });
     }, 1000);
@@ -117,6 +121,14 @@ export default function Wallet() {
   const submitDeposit = async () => {
     const addAmount = Number(amount);
 
+    if (!addAmount || addAmount < MIN_AMOUNT) {
+      return setError("Minimum deposit ₹100 hai");
+    }
+
+    if (addAmount > MAX_AMOUNT) {
+      return setError("Maximum deposit ₹1,00,000 hai");
+    }
+
     if (!utr.trim()) return setError("UTR / Transaction ID enter karo");
     if (!screenshot) return setError("Payment screenshot upload karo");
 
@@ -129,7 +141,7 @@ export default function Wallet() {
       formData.append("utr", utr.trim());
       formData.append("screenshot", screenshot);
 
-      const res = await axios.post(`${API_BASE}/api/deposit/create`, formData, {
+      const res = await axios.post(`${API_BASE}/deposit/create`, formData, {
         headers: {
           Authorization: `Bearer ${token}`,
           "Content-Type": "multipart/form-data",
@@ -152,6 +164,8 @@ export default function Wallet() {
     }
   };
 
+  const isLargePayment = Number(amount) > QR_LIMIT;
+
   if (pageLoading) {
     return <div style={styles.loading}>⏳ Loading Wallet...</div>;
   }
@@ -160,7 +174,9 @@ export default function Wallet() {
     <div style={styles.page}>
       <div style={styles.container}>
         <div style={styles.headerRow}>
-          <button style={styles.backBtn} onClick={() => navigate(-1)}>←</button>
+          <button style={styles.backBtn} onClick={() => navigate(-1)}>
+            ←
+          </button>
           <h2 style={styles.title}>Balance</h2>
           <span style={styles.online}>0 online</span>
         </div>
@@ -248,7 +264,9 @@ export default function Wallet() {
       {showAddCash && (
         <div style={styles.modalOverlay}>
           <div style={styles.modal}>
-            <button style={styles.closeBtn} onClick={() => setShowAddCash(false)}>×</button>
+            <button style={styles.closeBtn} onClick={() => setShowAddCash(false)}>
+              ×
+            </button>
 
             <h2 style={styles.modalTitle}>Add Money</h2>
             <p style={styles.modalSub}>Minimum ₹100 और Maximum ₹1,00,000</p>
@@ -264,14 +282,21 @@ export default function Wallet() {
             />
 
             <div style={styles.quickRow}>
-              {[100, 500, 1000, 4980].map((amt) => (
+              {[100, 500, 1000, 2000, 5000, 10000].map((amt) => (
                 <button key={amt} style={styles.quickBtn} onClick={() => setAmount(String(amt))}>
                   ₹{amt}
                 </button>
               ))}
             </div>
 
-            <button style={styles.payBtn} onClick={goToPayment}>Pay Fast</button>
+            <div style={styles.ruleBox}>
+              <p>₹2000 tak QR se payment hoga.</p>
+              <p>₹2000 se upar UPI ID ya Bank Transfer option milega.</p>
+            </div>
+
+            <button style={styles.payBtn} onClick={goToPayment}>
+              Pay Fast
+            </button>
 
             <div style={styles.warning}>
               💡 कृपया कोई भी धोखाधड़ी वाला भुगतान न करवाएँ। ऐसा करने पर आपका अकाउंट ब्लॉक कर दिया जाएगा।
@@ -300,21 +325,54 @@ export default function Wallet() {
 
             <div style={styles.paymentBody}>
               <div style={styles.paymentTopCard}>
-                <p style={styles.scanText}>▦ Scan to Pay</p>
+                <p style={styles.scanText}>
+                  {isLargePayment ? "🏦 Pay by UPI / Bank Transfer" : "▦ Scan to Pay"}
+                </p>
 
                 <h1 style={styles.bigAmount}>
                   <span style={{ fontSize: 24 }}>₹</span> {Number(amount || 0).toFixed(2)}
                 </h1>
 
-                <div style={styles.qrBox}>
-                  <div style={styles.fakeQr}>
-                    <div style={styles.qrInner}>
-                      <div style={styles.qrIcon}>▦</div>
-                      <div>UPI QR</div>
-                      <small>Replace with your QR image</small>
+                {!isLargePayment ? (
+                  <div style={styles.qrBox}>
+                    <div style={styles.fakeQr}>
+                      <div style={styles.qrInner}>
+                        <div style={styles.qrIcon}>▦</div>
+                        <div>UPI QR</div>
+                        <small>Scan & Pay</small>
+                      </div>
                     </div>
                   </div>
-                </div>
+                ) : (
+                  <div style={styles.bankBox}>
+                    <h3 style={styles.bankTitle}>UPI & Bank Details</h3>
+
+                    <div style={styles.bankItem}>
+                      <span>UPI ID</span>
+                      <b>addaludo@upi</b>
+                    </div>
+
+                    <div style={styles.bankItem}>
+                      <span>Account Holder</span>
+                      <b>AddaLudo</b>
+                    </div>
+
+                    <div style={styles.bankItem}>
+                      <span>Account Number</span>
+                      <b>1234567890</b>
+                    </div>
+
+                    <div style={styles.bankItem}>
+                      <span>IFSC Code</span>
+                      <b>SBIN0001234</b>
+                    </div>
+
+                    <div style={styles.bankItem}>
+                      <span>Bank Name</span>
+                      <b>State Bank of India</b>
+                    </div>
+                  </div>
+                )}
 
                 <div style={styles.timerBox}>
                   ⏱ Time remaining: <b>{formatTime(timeLeft)}</b>
@@ -322,10 +380,21 @@ export default function Wallet() {
               </div>
 
               <div style={styles.steps}>
-                <p><b>1</b> Open your UPI payment app</p>
-                <p><b>2</b> Tap on Scan QR Code</p>
-                <p><b>3</b> Pay exact ₹{amount}</p>
-                <p><b>4</b> Enter UTR and upload screenshot</p>
+                {!isLargePayment ? (
+                  <>
+                    <p><b>1</b> Open your UPI payment app</p>
+                    <p><b>2</b> Tap on Scan QR Code</p>
+                    <p><b>3</b> Pay exact ₹{amount}</p>
+                    <p><b>4</b> Enter UTR and upload screenshot</p>
+                  </>
+                ) : (
+                  <>
+                    <p><b>1</b> UPI ID ya Bank Account details se payment karo</p>
+                    <p><b>2</b> Exact ₹{amount} transfer karo</p>
+                    <p><b>3</b> UTR / Transaction ID enter karo</p>
+                    <p><b>4</b> Payment screenshot upload karo</p>
+                  </>
+                )}
               </div>
 
               <input
@@ -344,6 +413,8 @@ export default function Wallet() {
               />
 
               {screenshot && <p style={styles.small}>Selected: {screenshot.name}</p>}
+
+              {error && <div style={{ ...styles.error, marginTop: 14 }}>{error}</div>}
 
               <button style={styles.submitBtn} onClick={submitDeposit} disabled={loading}>
                 {loading ? "Submitting..." : "Submit Payment Proof"}
@@ -367,7 +438,7 @@ const styles = {
     fontFamily: "Arial, sans-serif",
   },
   container: {
-    padding: "16px 14px 105px",
+    padding: "76px 14px 105px",
     maxWidth: "480px",
     margin: "0 auto",
   },
@@ -555,6 +626,16 @@ const styles = {
     fontSize: "18px",
     fontWeight: "900",
   },
+  ruleBox: {
+    marginTop: "16px",
+    background: "#ecfeff",
+    color: "#155e75",
+    padding: "12px",
+    borderRadius: "15px",
+    fontWeight: "800",
+    fontSize: "13px",
+    lineHeight: 1.5,
+  },
   payBtn: {
     width: "100%",
     marginTop: "18px",
@@ -615,116 +696,130 @@ const styles = {
     minHeight: "100vh",
     boxShadow: "0 0 80px rgba(37,99,235,.18)",
   },
- paymentHeader: {
-  background: "linear-gradient(135deg,#0f172a,#1d4ed8,#7c3aed)",
-  color: "#ffffff",
-  display: "grid",
-  gridTemplateColumns: "54px 1fr 1.4fr",
-  alignItems: "center",
-  padding: "14px 18px",
-  gap: "10px",
-},
-
-paymentBack: {
-  border: "none",
-  background: "rgba(255,255,255,.12)",
-  color: "#ffffff",
-  fontSize: "26px",
-  fontWeight: "900",
-  borderRadius: "14px",
-  height: "42px",
-},
-
-logo: {
-  fontSize: "20px",
-  fontWeight: "900",
-},
-
-paymentTitle: {
-  margin: 0,
-  textAlign: "center",
-  fontSize: "22px",
-  fontWeight: "900",
-  color: "#ffffff",
-},
-
-paymentBody: {
-  padding: "22px",
-},
-
-paymentTopCard: {
-  background: "linear-gradient(135deg,#ffffff,#eff6ff)",
-  border: "1px solid #dbeafe",
-  borderRadius: "24px",
-  padding: "18px",
-  boxShadow: "0 18px 45px rgba(37,99,235,.10)",
-},
-
-scanText: {
-  color: "#2563eb",
-  fontSize: "20px",
-  fontWeight: "900",
-  margin: "0 0 10px",
-},
-
-bigAmount: {
-  textAlign: "center",
-  fontSize: "40px",
-  color: "#0f172a",
-  margin: "14px 0 18px",
-  fontWeight: "900",
-},
-
-fakeQr: {
-  width: "210px",
-  height: "210px",
-  border: "3px solid #2563eb",
-  borderRadius: "22px",
-  display: "grid",
-  placeItems: "center",
-  textAlign: "center",
-  color: "#0f172a",
-  background: "linear-gradient(135deg,#ffffff,#dbeafe)",
-  boxShadow: "0 16px 35px rgba(37,99,235,.18)",
-},
-
-qrInner: {
-  width: "160px",
-  height: "160px",
-  borderRadius: "18px",
-  display: "grid",
-  placeItems: "center",
-  background:
-    "repeating-linear-gradient(45deg,#0f172a 0 7px,#ffffff 7px 14px)",
-  color: "#ffffff",
-  textShadow: "0 2px 8px rgba(0,0,0,.6)",
-  fontSize: "20px",
-  fontWeight: "900",
-  padding: "8px",
-},
-
-qrIcon: {
-  fontSize: "26px",
-},
-
-timerBox: {
-  marginTop: "16px",
-  background: "linear-gradient(135deg,#ecfeff,#eff6ff)",
-  padding: "12px",
-  borderRadius: "16px",
-  textAlign: "center",
-  fontSize: "16px",
-  color: "#0f172a",
-  border: "1px solid #bfdbfe",
-  fontWeight: "800",
-},
-
-steps: {
-  marginTop: "18px",
-  color: "#334155",
-  fontSize: "16px",
-  lineHeight: 1.7,
-
+  paymentHeader: {
+    background: "linear-gradient(135deg,#0f172a,#1d4ed8,#7c3aed)",
+    color: "#ffffff",
+    display: "grid",
+    gridTemplateColumns: "54px 1fr 1.4fr",
+    alignItems: "center",
+    padding: "14px 18px",
+    gap: "10px",
+  },
+  paymentBack: {
+    border: "none",
+    background: "rgba(255,255,255,.12)",
+    color: "#ffffff",
+    fontSize: "26px",
+    fontWeight: "900",
+    borderRadius: "14px",
+    height: "42px",
+  },
+  logo: {
+    fontSize: "20px",
+    fontWeight: "900",
+  },
+  paymentTitle: {
+    margin: 0,
+    textAlign: "center",
+    fontSize: "22px",
+    fontWeight: "900",
+    color: "#ffffff",
+  },
+  paymentBody: {
+    padding: "22px",
+  },
+  paymentTopCard: {
+    background: "linear-gradient(135deg,#ffffff,#eff6ff)",
+    border: "1px solid #dbeafe",
+    borderRadius: "24px",
+    padding: "18px",
+    boxShadow: "0 18px 45px rgba(37,99,235,.10)",
+  },
+  scanText: {
+    color: "#2563eb",
+    fontSize: "20px",
+    fontWeight: "900",
+    margin: "0 0 10px",
+  },
+  bigAmount: {
+    textAlign: "center",
+    fontSize: "40px",
+    color: "#0f172a",
+    margin: "14px 0 18px",
+    fontWeight: "900",
+  },
+  qrBox: {
+    display: "flex",
+    justifyContent: "center",
+  },
+  fakeQr: {
+    width: "210px",
+    height: "210px",
+    border: "3px solid #2563eb",
+    borderRadius: "22px",
+    display: "grid",
+    placeItems: "center",
+    textAlign: "center",
+    color: "#0f172a",
+    background: "linear-gradient(135deg,#ffffff,#dbeafe)",
+    boxShadow: "0 16px 35px rgba(37,99,235,.18)",
+  },
+  qrInner: {
+    width: "160px",
+    height: "160px",
+    borderRadius: "18px",
+    display: "grid",
+    placeItems: "center",
+    background:
+      "repeating-linear-gradient(45deg,#0f172a 0 7px,#ffffff 7px 14px)",
+    color: "#ffffff",
+    textShadow: "0 2px 8px rgba(0,0,0,.6)",
+    fontSize: "20px",
+    fontWeight: "900",
+    padding: "8px",
+  },
+  qrIcon: {
+    fontSize: "26px",
+  },
+  bankBox: {
+    marginTop: "8px",
+    background: "#f8fafc",
+    border: "2px solid #dbeafe",
+    borderRadius: "22px",
+    padding: "18px",
+  },
+  bankTitle: {
+    margin: "0 0 14px",
+    fontSize: "22px",
+    fontWeight: "900",
+    color: "#0f172a",
+  },
+  bankItem: {
+    display: "flex",
+    justifyContent: "space-between",
+    alignItems: "center",
+    gap: "12px",
+    padding: "12px 0",
+    borderBottom: "1px solid #e2e8f0",
+    fontSize: "15px",
+    color: "#0f172a",
+  },
+  timerBox: {
+    marginTop: "16px",
+    background: "linear-gradient(135deg,#ecfeff,#eff6ff)",
+    padding: "12px",
+    borderRadius: "16px",
+    textAlign: "center",
+    fontSize: "16px",
+    color: "#0f172a",
+    border: "1px solid #bfdbfe",
+    fontWeight: "800",
+  },
+  steps: {
+    marginTop: "18px",
+    color: "#334155",
+    fontSize: "16px",
+    lineHeight: 1.7,
   },
   fileInput: {
     width: "100%",
