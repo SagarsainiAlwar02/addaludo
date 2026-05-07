@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { BrowserRouter as Router, Routes, Route, Navigate } from "react-router-dom";
 
-import { socket } from "./Socket";
+import { socket } from "./socket";
 
 import HeaderMain from "./components/HeaderMain";
 import FooterNav from "./components/FooterNav";
