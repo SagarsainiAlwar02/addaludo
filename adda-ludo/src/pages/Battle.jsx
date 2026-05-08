@@ -57,6 +57,7 @@ export default function Battle() {
   const navigate = useNavigate();
 
   const [amount, setAmount] = useState("");
+  const [searchedAmount, setSearchedAmount] = useState(null);
   const [openBattles, setOpenBattles] = useState([]);
   const [myBattles, setMyBattles] = useState([]);
   const [loading, setLoading] = useState(false);
@@ -119,19 +120,20 @@ export default function Battle() {
   const createBattle = async () => {
     if (!validateAmount(amount)) return;
 
+    const finalAmount = Number(amount);
+
     try {
       setLoading(true);
 
       await axios.post(
         `${API_BASE}/battle/create`,
-        { amount: Number(amount) },
+        { amount: finalAmount },
         authHeader()
       );
 
+      setSearchedAmount(finalAmount);
       setAmount("");
       await fetchBattles();
-
-      alert("Battle open ho gayi");
     } catch (err) {
       alert(err.response?.data?.msg || "Battle create failed");
     } finally {
@@ -182,19 +184,25 @@ export default function Battle() {
   };
 
   const visibleOpenBattles = useMemo(() => {
+    if (!searchedAmount) return [];
+
     const map = new Map();
 
     [...openBattles, ...myBattles].forEach((battle) => {
+      const status = String(battle?.status || "").toLowerCase();
+      const battleAmount = Number(battle?.amount);
+
       if (
         battle?.battleId &&
-        ["open", "waiting"].includes(String(battle.status || "").toLowerCase())
+        ["open", "waiting"].includes(status) &&
+        battleAmount === Number(searchedAmount)
       ) {
         map.set(battle.battleId, battle);
       }
     });
 
     return Array.from(map.values());
-  }, [openBattles, myBattles]);
+  }, [openBattles, myBattles, searchedAmount]);
 
   const runningBattles = useMemo(() => {
     return myBattles.filter((b) =>
@@ -227,10 +235,6 @@ export default function Battle() {
           </div>
 
           <div className="space-y-4 p-4">
-            <div className="rounded-xl bg-slate-50 p-3 text-sm font-bold text-slate-700">
-              Min ₹50, max ₹100000, amount ₹50 ke multiple me hona chahiye
-            </div>
-
             <input
               type="number"
               placeholder="Battle amount enter karo"
@@ -254,8 +258,10 @@ export default function Battle() {
 
         <SectionTitle title="🔥 Open Battles" />
 
-        {visibleOpenBattles.length === 0 ? (
-          <EmptyBox text="Abhi koi open battle nahi hai" />
+        {!searchedAmount ? (
+          <EmptyBox text="Amount set karo, usi amount ki battle yaha dikhegi" />
+        ) : visibleOpenBattles.length === 0 ? (
+          <EmptyBox text={`₹${searchedAmount} ki koi open battle nahi hai`} />
         ) : (
           visibleOpenBattles.map((battle) => {
             const creatorId = getBattleCreatorId(battle);
