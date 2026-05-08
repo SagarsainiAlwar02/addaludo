@@ -11,48 +11,20 @@ function getUserId(req) {
 }
 
 function validateBattleAmount(amount) {
-  if (!amount || amount < 50) {
-    return "Minimum battle amount ₹50 required";
-  }
+  amount = Number(amount);
 
-  if (amount > 100000) {
-    return "Maximum battle amount ₹100000 allowed";
-  }
-
-  if (amount % 50 !== 0) {
-    return "Battle amount ₹50 ke multiple me hona chahiye";
-  }
+  if (!amount || amount < 50) return "Minimum battle amount ₹50 required";
+  if (amount > 100000) return "Maximum battle amount ₹100000 allowed";
+  if (amount % 50 !== 0) return "Battle amount ₹50 ke multiple me hona chahiye";
 
   return null;
 }
 
-function calculateBattlePrize(amount, players = 2) {
-  amount = Number(amount);
-  players = Number(players || 2);
-
-  const totalPool = amount * players;
-
-  let commissionPercentPerUser;
-
-  if (amount >= 50 && amount <= 500) {
-    commissionPercentPerUser = 5;
-  } else if (amount > 500 && amount <= 100000) {
-    commissionPercentPerUser = 2.5;
-  } else {
-    throw new Error("Battle amount ₹50 se ₹100000 ke beech hona chahiye");
-  }
-
-  const totalCommissionPercent = commissionPercentPerUser * players;
-  const commission = Math.floor((totalPool * totalCommissionPercent) / 100);
-  const prize = totalPool - commission;
-
-  return {
-    totalPool,
-    commission,
-    prize,
-    commissionPercentPerUser,
-    totalCommissionPercent,
-  };
+function calculateBattlePrize(amount) {
+  const totalPool = Number(amount) * 2;
+  const commissionPercentPerUser = Number(amount) <= 500 ? 5 : 2.5;
+  const commission = Math.floor((totalPool * commissionPercentPerUser * 2) / 100);
+  return totalPool - commission;
 }
 
 async function getWallet(userId) {
@@ -96,7 +68,7 @@ async function lockAmount(userId, amount, roomId) {
   return wallet;
 }
 
-async function refundAmount(userId, amount, roomId) {
+async function refundAmount(userId, amount, roomId, note = "Battle amount refunded") {
   const wallet = await getWallet(userId);
 
   wallet.locked = Math.max(0, Number(wallet.locked || 0) - amount);
@@ -109,7 +81,7 @@ async function refundAmount(userId, amount, roomId) {
     type: "refund",
     status: "success",
     roomId,
-    note: "Battle amount refunded",
+    note,
     balanceAfter: wallet.balance,
   });
 
@@ -122,63 +94,41 @@ exports.createBattle = async (req, res) => {
     const amount = Number(req.body.amount);
 
     const amountError = validateBattleAmount(amount);
-    if (amountError) {
-      return res.status(400).json({
-        success: false,
-        msg: amountError,
-      });
-    }
+    if (amountError) return res.status(400).json({ success: false, msg: amountError });
 
     const battleId = makeBattleId();
-    const prizeData = calculateBattlePrize(amount, 2);
+    const prize = calculateBattlePrize(amount);
 
     await lockAmount(userId, amount, battleId);
 
     const battle = await Battle.create({
       battleId,
       amount,
-      prize: prizeData.prize,
+      prize,
       createdBy: userId,
       status: "open",
     });
 
     return res.json({
       success: true,
-      msg: "Battle created successfully",
-      commission: prizeData.commission,
-      commissionPercentPerUser: prizeData.commissionPercentPerUser,
+      msg: "Battle open ho gayi",
       battle,
     });
   } catch (err) {
-    console.log("❌ CREATE BATTLE ERROR:", err);
-
-    return res.status(500).json({
-      success: false,
-      msg: err.message,
-    });
+    console.log("CREATE BATTLE ERROR:", err);
+    return res.status(500).json({ success: false, msg: err.message });
   }
 };
 
 exports.getOpenBattles = async (req, res) => {
   try {
-    const userId = getUserId(req);
-
-    const battles = await Battle.find({
-      status: "open",
-      createdBy: { $ne: userId },
-    })
+    const battles = await Battle.find({ status: "open" })
       .populate("createdBy", "name phone")
       .sort({ createdAt: -1 });
 
-    return res.json({
-      success: true,
-      battles,
-    });
+    return res.json({ success: true, battles });
   } catch (err) {
-    return res.status(500).json({
-      success: false,
-      msg: err.message,
-    });
+    return res.status(500).json({ success: false, msg: err.message });
   }
 };
 
@@ -194,15 +144,9 @@ exports.getMyBattles = async (req, res) => {
       .populate("winner", "name phone")
       .sort({ createdAt: -1 });
 
-    return res.json({
-      success: true,
-      battles,
-    });
+    return res.json({ success: true, battles });
   } catch (err) {
-    return res.status(500).json({
-      success: false,
-      msg: err.message,
-    });
+    return res.status(500).json({ success: false, msg: err.message });
   }
 };
 
@@ -214,43 +158,21 @@ exports.getSingleBattle = async (req, res) => {
     const battle = await Battle.findOne({ battleId })
       .populate("createdBy", "name phone")
       .populate("opponent", "name phone")
-      .populate("winner", "name phone");
+      .populate("winner", "name phone")
+      .populate("resultSubmittedBy", "name phone");
 
-    if (!battle) {
-      return res.status(404).json({
-        success: false,
-        msg: "Battle not found",
-      });
+    if (!battle) return res.status(404).json({ success: false, msg: "Battle not found" });
+
+    const creatorId = battle.createdBy?._id?.toString();
+    const opponentId = battle.opponent?._id?.toString();
+
+    if (creatorId !== userId && opponentId !== userId) {
+      return res.status(403).json({ success: false, msg: "You are not part of this battle" });
     }
 
-    const createdById = battle.createdBy?._id
-      ? battle.createdBy._id.toString()
-      : battle.createdBy?.toString();
-
-    const opponentId = battle.opponent?._id
-      ? battle.opponent._id.toString()
-      : battle.opponent?.toString();
-
-    const isPlayer = createdById === userId || opponentId === userId;
-
-    if (!isPlayer) {
-      return res.status(403).json({
-        success: false,
-        msg: "You are not part of this battle",
-      });
-    }
-
-    return res.json({
-      success: true,
-      battle,
-    });
+    return res.json({ success: true, battle });
   } catch (err) {
-    console.log("❌ SINGLE BATTLE ERROR:", err);
-
-    return res.status(500).json({
-      success: false,
-      msg: err.message,
-    });
+    return res.status(500).json({ success: false, msg: err.message });
   }
 };
 
@@ -261,53 +183,27 @@ exports.joinBattle = async (req, res) => {
 
     const battle = await Battle.findOne({ battleId });
 
-    if (!battle) {
-      return res.status(404).json({
-        success: false,
-        msg: "Battle not found",
-      });
-    }
-
-    const amountError = validateBattleAmount(Number(battle.amount));
-    if (amountError) {
-      return res.status(400).json({
-        success: false,
-        msg: amountError,
-      });
-    }
+    if (!battle) return res.status(404).json({ success: false, msg: "Battle not found" });
 
     if (battle.status !== "open") {
-      return res.status(400).json({
-        success: false,
-        msg: "Battle already joined",
-      });
+      return res.status(400).json({ success: false, msg: "Battle already joined" });
     }
 
     if (battle.createdBy.toString() === userId) {
-      return res.status(400).json({
-        success: false,
-        msg: "You cannot join your own battle",
-      });
+      return res.status(400).json({ success: false, msg: "You cannot join your own battle" });
     }
 
     await lockAmount(userId, battle.amount, battle.battleId);
 
     battle.opponent = userId;
     battle.status = "running";
+    battle.timerStartedAt = new Date();
     await battle.save();
 
-    return res.json({
-      success: true,
-      msg: "Battle joined successfully",
-      battle,
-    });
+    return res.json({ success: true, msg: "Battle joined", battle });
   } catch (err) {
-    console.log("❌ JOIN BATTLE ERROR:", err);
-
-    return res.status(500).json({
-      success: false,
-      msg: err.message,
-    });
+    console.log("JOIN BATTLE ERROR:", err);
+    return res.status(500).json({ success: false, msg: err.message });
   }
 };
 
@@ -315,56 +211,38 @@ exports.submitRoomCode = async (req, res) => {
   try {
     const userId = getUserId(req);
     const { battleId } = req.params;
-    const { roomCode } = req.body;
+    const roomCode = String(req.body.roomCode || "").trim();
 
-    if (!roomCode || !String(roomCode).trim()) {
+    if (!/^\d{8}$/.test(roomCode)) {
       return res.status(400).json({
         success: false,
-        msg: "Ludo King room code required",
+        msg: "Room code only 8 digit",
       });
     }
 
     const battle = await Battle.findOne({ battleId });
 
-    if (!battle) {
-      return res.status(404).json({
-        success: false,
-        msg: "Battle not found",
-      });
-    }
+    if (!battle) return res.status(404).json({ success: false, msg: "Battle not found" });
 
-    const isPlayer =
-      battle.createdBy.toString() === userId ||
-      battle.opponent?.toString() === userId;
-
-    if (!isPlayer) {
+    if (battle.createdBy.toString() !== userId) {
       return res.status(403).json({
         success: false,
-        msg: "You are not part of this battle",
+        msg: "Only battle creator can set room code",
       });
     }
 
     if (!["running", "room_submitted"].includes(battle.status)) {
-      return res.status(400).json({
-        success: false,
-        msg: "Room code cannot be submitted now",
-      });
+      return res.status(400).json({ success: false, msg: "Room code cannot be submitted now" });
     }
 
-    battle.ludoKingRoomCode = String(roomCode).trim();
+    battle.ludoKingRoomCode = roomCode;
+    battle.roomCodeSetBy = userId;
     battle.status = "room_submitted";
     await battle.save();
 
-    return res.json({
-      success: true,
-      msg: "Room code submitted",
-      battle,
-    });
+    return res.json({ success: true, msg: "Room code submitted", battle });
   } catch (err) {
-    return res.status(500).json({
-      success: false,
-      msg: err.message,
-    });
+    return res.status(500).json({ success: false, msg: err.message });
   }
 };
 
@@ -372,49 +250,98 @@ exports.submitResult = async (req, res) => {
   try {
     const userId = getUserId(req);
     const { battleId } = req.params;
+    const result = String(req.body.result || "").toLowerCase();
 
     const battle = await Battle.findOne({ battleId });
 
-    if (!battle) {
-      return res.status(404).json({
-        success: false,
-        msg: "Battle not found",
+    if (!battle) return res.status(404).json({ success: false, msg: "Battle not found" });
+
+    const isCreator = battle.createdBy.toString() === userId;
+    const isOpponent = battle.opponent?.toString() === userId;
+
+    if (!isCreator && !isOpponent) {
+      return res.status(403).json({ success: false, msg: "You are not part of this battle" });
+    }
+
+    if (!["running", "room_submitted"].includes(battle.status)) {
+      return res.status(400).json({ success: false, msg: "Result cannot be submitted now" });
+    }
+
+    if (result === "win") {
+      if (!req.file) {
+        return res.status(400).json({ success: false, msg: "Winning screenshot required" });
+      }
+
+      battle.screenshot = `/uploads/results/${req.file.filename}`;
+      battle.winner = userId;
+      battle.resultSubmittedBy = userId;
+      battle.resultType = "win";
+      battle.status = "result_submitted";
+      await battle.save();
+
+      return res.json({
+        success: true,
+        msg: "Win result submitted. Admin approval pending.",
+        battle,
       });
     }
 
-    const isPlayer =
-      battle.createdBy.toString() === userId ||
-      battle.opponent?.toString() === userId;
+    if (result === "loss") {
+      const winner = isCreator ? battle.opponent : battle.createdBy;
 
-    if (!isPlayer) {
-      return res.status(403).json({
-        success: false,
-        msg: "You are not part of this battle",
+      battle.winner = winner;
+      battle.resultSubmittedBy = userId;
+      battle.resultType = "loss";
+      battle.status = "result_submitted";
+      await battle.save();
+
+      return res.json({
+        success: true,
+        msg: "Loss submitted. Admin approval pending.",
+        battle,
       });
     }
 
-    if (!req.file) {
-      return res.status(400).json({
-        success: false,
-        msg: "Screenshot required",
+    if (result === "cancel") {
+      const alreadyVoted = battle.cancelVotes.some((id) => id.toString() === userId);
+
+      if (!alreadyVoted) {
+        battle.cancelVotes.push(userId);
+      }
+
+      if (battle.cancelVotes.length >= 2) {
+        await refundAmount(battle.createdBy, battle.amount, battle.battleId, "Battle cancelled by both users");
+
+        if (battle.opponent) {
+          await refundAmount(battle.opponent, battle.amount, battle.battleId, "Battle cancelled by both users");
+        }
+
+        battle.status = "cancelled";
+      } else {
+        battle.status = "cancel_requested";
+      }
+
+      battle.resultSubmittedBy = userId;
+      battle.resultType = "cancel";
+      await battle.save();
+
+      return res.json({
+        success: true,
+        msg:
+          battle.status === "cancelled"
+            ? "Battle cancelled and amount refunded"
+            : "Cancel request submitted. Waiting for other user.",
+        battle,
       });
     }
 
-    battle.screenshot = `/uploads/results/${req.file.filename}`;
-    battle.winner = userId;
-    battle.status = "result_submitted";
-    await battle.save();
-
-    return res.json({
-      success: true,
-      msg: "Result submitted. Waiting for admin approval.",
-      battle,
+    return res.status(400).json({
+      success: false,
+      msg: "Invalid result type",
     });
   } catch (err) {
-    return res.status(500).json({
-      success: false,
-      msg: err.message,
-    });
+    console.log("SUBMIT RESULT ERROR:", err);
+    return res.status(500).json({ success: false, msg: err.message });
   }
 };
 
@@ -425,41 +352,25 @@ exports.cancelBattle = async (req, res) => {
 
     const battle = await Battle.findOne({ battleId });
 
-    if (!battle) {
-      return res.status(404).json({
-        success: false,
-        msg: "Battle not found",
-      });
+    if (!battle) return res.status(404).json({ success: false, msg: "Battle not found" });
+
+    if (battle.status === "open") {
+      if (battle.createdBy.toString() !== userId) {
+        return res.status(403).json({ success: false, msg: "Only creator can cancel open battle" });
+      }
+
+      await refundAmount(battle.createdBy, battle.amount, battle.battleId, "Open battle cancelled");
+      battle.status = "cancelled";
+      await battle.save();
+
+      return res.json({ success: true, msg: "Battle cancelled and refunded", battle });
     }
 
-    if (battle.createdBy.toString() !== userId) {
-      return res.status(403).json({
-        success: false,
-        msg: "Only battle creator can cancel",
-      });
-    }
-
-    if (battle.status !== "open") {
-      return res.status(400).json({
-        success: false,
-        msg: "Joined battle cannot be cancelled",
-      });
-    }
-
-    await refundAmount(battle.createdBy, battle.amount, battle.battleId);
-
-    battle.status = "cancelled";
-    await battle.save();
-
-    return res.json({
-      success: true,
-      msg: "Battle cancelled and amount refunded",
-      battle,
+    return res.status(400).json({
+      success: false,
+      msg: "Running battle cancel ke liye Cancel result button use karein",
     });
   } catch (err) {
-    return res.status(500).json({
-      success: false,
-      msg: err.message,
-    });
+    return res.status(500).json({ success: false, msg: err.message });
   }
 };

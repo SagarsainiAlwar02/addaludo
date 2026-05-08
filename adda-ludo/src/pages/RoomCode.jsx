@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import axios from "axios";
 import { useNavigate, useParams } from "react-router-dom";
 
@@ -13,6 +13,15 @@ const FILE_BASE =
     ? "http://localhost:5000"
     : "https://api.addaludo.com";
 
+function getUserId() {
+  try {
+    const user = JSON.parse(localStorage.getItem("user") || "{}");
+    return String(user?._id || user?.id || "");
+  } catch {
+    return "";
+  }
+}
+
 export default function RoomCode() {
   const { battleId } = useParams();
   const navigate = useNavigate();
@@ -20,10 +29,13 @@ export default function RoomCode() {
   const [battle, setBattle] = useState(null);
   const [roomCode, setRoomCode] = useState("");
   const [screenshot, setScreenshot] = useState(null);
+  const [selectedResult, setSelectedResult] = useState("");
   const [loading, setLoading] = useState(false);
   const [pageLoading, setPageLoading] = useState(true);
+  const [now, setNow] = useState(Date.now());
 
   const token = localStorage.getItem("token");
+  const myId = getUserId();
 
   const authHeader = () => ({
     headers: { Authorization: `Bearer ${token}` },
@@ -49,15 +61,34 @@ export default function RoomCode() {
     }
 
     fetchBattle();
-    const interval = setInterval(fetchBattle, 4000);
+    const interval = setInterval(fetchBattle, 3000);
+    const timerInterval = setInterval(() => setNow(Date.now()), 1000);
 
-    return () => clearInterval(interval);
+    return () => {
+      clearInterval(interval);
+      clearInterval(timerInterval);
+    };
     // eslint-disable-next-line
   }, [battleId]);
 
+  const isCreator = useMemo(() => {
+    const creatorId = String(battle?.createdBy?._id || battle?.createdBy || "");
+    return creatorId === myId;
+  }, [battle, myId]);
+
+  const timerLeft = useMemo(() => {
+    if (!battle?.timerStartedAt) return 120;
+
+    const start = new Date(battle.timerStartedAt).getTime();
+    const diff = Math.floor((now - start) / 1000);
+    return Math.max(0, 120 - diff);
+  }, [battle, now]);
+
   const saveRoomCode = async () => {
-    if (!roomCode.trim()) {
-      alert("Room code डालो");
+    const code = roomCode.trim();
+
+    if (!/^\d{8}$/.test(code)) {
+      alert("Room code only 8 digit");
       return;
     }
 
@@ -66,7 +97,7 @@ export default function RoomCode() {
 
       await axios.post(
         `${API_BASE}/battle/room-code/${battleId}`,
-        { roomCode: roomCode.trim() },
+        { roomCode: code },
         authHeader()
       );
 
@@ -81,14 +112,18 @@ export default function RoomCode() {
 
   const copyCode = async () => {
     if (!battle?.ludoKingRoomCode) return;
-
     await navigator.clipboard.writeText(battle.ludoKingRoomCode);
     alert("Room code copied");
   };
 
-  const uploadResult = async () => {
-    if (!screenshot) {
-      alert("Winner screenshot select करो");
+  const submitResult = async () => {
+    if (!selectedResult) {
+      alert("Win, Loss ya Cancel select karo");
+      return;
+    }
+
+    if (selectedResult === "win" && !screenshot) {
+      alert("Winning screenshot upload karo");
       return;
     }
 
@@ -96,7 +131,11 @@ export default function RoomCode() {
       setLoading(true);
 
       const formData = new FormData();
-      formData.append("screenshot", screenshot);
+      formData.append("result", selectedResult);
+
+      if (screenshot) {
+        formData.append("screenshot", screenshot);
+      }
 
       await axios.post(`${API_BASE}/battle/result/${battleId}`, formData, {
         headers: {
@@ -106,30 +145,16 @@ export default function RoomCode() {
       });
 
       await fetchBattle();
-      alert("Result uploaded. Admin approval pending.");
+
+      if (selectedResult === "win") {
+        alert("Win result submitted. Admin approval pending.");
+      } else if (selectedResult === "loss") {
+        alert("Loss submitted. Admin approval pending.");
+      } else {
+        alert("Cancel request submitted.");
+      }
     } catch (err) {
-      alert(err.response?.data?.msg || "Result upload failed");
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const cancelBattle = async () => {
-    if (!window.confirm("Battle cancel करनी है?")) return;
-
-    try {
-      setLoading(true);
-
-      await axios.patch(
-        `${API_BASE}/battle/cancel/${battleId}`,
-        {},
-        authHeader()
-      );
-
-      alert("Battle cancelled");
-      navigate("/battle");
-    } catch (err) {
-      alert(err.response?.data?.msg || "Cancel failed");
+      alert(err.response?.data?.msg || "Result submit failed");
     } finally {
       setLoading(false);
     }
@@ -137,7 +162,7 @@ export default function RoomCode() {
 
   if (pageLoading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-[#f4f6f8] pt-20 pb-28 font-black text-slate-800">
+      <div className="flex min-h-screen items-center justify-center bg-[#f4f6f8] pt-20 pb-28 font-black text-slate-800">
         Loading Battle...
       </div>
     );
@@ -145,62 +170,66 @@ export default function RoomCode() {
 
   if (!battle) return null;
 
-  const isWaiting = battle.status === "open";
-  const canRoomCode = ["running", "room_submitted"].includes(battle.status);
-  const canUpload = ["running", "room_submitted"].includes(battle.status);
+  const canResult = ["running", "room_submitted", "cancel_requested"].includes(battle.status);
+  const isCompleted = ["approved", "rejected", "cancelled"].includes(battle.status);
 
   return (
-    <div className="min-h-screen bg-[#f4f6f8] pt-20 pb-28 px-3 text-black">
-      <div className="mx-auto max-w-[520px]">
+    <div className="min-h-screen bg-[#f4f6f8] px-3 pt-20 pb-28 text-black">
+      <div className="mx-auto max-w-[540px]">
         <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
           <div className="bg-gradient-to-r from-slate-900 to-slate-600 px-4 py-3 text-lg font-black text-white">
-            🎮 Ludo King Room
+            🎮 Battle Room
           </div>
 
           <div className="space-y-4 p-4">
             <div className="rounded-2xl bg-[#342b72] p-4 text-white">
-              <p className="text-xs font-bold opacity-80">Battle ID</p>
-              <p className="break-all text-sm font-black">{battle.battleId}</p>
+              <div className="text-center">
+                <p className="text-xs font-bold opacity-80">Match</p>
+                <h2 className="mt-1 text-xl font-black">
+                  {battle.createdBy?.name || "User 1"} VS{" "}
+                  {battle.opponent?.name || "Waiting..."}
+                </h2>
+              </div>
 
-              <div className="mt-4 grid grid-cols-2 gap-3">
+              <div className="mt-4 grid grid-cols-3 gap-3 text-center">
                 <div>
-                  <p className="text-xs font-bold opacity-80">Entry Fee</p>
-                  <p className="text-2xl font-black">₹{battle.amount}</p>
+                  <p className="text-xs font-bold opacity-80">Entry</p>
+                  <p className="text-xl font-black">₹{battle.amount}</p>
                 </div>
 
-                <div className="text-right">
-                  <p className="text-xs font-bold opacity-80">Winning Prize</p>
-                  <p className="text-2xl font-black">₹{battle.prize}</p>
+                <div>
+                  <p className="text-xs font-bold opacity-80">Timer</p>
+                  <p className="text-xl font-black text-yellow-300">{timerLeft}s</p>
+                </div>
+
+                <div>
+                  <p className="text-xs font-bold opacity-80">Winning</p>
+                  <p className="text-xl font-black">₹{battle.prize}</p>
                 </div>
               </div>
 
-              <div className="mt-4 space-y-1 text-sm">
-                <p>
-                  Player 1: <b>{battle.createdBy?.name || "Player"}</b>
-                </p>
-                <p>
-                  Player 2: <b>{battle.opponent?.name || "Waiting..."}</b>
-                </p>
-                <p>
-                  Status: <b>{battle.status}</b>
-                </p>
+              <div className="mt-4 rounded-xl bg-white/10 p-3 text-center text-xs font-bold">
+                Status: {battle.status}
               </div>
             </div>
 
-            {isWaiting && (
-              <div className="rounded-2xl border border-yellow-300 bg-yellow-50 p-4 text-center text-sm font-black text-yellow-800">
-                Opponent ka wait ho raha hai. Dusra player Play dabayega tab room code active hoga.
-              </div>
+            {!battle.opponent && (
+              <InfoBox text="Opponent ka wait ho raha hai. Jab koi player join karega tab timer start hoga." />
             )}
 
-            {canRoomCode && (
+            {battle.opponent && !battle.ludoKingRoomCode && !isCreator && (
+              <InfoBox text="Waiting for room code. Battle creator room code set karega." />
+            )}
+
+            {battle.opponent && !battle.ludoKingRoomCode && isCreator && (
               <div className="space-y-3 rounded-2xl border border-slate-200 bg-white p-4">
-                <h2 className="text-lg font-black text-slate-900">Room Code</h2>
+                <h2 className="text-lg font-black text-slate-900">Set Room Code</h2>
 
                 <input
                   value={roomCode}
-                  onChange={(e) => setRoomCode(e.target.value)}
-                  placeholder="Ludo King Room Code"
+                  maxLength={8}
+                  onChange={(e) => setRoomCode(e.target.value.replace(/\D/g, ""))}
+                  placeholder="Enter 8 digit room code"
                   className="w-full rounded-xl border border-slate-300 px-4 py-3 text-lg font-black outline-none focus:border-cyan-500"
                 />
 
@@ -209,57 +238,119 @@ export default function RoomCode() {
                   onClick={saveRoomCode}
                   className="w-full rounded-xl bg-yellow-400 py-3 font-black text-black disabled:opacity-60"
                 >
-                  {loading ? "Saving..." : "Save Room Code"}
+                  {loading ? "Saving..." : "Submit Room Code"}
                 </button>
-
-                {battle.ludoKingRoomCode && (
-                  <button
-                    onClick={copyCode}
-                    className="w-full rounded-xl bg-green-600 py-3 font-black text-white"
-                  >
-                    Copy Room Code: {battle.ludoKingRoomCode}
-                  </button>
-                )}
               </div>
             )}
 
-            {canUpload && (
-              <div className="space-y-3 rounded-2xl border border-slate-200 bg-white p-4">
-                <h2 className="text-lg font-black text-slate-900">Result Proof</h2>
+            {battle.ludoKingRoomCode && (
+              <div className="space-y-3 rounded-2xl border border-green-200 bg-green-50 p-4 text-center">
+                <p className="text-sm font-black text-green-700">ROOM CODE</p>
+                <p className="text-3xl font-black tracking-widest text-slate-900">
+                  {battle.ludoKingRoomCode}
+                </p>
 
-                <input
-                  type="file"
-                  accept="image/*"
-                  onChange={(e) => setScreenshot(e.target.files?.[0] || null)}
-                  className="w-full rounded-xl border border-slate-200 p-3 text-sm"
-                />
+                <button
+                  onClick={copyCode}
+                  className="w-full rounded-xl bg-green-600 py-3 font-black text-white"
+                >
+                  Copy Room Code
+                </button>
+              </div>
+            )}
+
+            <div className="rounded-2xl bg-slate-50 p-4">
+              <h3 className="mb-2 text-base font-black text-slate-900">
+                Instructions
+              </h3>
+              <ul className="list-disc space-y-2 pl-5 text-sm font-semibold leading-6 text-slate-700">
+                <li>Sabhi match ki recording kare.</li>
+                <li>
+                  Room code only classic mode ka set kare varna match cancel kare.
+                  Dusra room code set karne par ₹25 ki penalty lag jayegi.
+                </li>
+                <li>
+                  Result sahi update kare. Galat update karne par ₹50 ki penalty
+                  lagegi.
+                </li>
+              </ul>
+            </div>
+
+            {canResult && (
+              <div className="space-y-3 rounded-2xl border border-slate-200 bg-white p-4">
+                <h2 className="text-lg font-black text-slate-900">Update Result</h2>
+
+                <div className="grid grid-cols-3 gap-2">
+                  <ResultButton
+                    active={selectedResult === "win"}
+                    text="WIN"
+                    color="green"
+                    onClick={() => setSelectedResult("win")}
+                  />
+                  <ResultButton
+                    active={selectedResult === "loss"}
+                    text="LOSS"
+                    color="red"
+                    onClick={() => setSelectedResult("loss")}
+                  />
+                  <ResultButton
+                    active={selectedResult === "cancel"}
+                    text="CANCEL"
+                    color="slate"
+                    onClick={() => setSelectedResult("cancel")}
+                  />
+                </div>
+
+                {selectedResult === "win" && (
+                  <div>
+                    <p className="mb-2 text-sm font-bold text-slate-600">
+                      Upload winning screenshot
+                    </p>
+                    <input
+                      type="file"
+                      accept="image/*"
+                      onChange={(e) => setScreenshot(e.target.files?.[0] || null)}
+                      className="w-full rounded-xl border border-slate-200 p-3 text-sm"
+                    />
+                  </div>
+                )}
+
+                {selectedResult === "loss" && (
+                  <InfoBox text="Loss submit karne ke baad battle admin pending me jayegi." />
+                )}
+
+                {selectedResult === "cancel" && (
+                  <InfoBox text="Cancel tabhi complete hoga jab dono users cancel submit karenge. Dono ko amount refund ho jayega." />
+                )}
 
                 <button
                   disabled={loading}
-                  onClick={uploadResult}
+                  onClick={submitResult}
                   className="w-full rounded-xl bg-orange-500 py-3 font-black text-white disabled:opacity-60"
                 >
-                  Upload Winner Screenshot
+                  {loading ? "Submitting..." : "Submit Result"}
                 </button>
               </div>
             )}
 
             {battle.status === "result_submitted" && (
-              <div className="rounded-xl bg-yellow-400 p-3 text-center font-black text-black">
-                Result submitted. Admin approval pending.
-              </div>
+              <StatusBox color="yellow" text="Result submitted. Admin approval pending." />
+            )}
+
+            {battle.status === "cancel_requested" && (
+              <StatusBox color="yellow" text="Cancel request submitted. Dusre user ka wait hai." />
             )}
 
             {battle.status === "approved" && (
-              <div className="rounded-xl bg-green-600 p-3 text-center font-black text-white">
-                Winner Approved ✅ Prize Added
-              </div>
+              <StatusBox color="green" text="Winner Approved ✅ Prize Added in winning wallet." />
             )}
 
             {battle.status === "rejected" && (
-              <div className="rounded-xl bg-red-600 p-3 text-center font-black text-white">
-                Battle Rejected / Refunded
-              </div>
+              <StatusBox color="red" text="Battle rejected / refunded by admin." />
+            )}
+
+            {battle.status === "cancelled" && (
+              <StatusBox color="red" text="Battle cancelled. Amount refunded." />
             )}
 
             {battle.screenshot && (
@@ -270,31 +361,54 @@ export default function RoomCode() {
               />
             )}
 
-            <div className="flex gap-3">
-              <button
-                onClick={() => navigate("/battle")}
-                className="flex-1 rounded-xl bg-slate-800 py-3 font-black text-white"
-              >
-                Back
-              </button>
-
-              {battle.status === "open" && (
-                <button
-                  disabled={loading}
-                  onClick={cancelBattle}
-                  className="flex-1 rounded-xl bg-red-600 py-3 font-black text-white disabled:opacity-60"
-                >
-                  Cancel
-                </button>
-              )}
-            </div>
-
-            <div className="rounded-xl bg-slate-50 p-3 text-xs font-semibold leading-5 text-slate-600">
-              Note: Room code website generate nahi karti. Ludo King app me room create karke code yaha paste karna hoga.
-            </div>
+            <button
+              onClick={() => navigate("/battle")}
+              className="w-full rounded-xl bg-slate-800 py-3 font-black text-white"
+            >
+              Back
+            </button>
           </div>
         </div>
       </div>
     </div>
+  );
+}
+
+function InfoBox({ text }) {
+  return (
+    <div className="rounded-2xl border border-yellow-300 bg-yellow-50 p-4 text-center text-sm font-black text-yellow-800">
+      {text}
+    </div>
+  );
+}
+
+function StatusBox({ text, color }) {
+  const cls =
+    color === "green"
+      ? "bg-green-600 text-white"
+      : color === "red"
+      ? "bg-red-600 text-white"
+      : "bg-yellow-400 text-black";
+
+  return <div className={`rounded-xl p-3 text-center font-black ${cls}`}>{text}</div>;
+}
+
+function ResultButton({ text, active, color, onClick }) {
+  const base =
+    color === "green"
+      ? "bg-green-600"
+      : color === "red"
+      ? "bg-red-600"
+      : "bg-slate-700";
+
+  return (
+    <button
+      onClick={onClick}
+      className={`rounded-xl py-3 font-black text-white ${base} ${
+        active ? "ring-4 ring-yellow-300" : "opacity-80"
+      }`}
+    >
+      {text}
+    </button>
   );
 }
