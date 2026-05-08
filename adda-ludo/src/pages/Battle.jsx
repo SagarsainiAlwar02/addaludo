@@ -17,40 +17,24 @@ function getUserId() {
   try {
     const user = JSON.parse(localStorage.getItem("user") || "{}");
 
-    if (user?._id || user?.id) {
-      return String(user._id || user.id);
-    }
+    if (user?._id || user?.id) return String(user._id || user.id);
 
     const token = localStorage.getItem("token");
     if (!token) return "";
 
     const payload = JSON.parse(atob(token.split(".")[1] || ""));
-    return String(
-      payload?._id ||
-        payload?.id ||
-        payload?.userId ||
-        payload?.user ||
-        ""
-    );
+    return String(payload?._id || payload?.id || payload?.userId || payload?.user || "");
   } catch {
     return "";
   }
 }
 
 function getBattleCreatorId(battle) {
-  return String(
-    battle?.createdBy?._id ||
-      battle?.createdBy?.id ||
-      battle?.createdBy ||
-      battle?.creator?._id ||
-      battle?.creator?.id ||
-      battle?.creator ||
-      battle?.user?._id ||
-      battle?.user?.id ||
-      battle?.user ||
-      battle?.userId ||
-      ""
-  );
+  return String(battle?.createdBy?._id || battle?.createdBy?.id || battle?.createdBy || "");
+}
+
+function getBattleOpponentId(battle) {
+  return String(battle?.opponent?._id || battle?.opponent?.id || battle?.opponent || "");
 }
 
 export default function Battle() {
@@ -141,22 +125,54 @@ export default function Battle() {
     }
   };
 
-  const joinBattle = async (battleId) => {
+  const playBattle = async (battleId) => {
+    try {
+      setLoading(true);
+
+      await axios.post(`${API_BASE}/battle/join/${battleId}`, {}, authHeader());
+
+      await fetchBattles();
+      alert("Play request sent. Creator Start karega tab room page khulega.");
+    } catch (err) {
+      alert(err.response?.data?.msg || "Play request failed");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const startBattle = async (battleId) => {
     try {
       setLoading(true);
 
       const res = await axios.post(
-        `${API_BASE}/battle/join/${battleId}`,
+        `${API_BASE}/battle/start/${battleId}`,
         {},
         authHeader()
       );
 
-      const joinedId = res.data?.battle?.battleId || battleId;
+      const startedId = res.data?.battle?.battleId || battleId;
 
       await fetchBattles();
-      navigate(`/room-code/${joinedId}`);
+      navigate(`/room-code/${startedId}`);
     } catch (err) {
-      alert(err.response?.data?.msg || "Battle join failed");
+      alert(err.response?.data?.msg || "Start battle failed");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const rejectBattle = async (battleId) => {
+    if (!window.confirm("Player request reject karni hai?")) return;
+
+    try {
+      setLoading(true);
+
+      await axios.post(`${API_BASE}/battle/reject/${battleId}`, {}, authHeader());
+
+      await fetchBattles();
+      alert("Request reject ho gayi, player amount refund ho gaya");
+    } catch (err) {
+      alert(err.response?.data?.msg || "Reject failed");
     } finally {
       setLoading(false);
     }
@@ -194,7 +210,7 @@ export default function Battle() {
 
       if (
         battle?.battleId &&
-        ["open", "waiting"].includes(status) &&
+        ["open", "join_requested"].includes(status) &&
         battleAmount === Number(searchedAmount)
       ) {
         map.set(battle.battleId, battle);
@@ -221,6 +237,82 @@ export default function Battle() {
       ["approved", "rejected", "cancelled"].includes(b.status)
     );
   }, [myBattles]);
+
+  const getAction = (battle) => {
+    const status = String(battle?.status || "").toLowerCase();
+    const creatorId = getBattleCreatorId(battle);
+    const opponentId = getBattleOpponentId(battle);
+
+    const isCreator = creatorId && myId && creatorId === myId;
+    const isOpponent = opponentId && myId && opponentId === myId;
+
+    if (status === "open" && isCreator) {
+      return (
+        <div className="flex flex-col items-center gap-2">
+          <WaitingSpinner />
+          <button
+            disabled={loading}
+            onClick={() => cancelOpenBattle(battle.battleId)}
+            className="rounded-xl bg-red-600 px-5 py-2 text-sm font-black text-white disabled:opacity-60"
+          >
+            Cancel
+          </button>
+        </div>
+      );
+    }
+
+    if (status === "open" && !isCreator) {
+      return (
+        <button
+          disabled={loading}
+          onClick={() => playBattle(battle.battleId)}
+          className="rounded-xl bg-green-600 px-5 py-2 text-sm font-black text-white disabled:opacity-60"
+        >
+          Play
+        </button>
+      );
+    }
+
+    if (status === "join_requested" && isCreator) {
+      return (
+        <div className="flex flex-col gap-2">
+          <button
+            disabled={loading}
+            onClick={() => startBattle(battle.battleId)}
+            className="rounded-xl bg-green-600 px-5 py-2 text-sm font-black text-white disabled:opacity-60"
+          >
+            Start
+          </button>
+
+          <button
+            disabled={loading}
+            onClick={() => rejectBattle(battle.battleId)}
+            className="rounded-xl bg-red-600 px-5 py-2 text-sm font-black text-white disabled:opacity-60"
+          >
+            Reject
+          </button>
+        </div>
+      );
+    }
+
+    if (status === "join_requested" && isOpponent) {
+      return (
+        <div className="flex flex-col items-center gap-2">
+          <WaitingSpinner />
+          <p className="text-xs font-black text-slate-600">Waiting Start</p>
+        </div>
+      );
+    }
+
+    return (
+      <button
+        onClick={() => navigate(`/room-code/${battle.battleId}`)}
+        className="rounded-xl bg-slate-800 px-5 py-2 text-sm font-black text-white"
+      >
+        View
+      </button>
+    );
+  };
 
   return (
     <div className="min-h-screen bg-[#f4f6f8] px-3 pt-20 pb-28 text-black">
@@ -263,36 +355,13 @@ export default function Battle() {
         ) : visibleOpenBattles.length === 0 ? (
           <EmptyBox text={`₹${searchedAmount} ki koi open battle nahi hai`} />
         ) : (
-          visibleOpenBattles.map((battle) => {
-            const creatorId = getBattleCreatorId(battle);
-            const isMine = creatorId && myId && creatorId === myId;
-
-            return (
-              <BattleCard
-                key={battle.battleId}
-                battle={battle}
-                action={
-                  isMine ? (
-                    <button
-                      disabled={loading}
-                      onClick={() => cancelOpenBattle(battle.battleId)}
-                      className="rounded-xl bg-red-600 px-5 py-2 text-sm font-black text-white disabled:opacity-60"
-                    >
-                      Cancel
-                    </button>
-                  ) : (
-                    <button
-                      disabled={loading}
-                      onClick={() => joinBattle(battle.battleId)}
-                      className="rounded-xl bg-green-600 px-5 py-2 text-sm font-black text-white disabled:opacity-60"
-                    >
-                      Play
-                    </button>
-                  )
-                }
-              />
-            );
-          })
+          visibleOpenBattles.map((battle) => (
+            <BattleCard
+              key={battle.battleId}
+              battle={battle}
+              action={getAction(battle)}
+            />
+          ))
         )}
 
         <SectionTitle title="🏃 Running Battles" />
@@ -342,6 +411,14 @@ export default function Battle() {
   );
 }
 
+function WaitingSpinner() {
+  return (
+    <div className="flex items-center justify-center">
+      <div className="h-8 w-8 animate-spin rounded-full border-4 border-slate-300 border-t-green-600" />
+    </div>
+  );
+}
+
 function SectionTitle({ title }) {
   return (
     <div className="mt-5 mb-3 overflow-hidden rounded-2xl border border-slate-200 shadow-sm">
@@ -376,11 +453,8 @@ function BattleCard({ battle, action, dark = false }) {
           dark ? "border-white/15" : "border-slate-100 bg-cyan-50 text-slate-700"
         }`}
       >
-        {battle.createdBy?.name ||
-          battle.creator?.name ||
-          battle.user?.name ||
-          "Player"}{" "}
-        vs {battle.opponent?.name || "Waiting..."}
+        {battle.createdBy?.name || "Player"} vs{" "}
+        {battle.opponent?.name || "Waiting..."}
       </div>
 
       <div className="grid grid-cols-3 items-center gap-2 px-4 py-3">
