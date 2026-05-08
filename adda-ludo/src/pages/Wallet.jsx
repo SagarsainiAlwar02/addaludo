@@ -257,7 +257,7 @@ export default function Wallet() {
           </div>
 
           <div style={styles.btnRow}>
-            <button style={styles.withdrawBtn} onClick={() => navigate("/redeem")}>
+          <button style={styles.withdrawBtn} onClick={() => navigate("/withdraw")}>
               Withdraw 🏦
             </button>
           </div>

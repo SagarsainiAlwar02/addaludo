@@ -5,7 +5,7 @@ import { socket } from "./socket";
 
 import HeaderMain from "./components/HeaderMain";
 import FooterNav from "./components/FooterNav";
-
+import Withdraw from "./pages/Withdraw";
 import Home from "./pages/Home";
 import Battle from "./pages/Battle";
 import RoomCode from "./pages/RoomCode";
@@ -97,6 +97,17 @@ function App() {
             )
           }
         />
+
+        <Route
+  path="/withdraw"
+  element={
+    <ProtectedRoute isAuthenticated={isAuthenticated}>
+      <Layout>
+        <Withdraw />
+      </Layout>
+    </ProtectedRoute>
+  }
+/>
 
         <Route path="/" element={<ProtectedRoute isAuthenticated={isAuthenticated}><Layout><Home /></Layout></ProtectedRoute>} />
         <Route path="/battle" element={<ProtectedRoute isAuthenticated={isAuthenticated}><Layout><Battle /></Layout></ProtectedRoute>} />
