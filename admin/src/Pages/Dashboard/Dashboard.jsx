@@ -1,30 +1,28 @@
 import React, { useEffect, useState } from "react";
-import axios from "axios";
+import API from "../../api";
 import "./Dashboard.css";
 
 const Dashboard = () => {
   const [stats, setStats] = useState([]);
   const [loading, setLoading] = useState(true);
 
-  // ================= FETCH DASHBOARD DATA =================
   const fetchStats = async () => {
     try {
-      const res = await axios.get("/api/admin/dashboard");
+      const res = await API.get("/admin/dashboard");
 
       setStats([
-        { title: "Total Deposit", value: res.data.totalDeposit },
-        { title: "Total Withdraw", value: res.data.totalWithdraw },
-        { title: "Total Earnings", value: res.data.totalEarnings },
-        { title: "Total Commission", value: res.data.totalCommission },
-        { title: "Total Referral", value: res.data.totalReferral },
-        { title: "Total Bonus", value: res.data.totalBonus },
-        { title: "Total Penalty", value: res.data.totalPenalty },
-        { title: "Hold Balance", value: res.data.holdBalance },
-        { title: "Wallet Balance", value: res.data.walletBalance },
+        { title: "Total Deposit", value: res.data.totalDeposit || 0 },
+        { title: "Total Withdraw", value: res.data.totalWithdraw || 0 },
+        { title: "Total Earnings", value: res.data.totalEarnings || 0 },
+        { title: "Total Commission", value: res.data.totalCommission || 0 },
+        { title: "Total Referral", value: res.data.totalReferral || 0 },
+        { title: "Total Bonus", value: res.data.totalBonus || 0 },
+        { title: "Total Penalty", value: res.data.totalPenalty || 0 },
+        { title: "Hold Balance", value: res.data.holdBalance || 0 },
+        { title: "Wallet Balance", value: res.data.walletBalance || 0 },
       ]);
-
     } catch (err) {
-      console.log(err);
+      console.log("DASHBOARD ERROR:", err.response?.data || err.message);
     } finally {
       setLoading(false);
     }
@@ -38,7 +36,6 @@ const Dashboard = () => {
     <div className="dashboard-container">
       <h1 className="heading">Dashboard</h1>
 
-      {/* LOADING */}
       {loading ? (
         <p>Loading...</p>
       ) : (
@@ -46,12 +43,7 @@ const Dashboard = () => {
           {stats.map((item, index) => (
             <div className="card" key={index}>
               <h3>{item.title}</h3>
-
-              <p>
-                {item.title === "Total Referral"
-                  ? item.value
-                  : `₹${Number(item.value || 0).toLocaleString()}`}
-              </p>
+              <p>₹{Number(item.value || 0).toLocaleString()}</p>
             </div>
           ))}
         </div>
