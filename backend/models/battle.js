@@ -64,6 +64,7 @@ const battleSchema = new mongoose.Schema(
       type: String,
       enum: [
         "open",
+        "join_requested",
         "running",
         "room_submitted",
         "result_submitted",

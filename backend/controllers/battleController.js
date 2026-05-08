@@ -94,7 +94,9 @@ exports.createBattle = async (req, res) => {
     const amount = Number(req.body.amount);
 
     const amountError = validateBattleAmount(amount);
-    if (amountError) return res.status(400).json({ success: false, msg: amountError });
+    if (amountError) {
+      return res.status(400).json({ success: false, msg: amountError });
+    }
 
     const battleId = makeBattleId();
     const prize = calculateBattlePrize(amount);
@@ -122,8 +124,11 @@ exports.createBattle = async (req, res) => {
 
 exports.getOpenBattles = async (req, res) => {
   try {
-    const battles = await Battle.find({ status: "open" })
+    const battles = await Battle.find({
+      status: { $in: ["open", "join_requested"] },
+    })
       .populate("createdBy", "name phone")
+      .populate("opponent", "name phone")
       .sort({ createdAt: -1 });
 
     return res.json({ success: true, battles });
@@ -161,13 +166,18 @@ exports.getSingleBattle = async (req, res) => {
       .populate("winner", "name phone")
       .populate("resultSubmittedBy", "name phone");
 
-    if (!battle) return res.status(404).json({ success: false, msg: "Battle not found" });
+    if (!battle) {
+      return res.status(404).json({ success: false, msg: "Battle not found" });
+    }
 
     const creatorId = battle.createdBy?._id?.toString();
     const opponentId = battle.opponent?._id?.toString();
 
     if (creatorId !== userId && opponentId !== userId) {
-      return res.status(403).json({ success: false, msg: "You are not part of this battle" });
+      return res.status(403).json({
+        success: false,
+        msg: "You are not part of this battle",
+      });
     }
 
     return res.json({ success: true, battle });
@@ -183,26 +193,128 @@ exports.joinBattle = async (req, res) => {
 
     const battle = await Battle.findOne({ battleId });
 
-    if (!battle) return res.status(404).json({ success: false, msg: "Battle not found" });
+    if (!battle) {
+      return res.status(404).json({ success: false, msg: "Battle not found" });
+    }
 
     if (battle.status !== "open") {
-      return res.status(400).json({ success: false, msg: "Battle already joined" });
+      return res.status(400).json({
+        success: false,
+        msg: "Battle already requested or joined",
+      });
     }
 
     if (battle.createdBy.toString() === userId) {
-      return res.status(400).json({ success: false, msg: "You cannot join your own battle" });
+      return res.status(400).json({
+        success: false,
+        msg: "You cannot join your own battle",
+      });
     }
 
     await lockAmount(userId, battle.amount, battle.battleId);
 
     battle.opponent = userId;
+    battle.status = "join_requested";
+    battle.timerStartedAt = null;
+    await battle.save();
+
+    return res.json({
+      success: true,
+      msg: "Play request sent. Waiting for creator start.",
+      battle,
+    });
+  } catch (err) {
+    console.log("JOIN BATTLE ERROR:", err);
+    return res.status(500).json({ success: false, msg: err.message });
+  }
+};
+
+exports.startBattle = async (req, res) => {
+  try {
+    const userId = getUserId(req);
+    const { battleId } = req.params;
+
+    const battle = await Battle.findOne({ battleId });
+
+    if (!battle) {
+      return res.status(404).json({ success: false, msg: "Battle not found" });
+    }
+
+    if (battle.createdBy.toString() !== userId) {
+      return res.status(403).json({
+        success: false,
+        msg: "Only battle creator can start this battle",
+      });
+    }
+
+    if (battle.status !== "join_requested" || !battle.opponent) {
+      return res.status(400).json({
+        success: false,
+        msg: "No player request found",
+      });
+    }
+
     battle.status = "running";
     battle.timerStartedAt = new Date();
     await battle.save();
 
-    return res.json({ success: true, msg: "Battle joined", battle });
+    return res.json({
+      success: true,
+      msg: "Battle started",
+      battle,
+    });
   } catch (err) {
-    console.log("JOIN BATTLE ERROR:", err);
+    console.log("START BATTLE ERROR:", err);
+    return res.status(500).json({ success: false, msg: err.message });
+  }
+};
+
+exports.rejectBattleRequest = async (req, res) => {
+  try {
+    const userId = getUserId(req);
+    const { battleId } = req.params;
+
+    const battle = await Battle.findOne({ battleId });
+
+    if (!battle) {
+      return res.status(404).json({ success: false, msg: "Battle not found" });
+    }
+
+    if (battle.createdBy.toString() !== userId) {
+      return res.status(403).json({
+        success: false,
+        msg: "Only battle creator can reject this request",
+      });
+    }
+
+    if (battle.status !== "join_requested" || !battle.opponent) {
+      return res.status(400).json({
+        success: false,
+        msg: "No pending request found",
+      });
+    }
+
+    const opponentId = battle.opponent;
+
+    await refundAmount(
+      opponentId,
+      battle.amount,
+      battle.battleId,
+      "Battle request rejected by creator"
+    );
+
+    battle.opponent = null;
+    battle.status = "open";
+    battle.timerStartedAt = null;
+    await battle.save();
+
+    return res.json({
+      success: true,
+      msg: "Request rejected. Opponent amount refunded.",
+      battle,
+    });
+  } catch (err) {
+    console.log("REJECT BATTLE ERROR:", err);
     return res.status(500).json({ success: false, msg: err.message });
   }
 };
@@ -222,7 +334,9 @@ exports.submitRoomCode = async (req, res) => {
 
     const battle = await Battle.findOne({ battleId });
 
-    if (!battle) return res.status(404).json({ success: false, msg: "Battle not found" });
+    if (!battle) {
+      return res.status(404).json({ success: false, msg: "Battle not found" });
+    }
 
     if (battle.createdBy.toString() !== userId) {
       return res.status(403).json({
@@ -232,7 +346,10 @@ exports.submitRoomCode = async (req, res) => {
     }
 
     if (!["running", "room_submitted"].includes(battle.status)) {
-      return res.status(400).json({ success: false, msg: "Room code cannot be submitted now" });
+      return res.status(400).json({
+        success: false,
+        msg: "Room code cannot be submitted now",
+      });
     }
 
     battle.ludoKingRoomCode = roomCode;
@@ -254,22 +371,33 @@ exports.submitResult = async (req, res) => {
 
     const battle = await Battle.findOne({ battleId });
 
-    if (!battle) return res.status(404).json({ success: false, msg: "Battle not found" });
+    if (!battle) {
+      return res.status(404).json({ success: false, msg: "Battle not found" });
+    }
 
     const isCreator = battle.createdBy.toString() === userId;
     const isOpponent = battle.opponent?.toString() === userId;
 
     if (!isCreator && !isOpponent) {
-      return res.status(403).json({ success: false, msg: "You are not part of this battle" });
+      return res.status(403).json({
+        success: false,
+        msg: "You are not part of this battle",
+      });
     }
 
     if (!["running", "room_submitted"].includes(battle.status)) {
-      return res.status(400).json({ success: false, msg: "Result cannot be submitted now" });
+      return res.status(400).json({
+        success: false,
+        msg: "Result cannot be submitted now",
+      });
     }
 
     if (result === "win") {
       if (!req.file) {
-        return res.status(400).json({ success: false, msg: "Winning screenshot required" });
+        return res.status(400).json({
+          success: false,
+          msg: "Winning screenshot required",
+        });
       }
 
       battle.screenshot = `/uploads/results/${req.file.filename}`;
@@ -303,17 +431,29 @@ exports.submitResult = async (req, res) => {
     }
 
     if (result === "cancel") {
-      const alreadyVoted = battle.cancelVotes.some((id) => id.toString() === userId);
+      const alreadyVoted = battle.cancelVotes.some(
+        (id) => id.toString() === userId
+      );
 
       if (!alreadyVoted) {
         battle.cancelVotes.push(userId);
       }
 
       if (battle.cancelVotes.length >= 2) {
-        await refundAmount(battle.createdBy, battle.amount, battle.battleId, "Battle cancelled by both users");
+        await refundAmount(
+          battle.createdBy,
+          battle.amount,
+          battle.battleId,
+          "Battle cancelled by both users"
+        );
 
         if (battle.opponent) {
-          await refundAmount(battle.opponent, battle.amount, battle.battleId, "Battle cancelled by both users");
+          await refundAmount(
+            battle.opponent,
+            battle.amount,
+            battle.battleId,
+            "Battle cancelled by both users"
+          );
         }
 
         battle.status = "cancelled";
@@ -352,18 +492,33 @@ exports.cancelBattle = async (req, res) => {
 
     const battle = await Battle.findOne({ battleId });
 
-    if (!battle) return res.status(404).json({ success: false, msg: "Battle not found" });
+    if (!battle) {
+      return res.status(404).json({ success: false, msg: "Battle not found" });
+    }
 
     if (battle.status === "open") {
       if (battle.createdBy.toString() !== userId) {
-        return res.status(403).json({ success: false, msg: "Only creator can cancel open battle" });
+        return res.status(403).json({
+          success: false,
+          msg: "Only creator can cancel open battle",
+        });
       }
 
-      await refundAmount(battle.createdBy, battle.amount, battle.battleId, "Open battle cancelled");
+      await refundAmount(
+        battle.createdBy,
+        battle.amount,
+        battle.battleId,
+        "Open battle cancelled"
+      );
+
       battle.status = "cancelled";
       await battle.save();
 
-      return res.json({ success: true, msg: "Battle cancelled and refunded", battle });
+      return res.json({
+        success: true,
+        msg: "Battle cancelled and refunded",
+        battle,
+      });
     }
 
     return res.status(400).json({

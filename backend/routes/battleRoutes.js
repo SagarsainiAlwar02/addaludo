@@ -21,7 +21,7 @@ const storage = multer.diskStorage({
   filename: function (req, file, cb) {
     const unique = Date.now() + "-" + Math.round(Math.random() * 1e9);
     cb(null, unique + path.extname(file.originalname));
-  }
+  },
 });
 
 const upload = multer({ storage });
@@ -29,8 +29,11 @@ const upload = multer({ storage });
 router.post("/create", auth, battleController.createBattle);
 router.get("/open", auth, battleController.getOpenBattles);
 router.get("/my", auth, battleController.getMyBattles);
-router.get("/:battleId", auth, battleController.getSingleBattle);
+
 router.post("/join/:battleId", auth, battleController.joinBattle);
+router.post("/start/:battleId", auth, battleController.startBattle);
+router.post("/reject/:battleId", auth, battleController.rejectBattleRequest);
+
 router.post("/room-code/:battleId", auth, battleController.submitRoomCode);
 router.post(
   "/result/:battleId",
@@ -39,5 +42,7 @@ router.post(
   battleController.submitResult
 );
 router.patch("/cancel/:battleId", auth, battleController.cancelBattle);
+
+router.get("/:battleId", auth, battleController.getSingleBattle);
 
 module.exports = router;
