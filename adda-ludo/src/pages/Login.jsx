@@ -2,14 +2,13 @@ import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import axios from "axios";
 
-// ✅ LIVE FIX:
-// Vercel me VITE_API_URL = https://api.addaludo.com
-// Agar env load na bhi ho, live fallback api.addaludo.com rahega, localhost nahi.
+// ✅ VITE_API_URL should be:
+// https://api.addaludo.com/api
 const API_URL =
-  import.meta.env.VITE_API_URL ||
+  import.meta.env.VITE_API_URL?.replace(/\/$/, "") ||
   (window.location.hostname === "localhost"
-    ? "http://localhost:5000"
-    : "https://api.addaludo.com");
+    ? "http://localhost:5000/api"
+    : "https://api.addaludo.com/api");
 
 export default function Login({ onLogin }) {
   const [phone, setPhone] = useState("");
@@ -42,9 +41,7 @@ export default function Login({ onLogin }) {
       setLoading(true);
       setError("");
 
-      console.log("OTP API URL:", `${API_URL}/api/send-otp`);
-
-      const res = await axios.post(`${API_URL}/api/send-otp`, { phone });
+      const res = await axios.post(`${API_URL}/send-otp`, { phone });
 
       if (res.data?.success) {
         setStep(2);
@@ -53,7 +50,7 @@ export default function Login({ onLogin }) {
         setError(res.data?.msg || "Failed to send OTP");
       }
     } catch (err) {
-      console.log("OTP SEND ERROR:", err);
+      console.log("OTP SEND ERROR:", err.response?.data || err.message);
       setError(
         err.response?.data?.msg ||
           err.message ||
@@ -74,9 +71,7 @@ export default function Login({ onLogin }) {
       setLoading(true);
       setError("");
 
-      console.log("VERIFY API URL:", `${API_URL}/api/otp-login`);
-
-      const res = await axios.post(`${API_URL}/api/otp-login`, {
+      const res = await axios.post(`${API_URL}/otp-login`, {
         phone,
         otp,
         referralCode: referralCode.trim().toUpperCase(),
@@ -94,7 +89,7 @@ export default function Login({ onLogin }) {
 
       navigate("/");
     } catch (err) {
-      console.log("OTP VERIFY ERROR:", err);
+      console.log("OTP VERIFY ERROR:", err.response?.data || err.message);
       setError(
         err.response?.data?.msg ||
           err.message ||
@@ -153,6 +148,7 @@ export default function Login({ onLogin }) {
                     }
                     maxLength={10}
                     className="w-full bg-transparent px-3 text-lg font-semibold outline-none"
+                    autoComplete="tel"
                   />
                 </div>
 
@@ -211,6 +207,7 @@ export default function Login({ onLogin }) {
                   onChange={(e) => setOtp(e.target.value.replace(/\D/g, ""))}
                   maxLength={6}
                   className="mb-4 w-full rounded-2xl border-2 border-gray-200 px-4 py-4 text-center text-2xl font-black tracking-[10px] outline-none focus:border-green-500"
+                  autoComplete="one-time-code"
                 />
 
                 <button
