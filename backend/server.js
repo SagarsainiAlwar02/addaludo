@@ -58,7 +58,6 @@ app.options(/.*/, cors(corsOptions));
 
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
-
 app.use("/uploads", express.static(uploadPath));
 
 const server = http.createServer(app);
@@ -147,13 +146,14 @@ app.post("/api/send-otp", async (req, res) => {
     return res.status(500).json({
       success: false,
       msg: "Failed to send OTP",
+      error: err.response?.data || err.message,
     });
   }
 });
 
 app.post("/api/otp-login", async (req, res) => {
   try {
-    let { phone, otp } = req.body;
+    let { phone, otp, referralCode } = req.body;
 
     if (!phone || !otp) {
       return res.status(400).json({
@@ -164,6 +164,7 @@ app.post("/api/otp-login", async (req, res) => {
 
     phone = String(phone).trim();
     otp = String(otp).trim();
+    referralCode = referralCode ? String(referralCode).trim().toUpperCase() : "";
 
     const record = otpStore[phone];
 
@@ -195,12 +196,35 @@ app.post("/api/otp-login", async (req, res) => {
     let user = await User.findOne({ phone });
 
     if (!user) {
+      let referredBy = null;
+
+      if (referralCode) {
+        const refUser = await User.findOne({ referralCode });
+
+        if (!refUser) {
+          return res.status(400).json({
+            success: false,
+            msg: "Invalid referral code",
+          });
+        }
+
+        if (String(refUser.phone) === String(phone)) {
+          return res.status(400).json({
+            success: false,
+            msg: "Self referral not allowed",
+          });
+        }
+
+        referredBy = refUser._id;
+      }
+
       user = await User.create({
         phone,
         name: "Player" + Math.floor(Math.random() * 1000),
         password: "nopassword",
         role: "user",
         status: "active",
+        referredBy,
       });
 
       console.log("✅ NEW USER CREATED:", user._id);
@@ -237,7 +261,16 @@ app.post("/api/otp-login", async (req, res) => {
     return res.json({
       success: true,
       token,
-      user,
+      user: {
+        id: user._id,
+        _id: user._id,
+        name: user.name,
+        phone: user.phone,
+        referralCode: user.referralCode,
+        referredBy: user.referredBy,
+        role: user.role,
+        status: user.status,
+      },
       wallet,
     });
   } catch (err) {

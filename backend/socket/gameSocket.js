@@ -1,6 +1,6 @@
 const jwt = require("jsonwebtoken");
 const Wallet = require("../models/wallet");
-const Transaction = require("../models/Transaction");
+const Transaction = require("../models/transaction");
 const User = require("../models/user");
 const Match = require("../models/match");
 
@@ -65,7 +65,7 @@ async function lockEntryAmount(userId, amount, roomId) {
   });
 }
 
-async function giveReferralCommission(winnerUserId, winAmount, roomId) {
+async function giveReferralCommission(winnerUserId, tableAmount, roomId) {
   try {
     const winnerUser = await User.findById(winnerUserId);
 
@@ -74,7 +74,7 @@ async function giveReferralCommission(winnerUserId, winAmount, roomId) {
     const referrer = await User.findById(winnerUser.referredBy);
     if (!referrer) return;
 
-    const referralAmount = Math.floor(Number(winAmount || 0) * 0.02);
+    const referralAmount = Math.floor(Number(tableAmount || 0) * 0.02);
 
     if (referralAmount <= 0) return;
 
@@ -94,8 +94,6 @@ async function giveReferralCommission(winnerUserId, winAmount, roomId) {
     refWallet.referralBalance =
       Number(refWallet.referralBalance || 0) + referralAmount;
 
-    refWallet.balance = Number(refWallet.balance || 0) + referralAmount;
-
     referrer.totalReferralEarning =
       Number(referrer.totalReferralEarning || 0) + referralAmount;
 
@@ -105,17 +103,18 @@ async function giveReferralCommission(winnerUserId, winAmount, roomId) {
     await Transaction.create({
       userId: referrer._id,
       amount: referralAmount,
-      type: "bonus",
+      type: "referral_commission",
       status: "success",
-      note: `2% referral commission from winner ${winnerUser.phone || winnerUser.name}`,
+      note: `2% referral commission from ₹${tableAmount} table`,
       roomId,
-      balanceAfter: refWallet.balance,
+      balanceAfter: refWallet.referralBalance,
     });
 
     console.log("✅ Referral commission added:", {
       referrer: String(referrer._id),
       winner: String(winnerUser._id),
-      amount: referralAmount,
+      tableAmount,
+      referralAmount,
       roomId,
     });
   } catch (err) {
@@ -300,7 +299,7 @@ async function finishGame(io, roomId, winnerPlayer, finishReason = "Game complet
         balanceAfter: wallet.balance,
       });
 
-      await giveReferralCommission(winner, winAmount, roomId);
+      await giveReferralCommission(winner, entryAmount, roomId);
     } else {
       await wallet.save();
 
@@ -614,10 +613,6 @@ module.exports = (io) => {
 
         if (!user) return socket.emit("battleError", { msg: "Login required" });
 
-        if (user.status === "blocked") {
-          return socket.emit("battleError", { msg: "Account blocked" });
-        }
-
         const player = room.players.find(
           (p) => !p.isBot && String(p.userId) === String(user._id)
         );
@@ -643,18 +638,8 @@ module.exports = (io) => {
         socket.emit("turnUpdate", {
           currentTurn: currentTurnId(room),
         });
-
-        io.to(roomId).emit("playerReconnected", {
-          userId: player.userId,
-          msg: `${player.username || "Player"} reconnected`,
-        });
-
-        console.log("✅ Player rejoined room safely:", roomId, player.userId);
       } catch (err) {
-        console.log("❌ JOIN ROOM ERROR:", err.message);
-        socket.emit("battleError", {
-          msg: err.message || "Join room failed",
-        });
+        socket.emit("battleError", { msg: err.message || "Join room failed" });
       }
     });
 
@@ -670,9 +655,7 @@ module.exports = (io) => {
       }
 
       if (room.lastDice) {
-        return socket.emit("battleError", {
-          msg: "Already rolled. Move token.",
-        });
+        return socket.emit("battleError", { msg: "Already rolled. Move token." });
       }
 
       const dice = rollDiceValue();
@@ -730,9 +713,7 @@ module.exports = (io) => {
       const movable = getMovableTokens(room, player, room.lastDice);
 
       if (!movable.includes(tokenIndex)) {
-        return socket.emit("battleError", {
-          msg: "Ye goti move nahi ho sakti",
-        });
+        return socket.emit("battleError", { msg: "Ye goti move nahi ho sakti" });
       }
 
       await moveTokenLogic(io, roomId, player, tokenIndex, socket);
@@ -748,13 +729,10 @@ module.exports = (io) => {
           (p) => !p.isBot && p.socketId === socket.id
         );
 
-        if (!player) {
-          return socket.emit("battleError", { msg: "Player not found" });
-        }
+        if (!player) return socket.emit("battleError", { msg: "Player not found" });
 
         await forfeitGame(io, roomId, player, "Player exited manually - no refund");
       } catch (err) {
-        console.log("❌ FORFEIT ERROR:", err.message);
         socket.emit("battleError", { msg: "Exit failed" });
       }
     });
@@ -791,11 +769,7 @@ module.exports = (io) => {
           );
 
           if (!latestPlayer) return;
-
-          if (latestPlayer.socketId) {
-            console.log("✅ Player reconnected, no loss:", roomId);
-            return;
-          }
+          if (latestPlayer.socketId) return;
 
           await forfeitGame(
             io,
@@ -803,8 +777,6 @@ module.exports = (io) => {
             latestPlayer,
             `${latestPlayer.username || "Player"} disconnected - no refund`
           );
-
-          console.log("✅ Match forfeited. No refund:", roomId);
         }, DISCONNECT_GRACE_TIME);
 
         break;
