@@ -1,36 +1,29 @@
 .matches-container {
-  padding: 25px;
-  background: #0f172a;
-  min-height: 100vh;
   color: white;
+  overflow-x: auto;
 }
 
-/* HEADING */
 .matches-container h1 {
-  font-size: 26px;
-  margin-bottom: 20px;
+  font-size: 30px;
+  margin: 0 0 20px;
+  font-weight: 800;
 }
 
-/* TABS */
 .tabs {
   display: flex;
   gap: 10px;
-  margin-bottom: 20px;
+  margin-bottom: 18px;
+  flex-wrap: wrap;
 }
 
 .tabs button {
-  padding: 10px 18px;
+  padding: 11px 16px;
   border: none;
-  border-radius: 8px;
+  border-radius: 12px;
   background: #1e293b;
-  color: #cbd5f5;
+  color: #cbd5e1;
   cursor: pointer;
-  transition: 0.3s;
-}
-
-.tabs button:hover {
-  background: #3b82f6;
-  color: white;
+  font-weight: 700;
 }
 
 .active-tab {
@@ -38,67 +31,98 @@
   color: white !important;
 }
 
-/* TABLE */
 .match-table {
   width: 100%;
+  min-width: 900px;
   border-collapse: collapse;
   background: #1e293b;
-  border-radius: 12px;
+  border-radius: 16px;
   overflow: hidden;
 }
 
 .match-table th {
   background: #020617;
-  padding: 15px;
+  padding: 14px;
   color: #94a3b8;
+  white-space: nowrap;
 }
 
 .match-table td {
-  padding: 15px;
+  padding: 14px;
   text-align: center;
   border-top: 1px solid #334155;
+  white-space: nowrap;
 }
 
-.match-table tr:hover {
-  background: #334155;
-}
-
-/* STATUS COLORS */
-.running {
-  color: #facc15;
-  font-weight: 600;
-}
-
-.completed {
-  color: #22c55e;
-  font-weight: 600;
-}
-
-
-
-
-
-
-
-/* VIEW BUTTON */
 .view {
   background: #3b82f6;
   color: white;
+  border: none;
+  padding: 8px 13px;
+  border-radius: 9px;
+  cursor: pointer;
+  font-weight: 700;
 }
 
-/* STATUS COLORS */
 .running {
   color: #22c55e;
+  font-weight: 800;
 }
 
 .completed {
   color: #3b82f6;
+  font-weight: 800;
 }
 
 .pending {
   color: #facc15;
+  font-weight: 800;
 }
 
 .cancelled {
   color: #ef4444;
+  font-weight: 800;
+}
+
+.modal {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.65);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 2000;
+  padding: 15px;
+}
+
+.modal-content {
+  width: 100%;
+  max-width: 430px;
+  background: #1e293b;
+  border: 1px solid #334155;
+  border-radius: 18px;
+  padding: 22px;
+  color: white;
+}
+
+.modal-content button {
+  margin-top: 12px;
+  width: 100%;
+  padding: 11px;
+  border: none;
+  border-radius: 12px;
+  background: #2563eb;
+  color: white;
+  font-weight: 800;
+}
+
+@media (max-width: 768px) {
+  .matches-container h1 {
+    font-size: 24px;
+  }
+
+  .tabs button {
+    flex: 1;
+    min-width: 145px;
+  }
 }

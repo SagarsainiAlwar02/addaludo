@@ -1,86 +1,55 @@
 import "./Sidebar.css";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 
-const Sidebar = () => {
+const Sidebar = ({ open, setOpen }) => {
   const location = useLocation();
   const navigate = useNavigate();
 
-  // Logout
   const handleLogout = () => {
     localStorage.removeItem("adminToken");
     navigate("/login");
   };
 
+  const closeMenu = () => {
+    if (setOpen) setOpen(false);
+  };
+
+  const links = [
+    ["Dashboard", "/dashboard"],
+    ["Users", "/users"],
+    ["Deposit", "/deposit"],
+    ["Withdraw", "/withdraw"],
+    ["Matches", "/matches"],
+    ["Settings", "/settings"],
+    ["Payment Control", "/payment"],
+    ["Admin Control", "/admin-control"],
+  ];
+
   return (
-    <div className="sidebar">
-      <h2 className="logo">Ludo Admin</h2>
+    <>
+      <div className={`sidebar-overlay ${open ? "show" : ""}`} onClick={closeMenu}></div>
 
-      <nav>
-        <Link
-          to="/dashboard"
-          className={location.pathname === "/dashboard" ? "active" : ""}
-        >
-          Dashboard
-        </Link>
+      <aside className={`sidebar ${open ? "open" : ""}`}>
+        <h2 className="logo">Ludo Admin</h2>
 
-        <Link
-          to="/users"
-          className={location.pathname === "/users" ? "active" : ""}
-        >
-          Users
-        </Link>
+        <nav>
+          {links.map(([name, path]) => (
+            <Link
+              key={path}
+              to={path}
+              onClick={closeMenu}
+              className={location.pathname === path ? "active" : ""}
+            >
+              {name}
+            </Link>
+          ))}
+        </nav>
 
-        <Link
-          to="/deposit"
-          className={location.pathname === "/deposit" ? "active" : ""}
-        >
-          Deposit
-        </Link>
-
-        <Link
-          to="/withdraw"
-          className={location.pathname === "/withdraw" ? "active" : ""}
-        >
-          Withdraw
-        </Link>
-
-        <Link
-          to="/matches"
-          className={location.pathname === "/matches" ? "active" : ""}
-        >
-          Matches
-        </Link>
-
-        {/* SETTINGS */}
-        <Link
-          to="/settings"
-          className={location.pathname === "/settings" ? "active" : ""}
-        >
-          Settings
-        </Link>
-
-        {/* PAYMENT CONTROL */}
-        <Link
-          to="/payment"
-          className={location.pathname === "/payment" ? "active" : ""}
-        >
-          Payment Control
-        </Link>
-
-        {/* ✅ ADMIN CONTROL */}
-        <Link
-          to="/admin-control"
-          className={location.pathname === "/admin-control" ? "active" : ""}
-        >
-          Admin Control
-        </Link>
-      </nav>
-
-      {/* Logout */}
-      <button className="logout-btn" onClick={handleLogout}>
-        Logout
-      </button>
-    </div>
+        <button className="logout-btn" onClick={handleLogout}>
+          Logout
+        </button>
+      </aside>
+    </>
   );
 };
 

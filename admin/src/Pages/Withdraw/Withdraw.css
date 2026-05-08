@@ -1,37 +1,28 @@
-/* CONTAINER */
 .withdraw-container {
-  padding: 25px;
-  background: #0f172a;
-  min-height: 100vh;
   color: white;
 }
 
-/* HEADING */
 .withdraw-container h1 {
-  font-size: 26px;
-  margin-bottom: 20px;
+  font-size: 30px;
+  margin: 0 0 20px;
+  font-weight: 800;
 }
 
-/* TABS */
 .tabs {
   display: flex;
   gap: 10px;
-  margin-bottom: 20px;
+  margin-bottom: 18px;
+  flex-wrap: wrap;
 }
 
 .tabs button {
-  padding: 10px 18px;
+  padding: 11px 16px;
   border: none;
-  border-radius: 8px;
+  border-radius: 12px;
   background: #1e293b;
-  color: #cbd5f5;
+  color: #cbd5e1;
   cursor: pointer;
-  transition: 0.3s;
-}
-
-.tabs button:hover {
-  background: #3b82f6;
-  color: white;
+  font-weight: 700;
 }
 
 .active-tab {
@@ -39,93 +30,111 @@
   color: white !important;
 }
 
-/* TABLE */
 .withdraw-table {
   width: 100%;
+  min-width: 950px;
   border-collapse: collapse;
   background: #1e293b;
-  border-radius: 12px;
+  border-radius: 16px;
   overflow: hidden;
+}
+
+.withdraw-container {
+  overflow-x: auto;
 }
 
 .withdraw-table th {
   background: #020617;
-  padding: 15px;
+  padding: 14px;
   color: #94a3b8;
+  white-space: nowrap;
 }
 
 .withdraw-table td {
-  padding: 15px;
+  padding: 14px;
   text-align: center;
   border-top: 1px solid #334155;
+  white-space: nowrap;
 }
 
-.withdraw-table tr:hover {
-  background: #334155;
+.view,
+.approve,
+.reject {
+  border: none;
+  padding: 8px 12px;
+  border-radius: 9px;
+  cursor: pointer;
+  color: white;
+  font-weight: 700;
 }
 
-/* STATUS COLORS */
+.view {
+  background: #3b82f6;
+}
+
+.approve {
+  background: #22c55e;
+  margin-right: 6px;
+}
+
+.reject {
+  background: #ef4444;
+}
+
 .pending {
   color: #facc15;
-  font-weight: 600;
+  font-weight: 800;
 }
 
 .approved {
   color: #22c55e;
-  font-weight: 600;
+  font-weight: 800;
 }
 
 .rejected {
   color: #ef4444;
-  font-weight: 600;
+  font-weight: 800;
 }
 
-/* BUTTONS */
-.approve {
-  background: #22c55e;
+.modal {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.65);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 2000;
+  padding: 15px;
+}
+
+.modal-content {
+  width: 100%;
+  max-width: 420px;
+  background: #1e293b;
+  border: 1px solid #334155;
+  border-radius: 18px;
+  padding: 22px;
+  color: white;
+}
+
+.modal-content button {
+  margin-top: 12px;
+  width: 100%;
+  padding: 11px;
   border: none;
-  padding: 6px 12px;
-  margin-right: 6px;
-  border-radius: 6px;
-  cursor: pointer;
-}
-
-.reject {
-  background: #ef4444;
-  border: none;
-  padding: 6px 12px;
-  border-radius: 6px;
-  cursor: pointer;
-}
-
-.approve:hover {
-  background: #16a34a;
-}
-
-.reject:hover {
-  background: #dc2626;
-}
-
-
-
-
-
-
-
-
-.view {
-  background: #3b82f6;
+  border-radius: 12px;
+  background: #2563eb;
   color: white;
-  margin-right: 6px;
+  font-weight: 800;
 }
 
-.approve {
-  background: #22c55e;
-  color: white;
-  margin-right: 6px;
-}
+@media (max-width: 768px) {
+  .withdraw-container h1 {
+    font-size: 24px;
+  }
 
-.reject {
-  background: #ef4444;
-  color: white;
+  .tabs button {
+    flex: 1;
+    min-width: 145px;
+  }
 }

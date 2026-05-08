@@ -1,10 +1,56 @@
 .admin-layout {
   display: flex;
+  min-height: 100vh;
+  background: #0f172a;
 }
 
 .main-content {
   flex: 1;
   background: #0f172a;
   min-height: 100vh;
-  padding: 20px;
+  padding: 24px;
+  overflow-x: hidden;
+}
+
+.mobile-topbar {
+  display: none;
+}
+
+@media (max-width: 768px) {
+  .main-content {
+    width: 100%;
+    padding: 14px;
+    padding-top: 75px;
+  }
+
+  .mobile-topbar {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    background: #020617;
+    border-bottom: 1px solid #1e293b;
+    padding: 12px 14px;
+    z-index: 900;
+  }
+
+  .mobile-topbar h3 {
+    margin: 0;
+    color: white;
+    font-size: 18px;
+  }
+
+  .menu-btn {
+    width: 42px;
+    height: 42px;
+    border: none;
+    border-radius: 12px;
+    background: #2563eb;
+    color: white;
+    font-size: 22px;
+    cursor: pointer;
+  }
 }
