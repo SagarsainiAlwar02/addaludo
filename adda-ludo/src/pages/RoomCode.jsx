@@ -2,8 +2,16 @@ import React, { useEffect, useState } from "react";
 import axios from "axios";
 import { useNavigate, useParams } from "react-router-dom";
 
-const API_BASE = "http://localhost:5000/api";
-const FILE_BASE = "http://localhost:5000";
+const API_BASE =
+  import.meta.env.VITE_API_URL?.replace(/\/$/, "") ||
+  (window.location.hostname === "localhost"
+    ? "http://localhost:5000/api"
+    : "https://api.addaludo.com/api");
+
+const FILE_BASE =
+  window.location.hostname === "localhost"
+    ? "http://localhost:5000"
+    : "https://api.addaludo.com";
 
 export default function RoomCode() {
   const { battleId } = useParams();
@@ -18,7 +26,7 @@ export default function RoomCode() {
   const token = localStorage.getItem("token");
 
   const authHeader = () => ({
-    headers: { Authorization: `Bearer ${token}` }
+    headers: { Authorization: `Bearer ${token}` },
   });
 
   const fetchBattle = async () => {
@@ -93,8 +101,8 @@ export default function RoomCode() {
       await axios.post(`${API_BASE}/battle/result/${battleId}`, formData, {
         headers: {
           Authorization: `Bearer ${token}`,
-          "Content-Type": "multipart/form-data"
-        }
+          "Content-Type": "multipart/form-data",
+        },
       });
 
       await fetchBattle();
@@ -129,7 +137,7 @@ export default function RoomCode() {
 
   if (pageLoading) {
     return (
-      <div className="min-h-screen flex items-center justify-center font-bold">
+      <div className="min-h-screen flex items-center justify-center bg-[#f4f6f8] pt-20 pb-28 font-black text-slate-800">
         Loading Battle...
       </div>
     );
@@ -142,58 +150,64 @@ export default function RoomCode() {
   const canUpload = ["running", "room_submitted"].includes(battle.status);
 
   return (
-    <div className="min-h-screen bg-[#f4f4f4] pt-20 pb-28 px-3 text-black">
-      <div className="max-w-[520px] mx-auto">
-        <div className="bg-white rounded-xl shadow border overflow-hidden">
-          <div className="bg-gradient-to-b from-gray-300 via-gray-600 to-black text-white px-4 py-3 font-black text-xl">
+    <div className="min-h-screen bg-[#f4f6f8] pt-20 pb-28 px-3 text-black">
+      <div className="mx-auto max-w-[520px]">
+        <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
+          <div className="bg-gradient-to-r from-slate-900 to-slate-600 px-4 py-3 text-lg font-black text-white">
             🎮 Ludo King Room
           </div>
 
-          <div className="p-4 space-y-4">
-            <div className="bg-[#4d3f91] text-white rounded-lg p-4">
-              <p className="text-sm opacity-90">Battle ID</p>
-              <p className="font-bold break-all">{battle.battleId}</p>
+          <div className="space-y-4 p-4">
+            <div className="rounded-2xl bg-[#342b72] p-4 text-white">
+              <p className="text-xs font-bold opacity-80">Battle ID</p>
+              <p className="break-all text-sm font-black">{battle.battleId}</p>
 
-              <div className="grid grid-cols-2 gap-3 mt-4">
+              <div className="mt-4 grid grid-cols-2 gap-3">
                 <div>
-                  <p className="text-sm opacity-90">Entry Fee</p>
+                  <p className="text-xs font-bold opacity-80">Entry Fee</p>
                   <p className="text-2xl font-black">₹{battle.amount}</p>
                 </div>
 
                 <div className="text-right">
-                  <p className="text-sm opacity-90">Winning Prize</p>
+                  <p className="text-xs font-bold opacity-80">Winning Prize</p>
                   <p className="text-2xl font-black">₹{battle.prize}</p>
                 </div>
               </div>
 
-              <div className="mt-4 text-sm">
-                <p>Player 1: <b>{battle.createdBy?.name || "Player"}</b></p>
-                <p>Player 2: <b>{battle.opponent?.name || "Waiting..."}</b></p>
-                <p>Status: <b>{battle.status}</b></p>
+              <div className="mt-4 space-y-1 text-sm">
+                <p>
+                  Player 1: <b>{battle.createdBy?.name || "Player"}</b>
+                </p>
+                <p>
+                  Player 2: <b>{battle.opponent?.name || "Waiting..."}</b>
+                </p>
+                <p>
+                  Status: <b>{battle.status}</b>
+                </p>
               </div>
             </div>
 
             {isWaiting && (
-              <div className="bg-yellow-100 border border-yellow-400 rounded-lg p-4 text-center font-bold">
+              <div className="rounded-2xl border border-yellow-300 bg-yellow-50 p-4 text-center text-sm font-black text-yellow-800">
                 Opponent ka wait ho raha hai. Dusra player Play dabayega tab room code active hoga.
               </div>
             )}
 
             {canRoomCode && (
-              <div className="bg-white border rounded-lg p-4 space-y-3">
-                <h2 className="text-xl font-black">Room Code</h2>
+              <div className="space-y-3 rounded-2xl border border-slate-200 bg-white p-4">
+                <h2 className="text-lg font-black text-slate-900">Room Code</h2>
 
                 <input
                   value={roomCode}
                   onChange={(e) => setRoomCode(e.target.value)}
                   placeholder="Ludo King Room Code"
-                  className="w-full border rounded-lg px-4 py-3 text-xl font-bold outline-none"
+                  className="w-full rounded-xl border border-slate-300 px-4 py-3 text-lg font-black outline-none focus:border-cyan-500"
                 />
 
                 <button
                   disabled={loading}
                   onClick={saveRoomCode}
-                  className="w-full bg-yellow-400 text-black rounded-lg py-3 font-black disabled:opacity-60"
+                  className="w-full rounded-xl bg-yellow-400 py-3 font-black text-black disabled:opacity-60"
                 >
                   {loading ? "Saving..." : "Save Room Code"}
                 </button>
@@ -201,7 +215,7 @@ export default function RoomCode() {
                 {battle.ludoKingRoomCode && (
                   <button
                     onClick={copyCode}
-                    className="w-full bg-green-600 text-white rounded-lg py-3 font-black"
+                    className="w-full rounded-xl bg-green-600 py-3 font-black text-white"
                   >
                     Copy Room Code: {battle.ludoKingRoomCode}
                   </button>
@@ -210,20 +224,20 @@ export default function RoomCode() {
             )}
 
             {canUpload && (
-              <div className="bg-white border rounded-lg p-4 space-y-3">
-                <h2 className="text-xl font-black">Result Proof</h2>
+              <div className="space-y-3 rounded-2xl border border-slate-200 bg-white p-4">
+                <h2 className="text-lg font-black text-slate-900">Result Proof</h2>
 
                 <input
                   type="file"
                   accept="image/*"
-                  onChange={(e) => setScreenshot(e.target.files[0])}
-                  className="w-full"
+                  onChange={(e) => setScreenshot(e.target.files?.[0] || null)}
+                  className="w-full rounded-xl border border-slate-200 p-3 text-sm"
                 />
 
                 <button
                   disabled={loading}
                   onClick={uploadResult}
-                  className="w-full bg-orange-500 text-white rounded-lg py-3 font-black disabled:opacity-60"
+                  className="w-full rounded-xl bg-orange-500 py-3 font-black text-white disabled:opacity-60"
                 >
                   Upload Winner Screenshot
                 </button>
@@ -231,19 +245,19 @@ export default function RoomCode() {
             )}
 
             {battle.status === "result_submitted" && (
-              <div className="bg-yellow-400 text-black rounded-lg p-3 text-center font-black">
+              <div className="rounded-xl bg-yellow-400 p-3 text-center font-black text-black">
                 Result submitted. Admin approval pending.
               </div>
             )}
 
             {battle.status === "approved" && (
-              <div className="bg-green-600 text-white rounded-lg p-3 text-center font-black">
+              <div className="rounded-xl bg-green-600 p-3 text-center font-black text-white">
                 Winner Approved ✅ Prize Added
               </div>
             )}
 
             {battle.status === "rejected" && (
-              <div className="bg-red-600 text-white rounded-lg p-3 text-center font-black">
+              <div className="rounded-xl bg-red-600 p-3 text-center font-black text-white">
                 Battle Rejected / Refunded
               </div>
             )}
@@ -252,14 +266,14 @@ export default function RoomCode() {
               <img
                 src={`${FILE_BASE}${battle.screenshot}`}
                 alt="result"
-                className="rounded-lg border max-h-72 mx-auto"
+                className="mx-auto max-h-72 rounded-xl border"
               />
             )}
 
             <div className="flex gap-3">
               <button
                 onClick={() => navigate("/battle")}
-                className="flex-1 bg-slate-800 text-white rounded-lg py-3 font-black"
+                className="flex-1 rounded-xl bg-slate-800 py-3 font-black text-white"
               >
                 Back
               </button>
@@ -268,14 +282,14 @@ export default function RoomCode() {
                 <button
                   disabled={loading}
                   onClick={cancelBattle}
-                  className="flex-1 bg-red-600 text-white rounded-lg py-3 font-black disabled:opacity-60"
+                  className="flex-1 rounded-xl bg-red-600 py-3 font-black text-white disabled:opacity-60"
                 >
                   Cancel
                 </button>
               )}
             </div>
 
-            <div className="text-xs text-gray-600 leading-5">
+            <div className="rounded-xl bg-slate-50 p-3 text-xs font-semibold leading-5 text-slate-600">
               Note: Room code website generate nahi karti. Ludo King app me room create karke code yaha paste karna hoga.
             </div>
           </div>
