@@ -24,7 +24,6 @@ export default function Withdraw() {
     accountNumber: "",
     confirmAccountNumber: "",
     ifsc: "",
-    receiverName: "",
   });
 
   const authHeader = {
@@ -48,7 +47,6 @@ export default function Withdraw() {
       navigate("/login");
       return;
     }
-
     loadData();
   }, []);
 
@@ -61,54 +59,26 @@ export default function Withdraw() {
     if (withdrawAmount < MIN_WITHDRAW) return setMessage("Minimum withdraw ₹200 hai");
     if (withdrawAmount > winningBalance) return setMessage("Insufficient winning balance");
 
-    if (bankRequired && method !== "bank") {
-      return setMessage("₹2000 se upar Bank Transfer required hai");
-    }
-
+    let finalMethod = bankRequired ? "bank" : method;
     let withdrawDetails = {};
 
-    if (method === "upi") {
-      if (!details.upiId || !details.confirmUpiId) {
-        return setMessage("UPI ID fill karo");
-      }
-
-      if (details.upiId !== details.confirmUpiId) {
-        return setMessage("UPI ID match nahi hui");
-      }
-
-      withdrawDetails = {
-        upiId: details.upiId,
-      };
+    if (finalMethod === "upi") {
+      if (!details.upiId || !details.confirmUpiId) return setMessage("UPI ID fill karo");
+      if (details.upiId !== details.confirmUpiId) return setMessage("UPI ID match nahi hui");
+      withdrawDetails = { upiId: details.upiId };
     }
 
-    if (method === "bank") {
-      if (
-        !details.holderName ||
-        !details.accountNumber ||
-        !details.confirmAccountNumber ||
-        !details.ifsc
-      ) {
+    if (finalMethod === "bank") {
+      if (!details.holderName || !details.accountNumber || !details.confirmAccountNumber || !details.ifsc) {
         return setMessage("Bank details complete fill karo");
       }
-
       if (details.accountNumber !== details.confirmAccountNumber) {
         return setMessage("Account number match nahi hua");
       }
-
       withdrawDetails = {
         holderName: details.holderName,
         accountNumber: details.accountNumber,
         ifsc: details.ifsc,
-      };
-    }
-
-    if (method === "qr") {
-      if (!details.receiverName) {
-        return setMessage("Receiver name required");
-      }
-
-      withdrawDetails = {
-        receiverName: details.receiverName,
       };
     }
 
@@ -118,17 +88,14 @@ export default function Withdraw() {
 
       const res = await axios.post(
         `${API_BASE}/redeem/withdraw`,
-        {
-          amount: withdrawAmount,
-          method,
-          details: withdrawDetails,
-        },
+        { amount: withdrawAmount, method: finalMethod, details: withdrawDetails },
         authHeader
       );
 
       alert(res.data.msg || "Withdraw request submitted successfully");
 
       setAmount("");
+      setMethod("upi");
       setDetails({
         upiId: "",
         confirmUpiId: "",
@@ -136,7 +103,6 @@ export default function Withdraw() {
         accountNumber: "",
         confirmAccountNumber: "",
         ifsc: "",
-        receiverName: "",
       });
 
       await loadData();
@@ -159,16 +125,10 @@ export default function Withdraw() {
     <div className="min-h-screen bg-white px-4 pt-[88px] pb-32">
       <div className="mx-auto max-w-[520px]">
         <div className="flex items-center gap-3">
-          <button
-            onClick={() => navigate(-1)}
-            className="h-11 w-11 rounded-xl bg-gray-100 text-2xl font-black"
-          >
+          <button onClick={() => navigate(-1)} className="h-11 w-11 rounded-xl bg-gray-100 text-2xl font-black">
             ←
           </button>
-
-          <h1 className="text-[30px] font-extrabold text-black">
-            Withdraw Winning
-          </h1>
+          <h1 className="text-[30px] font-extrabold text-black">Withdraw Winning</h1>
         </div>
 
         <div className="mt-6 rounded-2xl bg-green-50 p-5 border border-green-200">
@@ -179,18 +139,17 @@ export default function Withdraw() {
         </div>
 
         <div className="mt-6 rounded-2xl border border-gray-300 bg-gray-50 p-5">
-          <label className="text-xl font-bold text-gray-900">
-            Enter Withdraw Amount
-          </label>
+          <label className="text-xl font-bold text-gray-900">Enter Withdraw Amount</label>
 
           <input
             type="number"
             value={amount}
             placeholder="Enter Amount"
             onChange={(e) => {
-              setAmount(e.target.value);
+              const val = e.target.value;
+              setAmount(val);
               setMessage("");
-              if (Number(e.target.value) > 2000) setMethod("bank");
+              if (Number(val) > 2000) setMethod("bank");
             }}
             className="mt-4 h-[58px] w-full rounded-xl border border-gray-300 bg-white px-4 text-lg font-bold outline-none"
           />
@@ -200,14 +159,12 @@ export default function Withdraw() {
           </p>
         </div>
 
-        <div className="mt-6 grid grid-cols-3 gap-3">
+        <div className="mt-6 grid grid-cols-2 gap-3">
           <button
             onClick={() => !bankRequired && setMethod("upi")}
             disabled={bankRequired}
             className={`rounded-xl py-4 font-black ${
-              method === "upi"
-                ? "bg-blue-600 text-white"
-                : "bg-gray-100 text-gray-600"
+              method === "upi" ? "bg-blue-600 text-white" : "bg-gray-100 text-gray-600"
             } disabled:opacity-40`}
           >
             UPI
@@ -216,29 +173,15 @@ export default function Withdraw() {
           <button
             onClick={() => setMethod("bank")}
             className={`rounded-xl py-4 font-black ${
-              method === "bank"
-                ? "bg-blue-600 text-white"
-                : "bg-gray-100 text-gray-600"
+              method === "bank" ? "bg-blue-600 text-white" : "bg-gray-100 text-gray-600"
             }`}
           >
             Bank
           </button>
-
-          <button
-            onClick={() => !bankRequired && setMethod("qr")}
-            disabled={bankRequired}
-            className={`rounded-xl py-4 font-black ${
-              method === "qr"
-                ? "bg-blue-600 text-white"
-                : "bg-gray-100 text-gray-600"
-            } disabled:opacity-40`}
-          >
-            QR
-          </button>
         </div>
 
         <div className="mt-6 rounded-2xl bg-white p-5 shadow-lg border border-gray-100">
-          {method === "upi" && (
+          {method === "upi" && !bankRequired && (
             <>
               <h2 className="text-xl font-black">UPI Details</h2>
 
@@ -252,75 +195,43 @@ export default function Withdraw() {
               <input
                 value={details.confirmUpiId}
                 placeholder="Confirm UPI ID"
-                onChange={(e) =>
-                  setDetails({ ...details, confirmUpiId: e.target.value })
-                }
+                onChange={(e) => setDetails({ ...details, confirmUpiId: e.target.value })}
                 className="mt-4 h-[54px] w-full rounded-xl border px-4 font-bold outline-none"
               />
             </>
           )}
 
-          {method === "bank" && (
+          {(method === "bank" || bankRequired) && (
             <>
               <h2 className="text-xl font-black">Bank Details</h2>
 
               <input
                 value={details.holderName}
                 placeholder="Account Holder Name"
-                onChange={(e) =>
-                  setDetails({ ...details, holderName: e.target.value })
-                }
+                onChange={(e) => setDetails({ ...details, holderName: e.target.value })}
                 className="mt-4 h-[54px] w-full rounded-xl border px-4 font-bold outline-none"
               />
 
               <input
                 value={details.accountNumber}
                 placeholder="Account Number"
-                onChange={(e) =>
-                  setDetails({ ...details, accountNumber: e.target.value })
-                }
+                onChange={(e) => setDetails({ ...details, accountNumber: e.target.value })}
                 className="mt-4 h-[54px] w-full rounded-xl border px-4 font-bold outline-none"
               />
 
               <input
                 value={details.confirmAccountNumber}
                 placeholder="Confirm Account Number"
-                onChange={(e) =>
-                  setDetails({
-                    ...details,
-                    confirmAccountNumber: e.target.value,
-                  })
-                }
+                onChange={(e) => setDetails({ ...details, confirmAccountNumber: e.target.value })}
                 className="mt-4 h-[54px] w-full rounded-xl border px-4 font-bold outline-none"
               />
 
               <input
                 value={details.ifsc}
                 placeholder="IFSC Code"
-                onChange={(e) =>
-                  setDetails({ ...details, ifsc: e.target.value.toUpperCase() })
-                }
+                onChange={(e) => setDetails({ ...details, ifsc: e.target.value.toUpperCase() })}
                 className="mt-4 h-[54px] w-full rounded-xl border px-4 font-bold outline-none"
               />
-            </>
-          )}
-
-          {method === "qr" && (
-            <>
-              <h2 className="text-xl font-black">QR Transfer Details</h2>
-
-              <input
-                value={details.receiverName}
-                placeholder="Receiver / Account Name"
-                onChange={(e) =>
-                  setDetails({ ...details, receiverName: e.target.value })
-                }
-                className="mt-4 h-[54px] w-full rounded-xl border px-4 font-bold outline-none"
-              />
-
-              <p className="mt-3 text-sm font-bold text-gray-500">
-                QR image upload backend me baad me add karenge. Abhi receiver name save hoga.
-              </p>
             </>
           )}
         </div>
