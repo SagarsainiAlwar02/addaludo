@@ -72,6 +72,12 @@ export default function Wallet() {
     };
 
     init();
+
+    const refreshWallet = () => init();
+    window.addEventListener("walletUpdated", refreshWallet);
+
+    return () => window.removeEventListener("walletUpdated", refreshWallet);
+    // eslint-disable-next-line
   }, []);
 
   useEffect(() => {
@@ -195,9 +201,12 @@ export default function Wallet() {
             >
               💰
             </div>
+
             <div style={styles.info}>
               <p style={styles.label}>Deposit Coin</p>
-              <h1 style={styles.amount}>₹ {Number(wallet.balance || 0).toFixed(2)}</h1>
+              <h1 style={styles.amount}>
+                ₹ {Number(wallet.balance || 0).toFixed(2)}
+              </h1>
             </div>
           </div>
 
@@ -250,14 +259,18 @@ export default function Wallet() {
             >
               🏆
             </div>
+
             <div style={styles.info}>
               <p style={styles.label}>Winning Coin</p>
-              <h1 style={styles.amount}>₹ {Number(wallet.winnings || 0).toFixed(2)}</h1>
+              <h1 style={styles.amount}>
+                ₹ {Number(wallet.winnings || 0).toFixed(2)}
+              </h1>
             </div>
           </div>
 
           <div style={styles.btnRow}>
-          <button style={styles.withdrawBtn} onClick={() => navigate("/withdraw")}>
+            {/* ✅ Winning withdraw = /withdraw */}
+            <button style={styles.withdrawBtn} onClick={() => navigate("/withdraw")}>
               Withdraw 🏦
             </button>
           </div>
@@ -307,7 +320,11 @@ export default function Wallet() {
 
             <div style={styles.quickRow}>
               {[100, 500, 1000, 2000, 5000, 10000].map((amt) => (
-                <button key={amt} style={styles.quickBtn} onClick={() => setAmount(String(amt))}>
+                <button
+                  key={amt}
+                  style={styles.quickBtn}
+                  onClick={() => setAmount(String(amt))}
+                >
                   ₹{amt}
                 </button>
               ))}

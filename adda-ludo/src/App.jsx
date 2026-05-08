@@ -5,11 +5,12 @@ import { socket } from "./socket";
 
 import HeaderMain from "./components/HeaderMain";
 import FooterNav from "./components/FooterNav";
-import Withdraw from "./pages/Withdraw";
+
 import Home from "./pages/Home";
 import Battle from "./pages/Battle";
 import RoomCode from "./pages/RoomCode";
 import Wallet from "./pages/Wallet";
+import Withdraw from "./pages/Withdraw";
 import Profile from "./pages/Profile";
 import Refer from "./pages/Refer";
 import Support from "./pages/Support";
@@ -84,6 +85,12 @@ function App() {
     setUser(null);
   };
 
+  const protectedPage = (component) => (
+    <ProtectedRoute isAuthenticated={isAuthenticated}>
+      <Layout>{component}</Layout>
+    </ProtectedRoute>
+  );
+
   return (
     <Router>
       <Routes>
@@ -98,29 +105,24 @@ function App() {
           }
         />
 
-        <Route
-  path="/withdraw"
-  element={
-    <ProtectedRoute isAuthenticated={isAuthenticated}>
-      <Layout>
-        <Withdraw />
-      </Layout>
-    </ProtectedRoute>
-  }
-/>
+        <Route path="/" element={protectedPage(<Home />)} />
+        <Route path="/battle" element={protectedPage(<Battle />)} />
+        <Route path="/room-code/:battleId" element={protectedPage(<RoomCode />)} />
+        <Route path="/wallet" element={protectedPage(<Wallet />)} />
 
-        <Route path="/" element={<ProtectedRoute isAuthenticated={isAuthenticated}><Layout><Home /></Layout></ProtectedRoute>} />
-        <Route path="/battle" element={<ProtectedRoute isAuthenticated={isAuthenticated}><Layout><Battle /></Layout></ProtectedRoute>} />
-        <Route path="/room-code/:battleId" element={<ProtectedRoute isAuthenticated={isAuthenticated}><Layout><RoomCode /></Layout></ProtectedRoute>} />
-        <Route path="/wallet" element={<ProtectedRoute isAuthenticated={isAuthenticated}><Layout><Wallet /></Layout></ProtectedRoute>} />
-        <Route path="/redeem" element={<ProtectedRoute isAuthenticated={isAuthenticated}><Layout><Redeem /></Layout></ProtectedRoute>} />
-        <Route path="/refer" element={<ProtectedRoute isAuthenticated={isAuthenticated}><Layout><Refer /></Layout></ProtectedRoute>} />
-        <Route path="/support" element={<ProtectedRoute isAuthenticated={isAuthenticated}><Layout><Support /></Layout></ProtectedRoute>} />
-        <Route path="/kyc" element={<ProtectedRoute isAuthenticated={isAuthenticated}><Layout><Kyc /></Layout></ProtectedRoute>} />
-        <Route path="/profile" element={<ProtectedRoute isAuthenticated={isAuthenticated}><Layout><Profile onLogout={handleLogout} /></Layout></ProtectedRoute>} />
-        <Route path="/history" element={<ProtectedRoute isAuthenticated={isAuthenticated}><Layout><History /></Layout></ProtectedRoute>} />
-        <Route path="/lobby" element={<ProtectedRoute isAuthenticated={isAuthenticated}><Layout><Lobby /></Layout></ProtectedRoute>} />
-        <Route path="/game/:roomId" element={<ProtectedRoute isAuthenticated={isAuthenticated}><Layout><Game /></Layout></ProtectedRoute>} />
+        {/* ✅ Winning coin withdraw page */}
+        <Route path="/withdraw" element={protectedPage(<Withdraw />)} />
+
+        {/* ✅ Referral earning redeem page */}
+        <Route path="/redeem" element={protectedPage(<Redeem />)} />
+
+        <Route path="/refer" element={protectedPage(<Refer />)} />
+        <Route path="/support" element={protectedPage(<Support />)} />
+        <Route path="/kyc" element={protectedPage(<Kyc />)} />
+        <Route path="/profile" element={protectedPage(<Profile onLogout={handleLogout} />)} />
+        <Route path="/history" element={protectedPage(<History />)} />
+        <Route path="/lobby" element={protectedPage(<Lobby />)} />
+        <Route path="/game/:roomId" element={protectedPage(<Game />)} />
 
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
