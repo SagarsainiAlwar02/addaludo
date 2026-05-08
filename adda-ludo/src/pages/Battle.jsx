@@ -74,9 +74,7 @@ export default function Battle() {
 
   const handleSearch = () => {
     const finalAmount = Number(amount);
-
     if (!validateAmount(finalAmount)) return;
-
     setFilterAmount(String(finalAmount));
   };
 
@@ -84,7 +82,6 @@ export default function Battle() {
     if (!checkLogin()) return;
 
     const finalAmount = Number(entryAmount || amount);
-
     if (!validateAmount(finalAmount)) return;
 
     try {
@@ -137,6 +134,10 @@ export default function Battle() {
             </div>
           </div>
         )}
+
+        <div className="mb-4 rounded-xl bg-[#1f2937] px-4 py-4 text-center text-[15px] font-bold leading-7 text-white shadow-md">
+          गोटी open होने के बाद अगर कोई भी user left होता है तो lose माना जायेगा
+        </div>
 
         <div className="mb-4 overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
           <div className="bg-gradient-to-r from-slate-900 to-slate-600 px-4 py-3 text-lg font-black text-white">
