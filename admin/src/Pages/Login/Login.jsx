@@ -3,14 +3,14 @@ import API from "../../api";
 import "./Login.css";
 
 const Login = () => {
-  const [email, setEmail] = useState("admin@gmail.com");
+  const [email, setEmail] = useState("Adda48931@gmail.com");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
 
   const handleLogin = async (e) => {
     e.preventDefault();
 
-    if (!email || !password) {
+    if (!email.trim() || !password.trim()) {
       alert("Email aur password dono bharna zaroori hai");
       return;
     }
@@ -19,7 +19,7 @@ const Login = () => {
       setLoading(true);
 
       const res = await API.post("/admin-auth/login", {
-        email: email.trim().toLowerCase(),
+        email: email.trim(),
         password: password.trim(),
       });
 

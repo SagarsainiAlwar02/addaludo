@@ -2,7 +2,7 @@ import React, { useEffect, useState } from "react";
 import API from "../../api";
 import "./Deposite.css";
 
-const IMAGE_BASE = "http://localhost:5000";
+const IMAGE_BASE = "https://api.addaludo.com";
 
 const Deposit = () => {
   const [tab, setTab] = useState("request");

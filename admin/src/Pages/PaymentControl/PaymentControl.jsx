@@ -2,7 +2,7 @@ import React, { useState, useEffect } from "react";
 import axios from "axios";
 import "./PaymentControl.css";
 
-const API_BASE = "http://localhost:5000";
+const API_BASE = "https://api.addaludo.com";
 
 const PaymentControl = () => {
   const [tab, setTab] = useState("scanner");

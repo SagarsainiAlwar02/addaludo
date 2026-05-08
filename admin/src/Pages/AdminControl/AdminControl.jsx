@@ -2,7 +2,7 @@ import React, { useEffect, useState } from "react";
 import axios from "axios";
 import "./AdminControl.css";
 
-const API_BASE = "http://localhost:5000";
+const API_BASE = "https://api.addaludo.com";
 
 const AdminControl = () => {
   const [tab, setTab] = useState("website");
