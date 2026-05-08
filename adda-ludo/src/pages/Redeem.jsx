@@ -6,7 +6,7 @@ const API_BASE = import.meta.env.VITE_API_URL || "http://localhost:5000/api";
 export default function Redeem() {
   const token = localStorage.getItem("token");
 
-  const MIN_AMOUNT = 100;
+  const MIN_AMOUNT = 200;
   const MAX_AMOUNT = 10000;
 
   const [amount, setAmount] = useState("");
@@ -45,14 +45,13 @@ export default function Redeem() {
     }
 
     loadRedeemData();
-    // eslint-disable-next-line
   }, []);
 
   const handleRedeem = async () => {
     const redeemAmount = Number(amount);
 
     if (!redeemAmount) return setMessage("Amount enter karo");
-    if (redeemAmount < MIN_AMOUNT) return setMessage("Minimum redeem ₹100 hai");
+    if (redeemAmount < MIN_AMOUNT) return setMessage("Minimum redeem ₹200 hai");
     if (redeemAmount > MAX_AMOUNT) return setMessage("Maximum redeem ₹10000 hai");
     if (redeemAmount > referBalance) return setMessage("Insufficient refer balance");
 
@@ -66,7 +65,7 @@ export default function Redeem() {
         authHeader
       );
 
-      alert(res.data.msg || "Redeem request submitted successfully");
+      alert(res.data.msg || "Redeem successfully wallet me add ho gaya");
       setAmount("");
       await loadRedeemData();
     } catch (err) {
@@ -92,13 +91,11 @@ export default function Redeem() {
         </h1>
 
         <p className="mt-8 text-[22px] leading-9 font-medium text-black">
-          TDS (5%) Will Be Deducted After Annual Referral Earning Of 🪙 15,000.
+          Referral earning ₹200 hone ke baad redeem karke main wallet me add kar sakte ho.
         </p>
 
         <div className="mt-10 rounded-lg border-2 border-gray-500 bg-gray-50 p-5">
-          <h2 className="text-[24px] font-bold text-gray-900">
-            Enter Amount
-          </h2>
+          <h2 className="text-[24px] font-bold text-gray-900">Enter Amount</h2>
 
           <input
             type="number"
@@ -113,7 +110,7 @@ export default function Redeem() {
 
           <div className="mt-8 flex justify-between text-[17px] font-bold text-gray-800">
             <span>Balance: ₹{referBalance.toFixed(2)}</span>
-            <span>Min: 100, Max: 10000</span>
+            <span>Min: 200, Max: 10000</span>
           </div>
         </div>
 

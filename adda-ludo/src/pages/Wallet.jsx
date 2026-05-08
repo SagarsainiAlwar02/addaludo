@@ -16,6 +16,7 @@ export default function Wallet() {
     balance: 0,
     winnings: 0,
     bonus: 0,
+    referralBalance: 0,
   });
 
   const [amount, setAmount] = useState("");
@@ -39,10 +40,12 @@ export default function Wallet() {
 
   const loadWallet = async () => {
     const res = await axios.get(`${API_BASE}/wallet`, authHeader);
+
     setWallet({
       balance: res.data.balance || 0,
       winnings: res.data.winnings || 0,
       bonus: res.data.bonus || 0,
+      referralBalance: res.data.referralBalance || res.data.referBalance || 0,
     });
   };
 
@@ -69,7 +72,6 @@ export default function Wallet() {
     };
 
     init();
-    // eslint-disable-next-line
   }, []);
 
   useEffect(() => {
@@ -185,7 +187,12 @@ export default function Wallet() {
 
         <div style={styles.card}>
           <div style={styles.cardMain}>
-            <div style={{ ...styles.iconBox, background: "linear-gradient(135deg,#2563eb,#06b6d4)" }}>
+            <div
+              style={{
+                ...styles.iconBox,
+                background: "linear-gradient(135deg,#2563eb,#06b6d4)",
+              }}
+            >
               💰
             </div>
             <div style={styles.info}>
@@ -205,7 +212,42 @@ export default function Wallet() {
 
         <div style={styles.card}>
           <div style={styles.cardMain}>
-            <div style={{ ...styles.iconBox, background: "linear-gradient(135deg,#16a34a,#86efac)" }}>
+            <div
+              style={{
+                ...styles.iconBox,
+                background: "linear-gradient(135deg,#7c3aed,#ec4899)",
+              }}
+            >
+              🎁
+            </div>
+
+            <div style={styles.info}>
+              <p style={styles.label}>Referral Earning</p>
+              <h1 style={styles.amount}>
+                ₹ {Number(wallet.referralBalance || 0).toFixed(2)}
+              </h1>
+            </div>
+          </div>
+
+          <div style={styles.btnRow}>
+            <button style={styles.redeemBtn} onClick={() => navigate("/redeem")}>
+              Redeem 🎁
+            </button>
+          </div>
+
+          <p style={styles.desc}>
+            Referral earning ₹200 hone ke baad redeem karke wallet me add kar sakte ho.
+          </p>
+        </div>
+
+        <div style={styles.card}>
+          <div style={styles.cardMain}>
+            <div
+              style={{
+                ...styles.iconBox,
+                background: "linear-gradient(135deg,#16a34a,#86efac)",
+              }}
+            >
               🏆
             </div>
             <div style={styles.info}>
@@ -236,25 +278,7 @@ export default function Wallet() {
                   <p style={styles.small}>UTR: {d.utr}</p>
                 </div>
 
-                <span
-                  style={{
-                    ...styles.status,
-                    background:
-                      d.status === "approved"
-                        ? "#dcfce7"
-                        : d.status === "rejected"
-                        ? "#fee2e2"
-                        : "#fef3c7",
-                    color:
-                      d.status === "approved"
-                        ? "#166534"
-                        : d.status === "rejected"
-                        ? "#991b1b"
-                        : "#92400e",
-                  }}
-                >
-                  {d.status}
-                </span>
+                <span style={styles.status}>{d.status}</span>
               </div>
             ))
           )}
@@ -289,18 +313,9 @@ export default function Wallet() {
               ))}
             </div>
 
-            <div style={styles.ruleBox}>
-              <p>₹2000 tak QR se payment hoga.</p>
-              <p>₹2000 se upar UPI ID ya Bank Transfer option milega.</p>
-            </div>
-
             <button style={styles.payBtn} onClick={goToPayment}>
               Pay Fast
             </button>
-
-            <div style={styles.warning}>
-              💡 कृपया कोई भी धोखाधड़ी वाला भुगतान न करवाएँ। ऐसा करने पर आपका अकाउंट ब्लॉक कर दिया जाएगा।
-            </div>
           </div>
         </div>
       )}
@@ -329,72 +344,11 @@ export default function Wallet() {
                   {isLargePayment ? "🏦 Pay by UPI / Bank Transfer" : "▦ Scan to Pay"}
                 </p>
 
-                <h1 style={styles.bigAmount}>
-                  <span style={{ fontSize: 24 }}>₹</span> {Number(amount || 0).toFixed(2)}
-                </h1>
-
-                {!isLargePayment ? (
-                  <div style={styles.qrBox}>
-                    <div style={styles.fakeQr}>
-                      <div style={styles.qrInner}>
-                        <div style={styles.qrIcon}>▦</div>
-                        <div>UPI QR</div>
-                        <small>Scan & Pay</small>
-                      </div>
-                    </div>
-                  </div>
-                ) : (
-                  <div style={styles.bankBox}>
-                    <h3 style={styles.bankTitle}>UPI & Bank Details</h3>
-
-                    <div style={styles.bankItem}>
-                      <span>UPI ID</span>
-                      <b>addaludo@upi</b>
-                    </div>
-
-                    <div style={styles.bankItem}>
-                      <span>Account Holder</span>
-                      <b>AddaLudo</b>
-                    </div>
-
-                    <div style={styles.bankItem}>
-                      <span>Account Number</span>
-                      <b>1234567890</b>
-                    </div>
-
-                    <div style={styles.bankItem}>
-                      <span>IFSC Code</span>
-                      <b>SBIN0001234</b>
-                    </div>
-
-                    <div style={styles.bankItem}>
-                      <span>Bank Name</span>
-                      <b>State Bank of India</b>
-                    </div>
-                  </div>
-                )}
+                <h1 style={styles.bigAmount}>₹ {Number(amount || 0).toFixed(2)}</h1>
 
                 <div style={styles.timerBox}>
                   ⏱ Time remaining: <b>{formatTime(timeLeft)}</b>
                 </div>
-              </div>
-
-              <div style={styles.steps}>
-                {!isLargePayment ? (
-                  <>
-                    <p><b>1</b> Open your UPI payment app</p>
-                    <p><b>2</b> Tap on Scan QR Code</p>
-                    <p><b>3</b> Pay exact ₹{amount}</p>
-                    <p><b>4</b> Enter UTR and upload screenshot</p>
-                  </>
-                ) : (
-                  <>
-                    <p><b>1</b> UPI ID ya Bank Account details se payment karo</p>
-                    <p><b>2</b> Exact ₹{amount} transfer karo</p>
-                    <p><b>3</b> UTR / Transaction ID enter karo</p>
-                    <p><b>4</b> Payment screenshot upload karo</p>
-                  </>
-                )}
               </div>
 
               <input
@@ -432,425 +386,51 @@ export default function Wallet() {
 }
 
 const styles = {
-  page: {
-    minHeight: "100vh",
-    background: "linear-gradient(135deg,#f8fafc,#eef2ff)",
-    fontFamily: "Arial, sans-serif",
-  },
-  container: {
-    padding: "76px 14px 105px",
-    maxWidth: "480px",
-    margin: "0 auto",
-  },
-  headerRow: {
-    display: "flex",
-    alignItems: "center",
-    gap: "14px",
-    marginBottom: "24px",
-  },
-  backBtn: {
-    width: "48px",
-    height: "48px",
-    borderRadius: "15px",
-    border: "none",
-    background: "#ffffff",
-    color: "#0f172a",
-    fontSize: "28px",
-    fontWeight: "900",
-    boxShadow: "0 10px 24px rgba(15,23,42,.08)",
-  },
-  title: {
-    flex: 1,
-    margin: 0,
-    fontSize: "30px",
-    fontWeight: "900",
-    color: "#0f172a",
-  },
-  online: {
-    color: "#64748b",
-    fontSize: "15px",
-    fontWeight: "700",
-  },
-  card: {
-    background: "rgba(255,255,255,.92)",
-    borderRadius: "28px",
-    padding: "24px",
-    marginBottom: "22px",
-    boxShadow: "0 24px 60px rgba(15,23,42,.08)",
-    border: "1px solid rgba(255,255,255,.7)",
-  },
-  cardMain: {
-    display: "flex",
-    alignItems: "center",
-    gap: "20px",
-  },
-  iconBox: {
-    width: "94px",
-    height: "94px",
-    borderRadius: "24px",
-    display: "flex",
-    alignItems: "center",
-    justifyContent: "center",
-    color: "#ffffff",
-    fontSize: "40px",
-    boxShadow: "0 18px 35px rgba(37,99,235,.22)",
-  },
+  page: { minHeight: "100vh", background: "linear-gradient(135deg,#f8fafc,#eef2ff)" },
+  container: { padding: "76px 14px 105px", maxWidth: "480px", margin: "0 auto" },
+  headerRow: { display: "flex", alignItems: "center", gap: "14px", marginBottom: "24px" },
+  backBtn: { width: 48, height: 48, borderRadius: 15, border: "none", background: "#fff", fontSize: 28, fontWeight: 900 },
+  title: { flex: 1, margin: 0, fontSize: 30, fontWeight: 900, color: "#0f172a" },
+  online: { color: "#64748b", fontSize: 15, fontWeight: 700 },
+  card: { background: "#fff", borderRadius: 28, padding: 24, marginBottom: 22, boxShadow: "0 24px 60px rgba(15,23,42,.08)" },
+  cardMain: { display: "flex", alignItems: "center", gap: 20 },
+  iconBox: { width: 94, height: 94, borderRadius: 24, display: "flex", alignItems: "center", justifyContent: "center", color: "#fff", fontSize: 40 },
   info: { flex: 1 },
-  label: {
-    margin: "0 0 10px",
-    color: "#64748b",
-    fontSize: "18px",
-    fontWeight: "800",
-  },
-  amount: {
-    margin: 0,
-    color: "#0f172a",
-    fontSize: "31px",
-    fontWeight: "900",
-  },
-  btnRow: {
-    display: "flex",
-    justifyContent: "flex-end",
-    marginTop: "16px",
-  },
-  addBtn: {
-    border: "none",
-    background: "linear-gradient(135deg,#2563eb,#06b6d4)",
-    color: "#ffffff",
-    borderRadius: "16px",
-    padding: "14px 18px",
-    fontSize: "19px",
-    fontWeight: "900",
-    boxShadow: "0 12px 26px rgba(37,99,235,.28)",
-  },
-  withdrawBtn: {
-    border: "1px solid #bbf7d0",
-    background: "#f0fdf4",
-    color: "#166534",
-    borderRadius: "16px",
-    padding: "14px 18px",
-    fontSize: "19px",
-    fontWeight: "900",
-  },
-  plus: { marginLeft: "10px", fontSize: "24px" },
-  desc: {
-    margin: "16px 0 0",
-    color: "#64748b",
-    fontSize: "15px",
-    lineHeight: "1.5",
-  },
-  error: {
-    background: "#fee2e2",
-    color: "#991b1b",
-    padding: "12px",
-    borderRadius: "14px",
-    marginBottom: "16px",
-    fontWeight: "800",
-  },
-  loading: {
-    minHeight: "70vh",
-    display: "flex",
-    alignItems: "center",
-    justifyContent: "center",
-    fontWeight: "900",
-    color: "#0f172a",
-  },
-  modalOverlay: {
-    position: "fixed",
-    inset: 0,
-    background: "rgba(15,23,42,.65)",
-    display: "flex",
-    alignItems: "center",
-    justifyContent: "center",
-    padding: "20px",
-    zIndex: 9999,
-    backdropFilter: "blur(8px)",
-  },
-  modal: {
-    width: "100%",
-    maxWidth: "430px",
-    background: "linear-gradient(135deg,#ffffff,#eff6ff)",
-    borderRadius: "28px",
-    padding: "26px",
-    position: "relative",
-    boxShadow: "0 30px 90px rgba(0,0,0,.30)",
-  },
-  closeBtn: {
-    position: "absolute",
-    right: "18px",
-    top: "14px",
-    border: "none",
-    background: "#e0f2fe",
-    width: "38px",
-    height: "38px",
-    borderRadius: "50%",
-    fontSize: "26px",
-    fontWeight: "900",
-  },
-  modalTitle: {
-    margin: "0 0 6px",
-    fontSize: "30px",
-    fontWeight: "900",
-    color: "#0f172a",
-  },
-  modalSub: {
-    margin: "0 0 18px",
-    color: "#64748b",
-    fontSize: "15px",
-    fontWeight: "700",
-  },
-  input: {
-    width: "100%",
-    boxSizing: "border-box",
-    border: "2px solid #e2e8f0",
-    borderRadius: "18px",
-    padding: "17px",
-    fontSize: "18px",
-    fontWeight: "800",
-    outline: "none",
-    marginTop: "12px",
-    background: "#ffffff",
-  },
-  quickRow: {
-    display: "grid",
-    gridTemplateColumns: "1fr 1fr",
-    gap: "12px",
-    marginTop: "16px",
-  },
-  quickBtn: {
-    border: "1px solid #bfdbfe",
-    background: "#eff6ff",
-    color: "#1d4ed8",
-    borderRadius: "15px",
-    padding: "13px",
-    fontSize: "18px",
-    fontWeight: "900",
-  },
-  ruleBox: {
-    marginTop: "16px",
-    background: "#ecfeff",
-    color: "#155e75",
-    padding: "12px",
-    borderRadius: "15px",
-    fontWeight: "800",
-    fontSize: "13px",
-    lineHeight: 1.5,
-  },
-  payBtn: {
-    width: "100%",
-    marginTop: "18px",
-    border: "none",
-    borderRadius: "17px",
-    padding: "16px",
-    background: "linear-gradient(135deg,#2563eb,#7c3aed)",
-    color: "#ffffff",
-    fontSize: "22px",
-    fontWeight: "900",
-    boxShadow: "0 16px 35px rgba(79,70,229,.30)",
-  },
-  warning: {
-    marginTop: "18px",
-    background: "#fff7ed",
-    color: "#9a3412",
-    padding: "15px",
-    borderRadius: "17px",
-    fontWeight: "800",
-    lineHeight: 1.5,
-  },
-  historyTitle: {
-    margin: "0 0 14px",
-    fontSize: "22px",
-    fontWeight: "900",
-    color: "#0f172a",
-  },
-  depositItem: {
-    display: "flex",
-    justifyContent: "space-between",
-    alignItems: "center",
-    borderBottom: "1px solid #e5e7eb",
-    padding: "12px 0",
-  },
-  small: {
-    margin: "5px 0 0",
-    color: "#64748b",
-    fontSize: "13px",
-  },
-  status: {
-    padding: "7px 10px",
-    borderRadius: "999px",
-    fontWeight: "900",
-    fontSize: "12px",
-    textTransform: "uppercase",
-  },
-  paymentPage: {
-    position: "fixed",
-    inset: 0,
-    background: "radial-gradient(circle at top,#dbeafe,#eef2ff 45%,#f8fafc)",
-    zIndex: 99999,
-    overflowY: "auto",
-  },
-  paymentCard: {
-    maxWidth: "720px",
-    margin: "0 auto",
-    background: "#ffffff",
-    minHeight: "100vh",
-    boxShadow: "0 0 80px rgba(37,99,235,.18)",
-  },
-  paymentHeader: {
-    background: "linear-gradient(135deg,#0f172a,#1d4ed8,#7c3aed)",
-    color: "#ffffff",
-    display: "grid",
-    gridTemplateColumns: "54px 1fr 1.4fr",
-    alignItems: "center",
-    padding: "14px 18px",
-    gap: "10px",
-  },
-  paymentBack: {
-    border: "none",
-    background: "rgba(255,255,255,.12)",
-    color: "#ffffff",
-    fontSize: "26px",
-    fontWeight: "900",
-    borderRadius: "14px",
-    height: "42px",
-  },
-  logo: {
-    fontSize: "20px",
-    fontWeight: "900",
-  },
-  paymentTitle: {
-    margin: 0,
-    textAlign: "center",
-    fontSize: "22px",
-    fontWeight: "900",
-    color: "#ffffff",
-  },
-  paymentBody: {
-    padding: "22px",
-  },
-  paymentTopCard: {
-    background: "linear-gradient(135deg,#ffffff,#eff6ff)",
-    border: "1px solid #dbeafe",
-    borderRadius: "24px",
-    padding: "18px",
-    boxShadow: "0 18px 45px rgba(37,99,235,.10)",
-  },
-  scanText: {
-    color: "#2563eb",
-    fontSize: "20px",
-    fontWeight: "900",
-    margin: "0 0 10px",
-  },
-  bigAmount: {
-    textAlign: "center",
-    fontSize: "40px",
-    color: "#0f172a",
-    margin: "14px 0 18px",
-    fontWeight: "900",
-  },
-  qrBox: {
-    display: "flex",
-    justifyContent: "center",
-  },
-  fakeQr: {
-    width: "210px",
-    height: "210px",
-    border: "3px solid #2563eb",
-    borderRadius: "22px",
-    display: "grid",
-    placeItems: "center",
-    textAlign: "center",
-    color: "#0f172a",
-    background: "linear-gradient(135deg,#ffffff,#dbeafe)",
-    boxShadow: "0 16px 35px rgba(37,99,235,.18)",
-  },
-  qrInner: {
-    width: "160px",
-    height: "160px",
-    borderRadius: "18px",
-    display: "grid",
-    placeItems: "center",
-    background:
-      "repeating-linear-gradient(45deg,#0f172a 0 7px,#ffffff 7px 14px)",
-    color: "#ffffff",
-    textShadow: "0 2px 8px rgba(0,0,0,.6)",
-    fontSize: "20px",
-    fontWeight: "900",
-    padding: "8px",
-  },
-  qrIcon: {
-    fontSize: "26px",
-  },
-  bankBox: {
-    marginTop: "8px",
-    background: "#f8fafc",
-    border: "2px solid #dbeafe",
-    borderRadius: "22px",
-    padding: "18px",
-  },
-  bankTitle: {
-    margin: "0 0 14px",
-    fontSize: "22px",
-    fontWeight: "900",
-    color: "#0f172a",
-  },
-  bankItem: {
-    display: "flex",
-    justifyContent: "space-between",
-    alignItems: "center",
-    gap: "12px",
-    padding: "12px 0",
-    borderBottom: "1px solid #e2e8f0",
-    fontSize: "15px",
-    color: "#0f172a",
-  },
-  timerBox: {
-    marginTop: "16px",
-    background: "linear-gradient(135deg,#ecfeff,#eff6ff)",
-    padding: "12px",
-    borderRadius: "16px",
-    textAlign: "center",
-    fontSize: "16px",
-    color: "#0f172a",
-    border: "1px solid #bfdbfe",
-    fontWeight: "800",
-  },
-  steps: {
-    marginTop: "18px",
-    color: "#334155",
-    fontSize: "16px",
-    lineHeight: 1.7,
-  },
-  fileInput: {
-    width: "100%",
-    marginTop: "14px",
-    border: "2px dashed #93c5fd",
-    borderRadius: "18px",
-    padding: "15px",
-    boxSizing: "border-box",
-    background: "#f8fafc",
-  },
-  submitBtn: {
-    width: "100%",
-    marginTop: "18px",
-    border: "none",
-    borderRadius: "18px",
-    padding: "17px",
-    background: "linear-gradient(135deg,#16a34a,#22c55e)",
-    color: "#ffffff",
-    fontSize: "20px",
-    fontWeight: "900",
-    boxShadow: "0 16px 35px rgba(34,197,94,.28)",
-  },
-  cancelBtn: {
-    width: "100%",
-    marginTop: "10px",
-    border: "none",
-    borderRadius: "18px",
-    padding: "15px",
-    background: "#e5e7eb",
-    color: "#0f172a",
-    fontSize: "18px",
-    fontWeight: "900",
-  },
+  label: { margin: "0 0 10px", color: "#64748b", fontSize: 18, fontWeight: 800 },
+  amount: { margin: 0, color: "#0f172a", fontSize: 31, fontWeight: 900 },
+  btnRow: { display: "flex", justifyContent: "flex-end", marginTop: 16 },
+  addBtn: { border: "none", background: "linear-gradient(135deg,#2563eb,#06b6d4)", color: "#fff", borderRadius: 16, padding: "14px 18px", fontSize: 19, fontWeight: 900 },
+  redeemBtn: { border: "none", background: "linear-gradient(135deg,#7c3aed,#ec4899)", color: "#fff", borderRadius: 16, padding: "14px 18px", fontSize: 19, fontWeight: 900 },
+  withdrawBtn: { border: "1px solid #bbf7d0", background: "#f0fdf4", color: "#166534", borderRadius: 16, padding: "14px 18px", fontSize: 19, fontWeight: 900 },
+  plus: { marginLeft: 10, fontSize: 24 },
+  desc: { margin: "16px 0 0", color: "#64748b", fontSize: 15, lineHeight: 1.5 },
+  error: { background: "#fee2e2", color: "#991b1b", padding: 12, borderRadius: 14, marginBottom: 16, fontWeight: 800 },
+  loading: { minHeight: "70vh", display: "flex", alignItems: "center", justifyContent: "center", fontWeight: 900 },
+  historyTitle: { margin: "0 0 14px", fontSize: 22, fontWeight: 900, color: "#0f172a" },
+  depositItem: { display: "flex", justifyContent: "space-between", alignItems: "center", borderBottom: "1px solid #e5e7eb", padding: "12px 0" },
+  small: { margin: "5px 0 0", color: "#64748b", fontSize: 13 },
+  status: { padding: "7px 10px", borderRadius: 999, fontWeight: 900, fontSize: 12, background: "#fef3c7", color: "#92400e", textTransform: "uppercase" },
+  modalOverlay: { position: "fixed", inset: 0, background: "rgba(15,23,42,.65)", display: "flex", alignItems: "center", justifyContent: "center", padding: 20, zIndex: 9999 },
+  modal: { width: "100%", maxWidth: 430, background: "#fff", borderRadius: 28, padding: 26, position: "relative" },
+  closeBtn: { position: "absolute", right: 18, top: 14, border: "none", background: "#e0f2fe", width: 38, height: 38, borderRadius: "50%", fontSize: 26, fontWeight: 900 },
+  modalTitle: { margin: "0 0 6px", fontSize: 30, fontWeight: 900, color: "#0f172a" },
+  modalSub: { margin: "0 0 18px", color: "#64748b", fontSize: 15, fontWeight: 700 },
+  input: { width: "100%", boxSizing: "border-box", border: "2px solid #e2e8f0", borderRadius: 18, padding: 17, fontSize: 18, fontWeight: 800, outline: "none", marginTop: 12, background: "#fff" },
+  quickRow: { display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12, marginTop: 16 },
+  quickBtn: { border: "1px solid #bfdbfe", background: "#eff6ff", color: "#1d4ed8", borderRadius: 15, padding: 13, fontSize: 18, fontWeight: 900 },
+  payBtn: { width: "100%", marginTop: 18, border: "none", borderRadius: 17, padding: 16, background: "linear-gradient(135deg,#2563eb,#7c3aed)", color: "#fff", fontSize: 22, fontWeight: 900 },
+  paymentPage: { position: "fixed", inset: 0, background: "#eef2ff", zIndex: 99999, overflowY: "auto" },
+  paymentCard: { maxWidth: 720, margin: "0 auto", background: "#fff", minHeight: "100vh" },
+  paymentHeader: { background: "linear-gradient(135deg,#0f172a,#1d4ed8,#7c3aed)", color: "#fff", display: "grid", gridTemplateColumns: "54px 1fr 1.4fr", alignItems: "center", padding: "14px 18px", gap: 10 },
+  paymentBack: { border: "none", background: "rgba(255,255,255,.12)", color: "#fff", fontSize: 26, fontWeight: 900, borderRadius: 14, height: 42 },
+  logo: { fontSize: 20, fontWeight: 900 },
+  paymentTitle: { margin: 0, textAlign: "center", fontSize: 22, fontWeight: 900 },
+  paymentBody: { padding: 22 },
+  paymentTopCard: { background: "#eff6ff", border: "1px solid #dbeafe", borderRadius: 24, padding: 18 },
+  scanText: { color: "#2563eb", fontSize: 20, fontWeight: 900, margin: "0 0 10px" },
+  bigAmount: { textAlign: "center", fontSize: 40, color: "#0f172a", margin: "14px 0 18px", fontWeight: 900 },
+  timerBox: { marginTop: 16, background: "#ecfeff", padding: 12, borderRadius: 16, textAlign: "center", fontSize: 16, color: "#0f172a", fontWeight: 800 },
+  fileInput: { width: "100%", marginTop: 14, border: "2px dashed #93c5fd", borderRadius: 18, padding: 15, boxSizing: "border-box", background: "#f8fafc" },
+  submitBtn: { width: "100%", marginTop: 18, border: "none", borderRadius: 18, padding: 17, background: "linear-gradient(135deg,#16a34a,#22c55e)", color: "#fff", fontSize: 20, fontWeight: 900 },
+  cancelBtn: { width: "100%", marginTop: 10, border: "none", borderRadius: 18, padding: 15, background: "#e5e7eb", color: "#0f172a", fontSize: 18, fontWeight: 900 },
 };

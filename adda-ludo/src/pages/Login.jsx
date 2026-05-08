@@ -2,8 +2,6 @@ import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import axios from "axios";
 
-// ✅ VITE_API_URL should be:
-// https://api.addaludo.com/api
 const API_URL =
   import.meta.env.VITE_API_URL?.replace(/\/$/, "") ||
   (window.location.hostname === "localhost"
@@ -20,6 +18,17 @@ export default function Login({ onLogin }) {
   const [timer, setTimer] = useState(0);
 
   const navigate = useNavigate();
+
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const ref = params.get("ref");
+
+    if (ref) {
+      const code = ref.trim().toUpperCase();
+      setReferralCode(code);
+      localStorage.setItem("pendingReferralCode", code);
+    }
+  }, []);
 
   useEffect(() => {
     let interval;
@@ -51,11 +60,7 @@ export default function Login({ onLogin }) {
       }
     } catch (err) {
       console.log("OTP SEND ERROR:", err.response?.data || err.message);
-      setError(
-        err.response?.data?.msg ||
-          err.message ||
-          "Failed to send OTP. Please try again."
-      );
+      setError(err.response?.data?.msg || err.message || "Failed to send OTP");
     } finally {
       setLoading(false);
     }
@@ -67,6 +72,11 @@ export default function Login({ onLogin }) {
       return;
     }
 
+    const finalReferralCode =
+      referralCode.trim().toUpperCase() ||
+      localStorage.getItem("pendingReferralCode") ||
+      "";
+
     try {
       setLoading(true);
       setError("");
@@ -74,7 +84,7 @@ export default function Login({ onLogin }) {
       const res = await axios.post(`${API_URL}/otp-login`, {
         phone,
         otp,
-        referralCode: referralCode.trim().toUpperCase(),
+        referralCode: finalReferralCode,
       });
 
       if (!res.data?.success) {
@@ -84,17 +94,14 @@ export default function Login({ onLogin }) {
 
       localStorage.setItem("token", res.data.token);
       localStorage.setItem("user", JSON.stringify(res.data.user));
+      localStorage.removeItem("pendingReferralCode");
 
       if (onLogin) onLogin(res.data.user);
 
       navigate("/");
     } catch (err) {
       console.log("OTP VERIFY ERROR:", err.response?.data || err.message);
-      setError(
-        err.response?.data?.msg ||
-          err.message ||
-          "Invalid OTP. Please try again."
-      );
+      setError(err.response?.data?.msg || err.message || "Invalid OTP");
     } finally {
       setLoading(false);
     }
@@ -103,22 +110,12 @@ export default function Login({ onLogin }) {
   return (
     <div className="min-h-screen flex justify-center bg-[#f8ecd2]">
       <div className="relative w-full max-w-[650px] min-h-screen overflow-hidden bg-gradient-to-b from-[#14061f] via-[#2a0c45] to-[#09040d] px-5 py-8">
-        <div className="absolute top-[-60px] left-[-60px] h-56 w-56 rounded-full bg-yellow-400/20 blur-3xl"></div>
-        <div className="absolute top-40 right-[-70px] h-72 w-72 rounded-full bg-red-500/20 blur-3xl"></div>
-        <div className="absolute bottom-0 left-10 h-80 w-80 rounded-full bg-cyan-400/10 blur-3xl"></div>
-
         <div className="relative z-10 flex flex-col items-center">
           <img
             src="/logo.jpeg"
             alt="AddaLudo"
-            className="mt-4 w-full max-w-[250px] object-contain mx-auto drop-shadow-[0_0_30px_rgba(255,215,0,0.35)]"
+            className="mt-4 w-full max-w-[250px] object-contain mx-auto"
           />
-
-          <div className="mt-4 w-full rounded-2xl border border-yellow-300/40 bg-green-100/95 px-4 py-4 shadow-lg">
-            <p className="text-center text-sm font-bold text-[#234100]">
-              सूचना: आपका वॉलेट बैलेंस सुरक्षित है।
-            </p>
-          </div>
 
           <div className="mt-7 w-full rounded-[28px] border border-white/20 bg-white/95 p-6 shadow-2xl">
             <div className="mb-6 text-center">
@@ -130,12 +127,12 @@ export default function Login({ onLogin }) {
 
             {step === 1 && (
               <>
-                <label className="mb-2 block text-left text-sm font-bold text-gray-700">
+                <label className="mb-2 block text-sm font-bold text-gray-700">
                   Mobile Number
                 </label>
 
-                <div className="mb-4 flex items-center rounded-2xl border-2 border-gray-200 bg-white px-4 py-4 focus-within:border-orange-500">
-                  <span className="border-r border-gray-300 pr-3 text-lg font-bold text-gray-800">
+                <div className="mb-4 flex items-center rounded-2xl border-2 border-gray-200 bg-white px-4 py-4">
+                  <span className="border-r border-gray-300 pr-3 text-lg font-bold">
                     +91
                   </span>
 
@@ -143,39 +140,34 @@ export default function Login({ onLogin }) {
                     type="text"
                     placeholder="Enter mobile number"
                     value={phone}
-                    onChange={(e) =>
-                      setPhone(e.target.value.replace(/\D/g, ""))
-                    }
+                    onChange={(e) => setPhone(e.target.value.replace(/\D/g, ""))}
                     maxLength={10}
                     className="w-full bg-transparent px-3 text-lg font-semibold outline-none"
                     autoComplete="tel"
                   />
                 </div>
 
-                <label className="mb-2 block text-left text-sm font-bold text-gray-700">
+                <label className="mb-2 block text-sm font-bold text-gray-700">
                   Referral Code Optional
                 </label>
 
                 <input
                   type="text"
-                  placeholder="Enter referral code e.g. BA-438286"
+                  placeholder="Enter referral code"
                   value={referralCode}
-                  onChange={(e) =>
-                    setReferralCode(e.target.value.toUpperCase())
-                  }
-                  maxLength={12}
-                  className="mb-5 w-full rounded-2xl border-2 border-gray-200 px-4 py-4 text-lg font-bold uppercase outline-none focus:border-cyan-500"
+                  onChange={(e) => {
+                    const code = e.target.value.toUpperCase();
+                    setReferralCode(code);
+                    localStorage.setItem("pendingReferralCode", code);
+                  }}
+                  maxLength={20}
+                  className="mb-5 w-full rounded-2xl border-2 border-gray-200 px-4 py-4 text-lg font-bold uppercase outline-none"
                 />
-
-                <p className="mb-5 text-center text-xs leading-5 text-gray-500">
-                  By continuing, you agree to our Legal Terms and confirm you
-                  are 18 years or older.
-                </p>
 
                 <button
                   onClick={sendOTP}
                   disabled={loading}
-                  className="w-full rounded-2xl bg-gradient-to-r from-orange-500 to-red-500 py-4 text-lg font-black text-white shadow-lg transition active:scale-95 disabled:opacity-60"
+                  className="w-full rounded-2xl bg-gradient-to-r from-orange-500 to-red-500 py-4 text-lg font-black text-white shadow-lg disabled:opacity-60"
                 >
                   {loading ? "Sending..." : "Send OTP"}
                 </button>
@@ -196,24 +188,20 @@ export default function Login({ onLogin }) {
                   )}
                 </div>
 
-                <label className="mb-2 block text-left text-sm font-bold text-gray-700">
-                  Enter OTP
-                </label>
-
                 <input
                   type="text"
                   placeholder="Enter OTP"
                   value={otp}
                   onChange={(e) => setOtp(e.target.value.replace(/\D/g, ""))}
                   maxLength={6}
-                  className="mb-4 w-full rounded-2xl border-2 border-gray-200 px-4 py-4 text-center text-2xl font-black tracking-[10px] outline-none focus:border-green-500"
+                  className="mb-4 w-full rounded-2xl border-2 border-gray-200 px-4 py-4 text-center text-2xl font-black tracking-[10px] outline-none"
                   autoComplete="one-time-code"
                 />
 
                 <button
                   onClick={verifyOTP}
                   disabled={loading}
-                  className="w-full rounded-2xl bg-gradient-to-r from-green-500 to-emerald-500 py-4 text-lg font-black text-white shadow-lg transition active:scale-95 disabled:opacity-60"
+                  className="w-full rounded-2xl bg-gradient-to-r from-green-500 to-emerald-500 py-4 text-lg font-black text-white shadow-lg disabled:opacity-60"
                 >
                   {loading ? "Verifying..." : "Verify OTP"}
                 </button>
@@ -246,14 +234,6 @@ export default function Login({ onLogin }) {
                 {error}
               </p>
             )}
-          </div>
-
-          <div className="mt-6 flex gap-3 text-xs font-bold text-white/70">
-            <span>Secure Login</span>
-            <span>•</span>
-            <span>Fast OTP</span>
-            <span>•</span>
-            <span>Real Cash Rewards</span>
           </div>
         </div>
       </div>
