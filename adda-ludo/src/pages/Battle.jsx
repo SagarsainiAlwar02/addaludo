@@ -16,14 +16,41 @@ function calculatePrize(amount) {
 function getUserId() {
   try {
     const user = JSON.parse(localStorage.getItem("user") || "{}");
-    return String(user?._id || user?.id || "");
+
+    if (user?._id || user?.id) {
+      return String(user._id || user.id);
+    }
+
+    const token = localStorage.getItem("token");
+    if (!token) return "";
+
+    const payload = JSON.parse(atob(token.split(".")[1] || ""));
+    return String(
+      payload?._id ||
+        payload?.id ||
+        payload?.userId ||
+        payload?.user ||
+        ""
+    );
   } catch {
     return "";
   }
 }
 
 function getBattleCreatorId(battle) {
-  return String(battle?.createdBy?._id || battle?.createdBy || battle?.userId || "");
+  return String(
+    battle?.createdBy?._id ||
+      battle?.createdBy?.id ||
+      battle?.createdBy ||
+      battle?.creator?._id ||
+      battle?.creator?.id ||
+      battle?.creator ||
+      battle?.user?._id ||
+      battle?.user?.id ||
+      battle?.user ||
+      battle?.userId ||
+      ""
+  );
 }
 
 export default function Battle() {
@@ -157,15 +184,14 @@ export default function Battle() {
   const visibleOpenBattles = useMemo(() => {
     const map = new Map();
 
-    openBattles.forEach((battle) => {
-      if (battle?.battleId) map.set(battle.battleId, battle);
+    [...openBattles, ...myBattles].forEach((battle) => {
+      if (
+        battle?.battleId &&
+        ["open", "waiting"].includes(String(battle.status || "").toLowerCase())
+      ) {
+        map.set(battle.battleId, battle);
+      }
     });
-
-    myBattles
-      .filter((battle) => battle?.status === "open" || battle?.status === "waiting")
-      .forEach((battle) => {
-        if (battle?.battleId) map.set(battle.battleId, battle);
-      });
 
     return Array.from(map.values());
   }, [openBattles, myBattles]);
@@ -233,7 +259,7 @@ export default function Battle() {
         ) : (
           visibleOpenBattles.map((battle) => {
             const creatorId = getBattleCreatorId(battle);
-            const isMine = creatorId === myId;
+            const isMine = creatorId && myId && creatorId === myId;
 
             return (
               <BattleCard
@@ -344,8 +370,11 @@ function BattleCard({ battle, action, dark = false }) {
           dark ? "border-white/15" : "border-slate-100 bg-cyan-50 text-slate-700"
         }`}
       >
-        {battle.createdBy?.name || "Player"} vs{" "}
-        {battle.opponent?.name || "Waiting..."}
+        {battle.createdBy?.name ||
+          battle.creator?.name ||
+          battle.user?.name ||
+          "Player"}{" "}
+        vs {battle.opponent?.name || "Waiting..."}
       </div>
 
       <div className="grid grid-cols-3 items-center gap-2 px-4 py-3">
