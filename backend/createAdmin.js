@@ -12,11 +12,11 @@ async function createAdmin() {
     const hashedPassword = await bcrypt.hash("Mohit@9250", 10);
 
     const admin = await User.findOneAndUpdate(
-      { email: "admin@gmail.com" },
+      { email: "Adda48931@gmail.com" },
       {
         name: "Admin",
-        email: "admin@gmail.com",
-        phone: "9999999999",
+        email: "Adda48931@gmail.com",
+        phone: "9000000001",
         password: hashedPassword,
         role: "admin",
         status: "active"
@@ -29,8 +29,8 @@ async function createAdmin() {
     );
 
     console.log("✅ Admin Ready");
-    console.log("Email: admin@gmail.com");
-    console.log("Phone: 9999999999");
+    console.log("Email: Adda48931@gmail.com");
+    console.log("Phone: 9000000001 ");
     console.log("Password: Mohit@9250");
 
     process.exit(0);
