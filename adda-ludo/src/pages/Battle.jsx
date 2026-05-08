@@ -36,6 +36,16 @@ function calculatePrize(amount) {
   return totalPool - commission;
 }
 
+function getWalletBalance(data) {
+  const wallet = data?.wallet || data || {};
+
+  return (
+    Number(wallet.balance || 0) +
+    Number(wallet.winnings || 0) +
+    Number(wallet.bonus || 0)
+  );
+}
+
 export default function Battle() {
   const navigate = useNavigate();
 
@@ -91,13 +101,32 @@ export default function Battle() {
     return allBattleAmounts.filter((amt) => amt === value);
   }, [searchedAmount, hasSearched]);
 
-  const handleSearch = () => {
+  const handleSearch = async () => {
     const finalAmount = Number(amount);
 
     if (!validateAmount(finalAmount)) return;
+    if (!checkLogin()) return;
 
-    setSearchedAmount(String(finalAmount));
-    setHasSearched(true);
+    try {
+      setLoading(true);
+
+      const res = await axios.get(`${API_BASE}/wallet`, authHeader());
+      const totalBalance = getWalletBalance(res.data);
+
+      if (totalBalance < finalAmount) {
+        setHasSearched(false);
+        setSearchedAmount("");
+        alert("Insufficient Balance");
+        return;
+      }
+
+      setSearchedAmount(String(finalAmount));
+      setHasSearched(true);
+    } catch (err) {
+      alert(err.response?.data?.msg || "Wallet check failed");
+    } finally {
+      setLoading(false);
+    }
   };
 
   const createBattle = async (entryAmount) => {
@@ -143,7 +172,9 @@ export default function Battle() {
           <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 px-4">
             <div className="w-full max-w-sm rounded-3xl bg-white p-6 text-center shadow-2xl">
               <div className="mx-auto mb-4 h-14 w-14 animate-spin rounded-full border-4 border-gray-200 border-t-green-600"></div>
-              <h2 className="text-xl font-black text-gray-900">Searching Battle...</h2>
+              <h2 className="text-xl font-black text-gray-900">
+                Searching Battle...
+              </h2>
               <p className="mt-2 text-sm font-semibold text-gray-500">
                 Room ready ho raha hai. Please wait.
               </p>
@@ -187,11 +218,10 @@ export default function Battle() {
                 onClick={handleSearch}
                 className="rounded-xl bg-gradient-to-b from-red-500 to-red-700 px-5 py-3 text-base font-black text-white shadow-sm disabled:opacity-60"
               >
-                Search
+                {loading ? "Checking..." : "Search"}
               </button>
             </div>
 
-            
             {hasSearched && (
               <button
                 onClick={() => {
@@ -234,8 +264,12 @@ export default function Battle() {
 
                     <div className="grid grid-cols-3 items-center gap-2 px-4 py-3">
                       <div>
-                        <p className="text-xs font-black text-slate-500">Entry Fee</p>
-                        <p className="mt-1 text-2xl font-black text-slate-950">₹{amt}</p>
+                        <p className="text-xs font-black text-slate-500">
+                          Entry Fee
+                        </p>
+                        <p className="mt-1 text-2xl font-black text-slate-950">
+                          ₹{amt}
+                        </p>
                       </div>
 
                       <div className="text-center">
@@ -249,7 +283,9 @@ export default function Battle() {
                       </div>
 
                       <div className="text-right">
-                        <p className="text-xs font-black text-slate-500">Winning</p>
+                        <p className="text-xs font-black text-slate-500">
+                          Winning
+                        </p>
                         <p className="mt-1 text-2xl font-black text-emerald-700">
                           ₹{winPrize}
                         </p>
