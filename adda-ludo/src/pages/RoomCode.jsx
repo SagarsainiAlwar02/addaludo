@@ -1,4 +1,5 @@
 import React, { useEffect, useMemo, useState } from "react";
+import { ArrowLeft } from "lucide-react";
 import axios from "axios";
 import { useNavigate, useParams } from "react-router-dom";
 
@@ -133,7 +134,8 @@ export default function RoomCode() {
       const formData = new FormData();
       formData.append("result", selectedResult);
 
-      if (screenshot) {
+      // ✅ Screenshot sirf WIN me jayega
+      if (selectedResult === "win" && screenshot) {
         formData.append("screenshot", screenshot);
       }
 
@@ -170,15 +172,23 @@ export default function RoomCode() {
 
   if (!battle) return null;
 
-  const canResult = ["running", "room_submitted", "cancel_requested"].includes(battle.status);
-  const isCompleted = ["approved", "rejected", "cancelled"].includes(battle.status);
+  const canResult = ["running", "room_submitted", "cancel_requested"].includes(
+    battle.status
+  );
 
   return (
     <div className="min-h-screen bg-[#f4f6f8] px-3 pt-20 pb-28 text-black">
       <div className="mx-auto max-w-[540px]">
         <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
-          <div className="bg-gradient-to-r from-slate-900 to-slate-600 px-4 py-3 text-lg font-black text-white">
-            🎮 Battle Room
+          <div className="flex items-center gap-3 bg-gradient-to-r from-slate-900 to-slate-600 px-4 py-3 text-white">
+            <button
+              onClick={() => navigate("/battle")}
+              className="flex h-10 w-10 items-center justify-center rounded-xl bg-white/10"
+            >
+              <ArrowLeft size={22} />
+            </button>
+
+            <h2 className="text-lg font-black">🎮 Battle Room</h2>
           </div>
 
           <div className="space-y-4 p-4">
@@ -199,7 +209,9 @@ export default function RoomCode() {
 
                 <div>
                   <p className="text-xs font-bold opacity-80">Timer</p>
-                  <p className="text-xl font-black text-yellow-300">{timerLeft}s</p>
+                  <p className="text-xl font-black text-yellow-300">
+                    {timerLeft}s
+                  </p>
                 </div>
 
                 <div>
@@ -223,12 +235,16 @@ export default function RoomCode() {
 
             {battle.opponent && !battle.ludoKingRoomCode && isCreator && (
               <div className="space-y-3 rounded-2xl border border-slate-200 bg-white p-4">
-                <h2 className="text-lg font-black text-slate-900">Set Room Code</h2>
+                <h2 className="text-lg font-black text-slate-900">
+                  Set Room Code
+                </h2>
 
                 <input
                   value={roomCode}
                   maxLength={8}
-                  onChange={(e) => setRoomCode(e.target.value.replace(/\D/g, ""))}
+                  onChange={(e) =>
+                    setRoomCode(e.target.value.replace(/\D/g, ""))
+                  }
                   placeholder="Enter 8 digit room code"
                   className="w-full rounded-xl border border-slate-300 px-4 py-3 text-lg font-black outline-none focus:border-cyan-500"
                 />
@@ -263,6 +279,7 @@ export default function RoomCode() {
               <h3 className="mb-2 text-base font-black text-slate-900">
                 Instructions
               </h3>
+
               <ul className="list-disc space-y-2 pl-5 text-sm font-semibold leading-6 text-slate-700">
                 <li>Sabhi match ki recording kare.</li>
                 <li>
@@ -278,7 +295,9 @@ export default function RoomCode() {
 
             {canResult && (
               <div className="space-y-3 rounded-2xl border border-slate-200 bg-white p-4">
-                <h2 className="text-lg font-black text-slate-900">Update Result</h2>
+                <h2 className="text-lg font-black text-slate-900">
+                  Update Result
+                </h2>
 
                 <div className="grid grid-cols-3 gap-2">
                   <ResultButton
@@ -287,17 +306,25 @@ export default function RoomCode() {
                     color="green"
                     onClick={() => setSelectedResult("win")}
                   />
+
                   <ResultButton
                     active={selectedResult === "loss"}
                     text="LOSS"
                     color="red"
-                    onClick={() => setSelectedResult("loss")}
+                    onClick={() => {
+                      setSelectedResult("loss");
+                      setScreenshot(null);
+                    }}
                   />
+
                   <ResultButton
                     active={selectedResult === "cancel"}
                     text="CANCEL"
                     color="slate"
-                    onClick={() => setSelectedResult("cancel")}
+                    onClick={() => {
+                      setSelectedResult("cancel");
+                      setScreenshot(null);
+                    }}
                   />
                 </div>
 
@@ -306,21 +333,24 @@ export default function RoomCode() {
                     <p className="mb-2 text-sm font-bold text-slate-600">
                       Upload winning screenshot
                     </p>
+
                     <input
                       type="file"
                       accept="image/*"
-                      onChange={(e) => setScreenshot(e.target.files?.[0] || null)}
+                      onChange={(e) =>
+                        setScreenshot(e.target.files?.[0] || null)
+                      }
                       className="w-full rounded-xl border border-slate-200 p-3 text-sm"
                     />
                   </div>
                 )}
 
                 {selectedResult === "loss" && (
-                  <InfoBox text="Loss submit karne ke baad battle admin pending me jayegi." />
+                  <InfoBox text="Loss submit karne ke baad battle admin pending me jayegi. Screenshot ki zarurat nahi hai." />
                 )}
 
                 {selectedResult === "cancel" && (
-                  <InfoBox text="Cancel tabhi complete hoga jab dono users cancel submit karenge. Dono ko amount refund ho jayega." />
+                  <InfoBox text="Cancel tabhi complete hoga jab dono users cancel submit karenge. Screenshot ki zarurat nahi hai." />
                 )}
 
                 <button
@@ -334,15 +364,24 @@ export default function RoomCode() {
             )}
 
             {battle.status === "result_submitted" && (
-              <StatusBox color="yellow" text="Result submitted. Admin approval pending." />
+              <StatusBox
+                color="yellow"
+                text="Result submitted. Admin approval pending."
+              />
             )}
 
             {battle.status === "cancel_requested" && (
-              <StatusBox color="yellow" text="Cancel request submitted. Dusre user ka wait hai." />
+              <StatusBox
+                color="yellow"
+                text="Cancel request submitted. Dusre user ka wait hai."
+              />
             )}
 
             {battle.status === "approved" && (
-              <StatusBox color="green" text="Winner Approved ✅ Prize Added in winning wallet." />
+              <StatusBox
+                color="green"
+                text="Winner Approved ✅ Prize Added in winning wallet."
+              />
             )}
 
             {battle.status === "rejected" && (
@@ -360,13 +399,6 @@ export default function RoomCode() {
                 className="mx-auto max-h-72 rounded-xl border"
               />
             )}
-
-            <button
-              onClick={() => navigate("/battle")}
-              className="w-full rounded-xl bg-slate-800 py-3 font-black text-white"
-            >
-              Back
-            </button>
           </div>
         </div>
       </div>
@@ -390,7 +422,11 @@ function StatusBox({ text, color }) {
       ? "bg-red-600 text-white"
       : "bg-yellow-400 text-black";
 
-  return <div className={`rounded-xl p-3 text-center font-black ${cls}`}>{text}</div>;
+  return (
+    <div className={`rounded-xl p-3 text-center font-black ${cls}`}>
+      {text}
+    </div>
+  );
 }
 
 function ResultButton({ text, active, color, onClick }) {
