@@ -191,10 +191,7 @@ export default function Battle() {
               </button>
             </div>
 
-            <p className="mt-3 text-xs font-bold text-slate-500">
-              ₹50 से ₹500 तक ₹50 के gap में, उसके बाद ₹10000 तक ₹150 के gap में amount डालें।
-            </p>
-
+            
             {hasSearched && (
               <button
                 onClick={() => {
