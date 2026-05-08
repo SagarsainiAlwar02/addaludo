@@ -224,7 +224,7 @@ router.post("/add-bonus", auth, async (req, res) => {
       });
     }
 
-    wallet.bonus = Number(wallet.bonus || 0) + bonusAmount;
+   
     wallet.balance = Number(wallet.balance || 0) + bonusAmount;
 
     await wallet.save();

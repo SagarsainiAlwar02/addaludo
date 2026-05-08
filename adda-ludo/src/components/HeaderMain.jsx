@@ -12,7 +12,10 @@ export default function HeaderMain() {
     const fetchWallet = async () => {
       try {
         const token = localStorage.getItem("token");
-        if (!token) return;
+        if (!token) {
+          setBalance("0.00");
+          return;
+        }
 
         const res = await axios.get(`${API_BASE}/wallet`, {
           headers: {
@@ -20,24 +23,32 @@ export default function HeaderMain() {
           },
         });
 
+        // ✅ FIX: bonus ko dobara add nahi karna
+        // wallet.balance me admin bonus already add ho chuka hota hai
         const total =
           Number(res.data.balance || 0) +
-          Number(res.data.winnings || 0) +
-          Number(res.data.bonus || 0);
+          Number(res.data.winnings || 0);
 
         setBalance(total.toFixed(2));
       } catch (err) {
         console.log("HEADER WALLET ERROR:", err.response?.data || err.message);
+        setBalance("0.00");
       }
     };
 
     fetchWallet();
+
+    const refreshWallet = () => fetchWallet();
+    window.addEventListener("walletUpdated", refreshWallet);
+
+    return () => {
+      window.removeEventListener("walletUpdated", refreshWallet);
+    };
   }, []);
 
   return (
     <header className="fixed top-0 left-0 right-0 z-40 w-full bg-gradient-to-r from-black via-[#050816] to-black shadow-lg border-b border-slate-800">
       <div className="mx-auto flex h-[58px] w-full max-w-[760px] items-center justify-between px-3 sm:h-[70px] sm:px-4">
-        
         <div
           onClick={() => navigate("/")}
           className="flex shrink-0 cursor-pointer items-center"
