@@ -1,6 +1,7 @@
 const Battle = require("../models/battle");
 const Wallet = require("../models/wallet");
 const Transaction = require("../models/transaction");
+const User = require("../models/user");
 
 const OPEN_BATTLE_EXPIRE_MS = 60 * 1000;
 const MAX_SEARCHING_BATTLES = 2;
@@ -38,7 +39,6 @@ function validateBattleAmount(amount) {
   return null;
 }
 
-// ✅ NEW COMMISSION LOGIC
 function calculateBattlePrize(amount) {
   const amt = parseInt(amount, 10);
   if (isNaN(amt)) return 0;
@@ -139,10 +139,49 @@ async function refundAmount(userId, amount, roomId, note = "Battle amount refund
   return wallet;
 }
 
+async function giveReferralCommission(winnerId, betAmount, roomId) {
+  const winner = await User.findById(winnerId).select("referredBy phone name");
+
+  if (!winner || !winner.referredBy) return;
+
+  const referrerId = winner.referredBy;
+  const commission = Number((Number(betAmount || 0) * 0.02).toFixed(2));
+
+  if (commission <= 0) return;
+
+  const alreadyGiven = await Transaction.findOne({
+    userId: referrerId,
+    type: "referral_commission",
+    roomId,
+  });
+
+  if (alreadyGiven) return;
+
+  const referrerWallet = await getWallet(referrerId);
+
+  referrerWallet.referralBalance =
+    Number(referrerWallet.referralBalance || 0) + commission;
+
+  await referrerWallet.save();
+
+  await User.findByIdAndUpdate(referrerId, {
+    $inc: { totalReferralEarning: commission },
+  });
+
+  await Transaction.create({
+    userId: referrerId,
+    amount: commission,
+    type: "referral_commission",
+    status: "success",
+    roomId,
+    note: "Referral commission 2% from referred player's winning battle",
+    balanceAfter: referrerWallet.referralBalance,
+  });
+}
+
 async function settleWinner(battle, winnerId) {
   if (battle.resultSettled) return;
 
-  // ✅ safety: old battle me prize galat ho to latest logic se correct prize
   const finalPrize = calculateBattlePrize(battle.amount);
 
   const creatorId = battle.createdBy.toString();
@@ -174,6 +213,8 @@ async function settleWinner(battle, winnerId) {
     note: "Battle winning prize",
     balanceAfter: winnerWallet.balance,
   });
+
+  await giveReferralCommission(winnerId, battle.amount, battle.battleId);
 
   battle.prize = finalPrize;
   battle.winner = winnerId;
@@ -440,7 +481,6 @@ exports.startBattle = async (req, res) => {
       });
     }
 
-    // ✅ ensure prize always latest commission logic
     battle.prize = calculateBattlePrize(battle.amount);
 
     if (!battle.entryLocked) {
