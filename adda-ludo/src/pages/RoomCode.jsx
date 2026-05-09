@@ -12,7 +12,20 @@ const API_BASE =
 function getUserId() {
   try {
     const user = JSON.parse(localStorage.getItem("user") || "{}");
-    return String(user?._id || user?.id || "");
+
+    if (user?._id || user?.id) return String(user._id || user.id);
+
+    const token = localStorage.getItem("token");
+    if (!token) return "";
+
+    const payload = JSON.parse(atob(token.split(".")[1] || ""));
+    return String(
+      payload?._id ||
+        payload?.id ||
+        payload?.userId ||
+        payload?.user ||
+        ""
+    );
   } catch {
     return "";
   }
@@ -169,7 +182,7 @@ export default function RoomCode() {
 
   if (pageLoading) {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-[#f4f6f8] pt-20 pb-28 font-black text-slate-800">
+      <div className="flex min-h-screen items-center justify-center bg-[#f4f6f8] pt-20 pb-40 font-black text-slate-800">
         Loading Battle...
       </div>
     );
@@ -183,7 +196,7 @@ export default function RoomCode() {
     ) && !myResultSubmitted;
 
   return (
-    <div className="min-h-screen bg-[#f4f6f8] px-3 pt-20 pb-28 text-black">
+    <div className="min-h-screen bg-[#f4f6f8] px-3 pt-20 pb-40 text-black">
       <div className="mx-auto max-w-[540px]">
         <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
           <div className="flex items-center gap-3 bg-gradient-to-r from-slate-900 to-slate-600 px-4 py-3 text-white">
@@ -365,9 +378,15 @@ export default function RoomCode() {
               </div>
             )}
 
-            {myResultSubmitted && ["running", "room_submitted", "result_submitted", "cancel_requested"].includes(battle.status) && (
-              <StatusBox color="yellow" text="Aapka result submit ho chuka hai. Dusre user/admin ka wait hai." />
-            )}
+            {myResultSubmitted &&
+              ["running", "room_submitted", "result_submitted", "cancel_requested"].includes(
+                String(battle.status || "").toLowerCase()
+              ) && (
+                <StatusBox
+                  color="yellow"
+                  text="Aapka result submit ho chuka hai. Dusre user/admin ka wait hai."
+                />
+              )}
 
             {battle.status === "result_submitted" && (
               <StatusBox
