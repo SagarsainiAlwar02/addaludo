@@ -79,7 +79,10 @@ app.use("/api/admin", require("./routes/admin"));
 app.use("/api/wallet", require("./routes/wallet"));
 app.use("/api/deposit", require("./routes/depositRoutes"));
 app.use("/api/redeem", require("./routes/redeemRoutes"));
+
 app.use("/api/matches", require("./routes/match"));
+app.use("/api/match", require("./routes/match"));
+
 app.use("/api/battle", require("./routes/battleRoutes"));
 app.use("/api/admin/battles", require("./routes/adminBattleRoutes"));
 app.use("/api/match-proof", require("./routes/matchProofRoutes"));
