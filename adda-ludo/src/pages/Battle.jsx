@@ -30,7 +30,6 @@ function calculatePrize(amount) {
 function getUserId() {
   try {
     const user = JSON.parse(localStorage.getItem("user") || "{}");
-
     if (user?._id || user?.id) return String(user._id || user.id);
 
     const token = localStorage.getItem("token");
@@ -61,7 +60,6 @@ export default function Battle() {
   const navigate = useNavigate();
 
   const [amount, setAmount] = useState("");
-  const [searchedAmount, setSearchedAmount] = useState(null);
   const [openBattles, setOpenBattles] = useState([]);
   const [myBattles, setMyBattles] = useState([]);
   const [loading, setLoading] = useState(false);
@@ -156,7 +154,6 @@ export default function Battle() {
         authHeader()
       );
 
-      setSearchedAmount(finalAmount);
       setAmount("");
       await fetchBattles();
     } catch (err) {
@@ -247,25 +244,23 @@ export default function Battle() {
   };
 
   const visibleOpenBattles = useMemo(() => {
-    if (!searchedAmount) return [];
-
     const map = new Map();
 
     [...openBattles, ...myBattles].forEach((battle) => {
       const status = String(battle?.status || "").toLowerCase();
-      const battleAmount = Number(battle?.amount);
 
       if (
         battle?.battleId &&
-        ["open", "join_requested"].includes(status) &&
-        battleAmount === Number(searchedAmount)
+        ["open", "join_requested"].includes(status)
       ) {
         map.set(battle.battleId, battle);
       }
     });
 
-    return Array.from(map.values()).slice(0, MAX_SEARCHING_BATTLES);
-  }, [openBattles, myBattles, searchedAmount, tick]);
+    return Array.from(map.values()).sort(
+      (a, b) => new Date(b.createdAt || 0) - new Date(a.createdAt || 0)
+    );
+  }, [openBattles, myBattles, tick]);
 
   const realRunningBattles = useMemo(() => {
     return myBattles.filter((b) =>
@@ -417,10 +412,8 @@ export default function Battle() {
 
         <SectionTitle title="🔥 Open Battles" />
 
-        {!searchedAmount ? (
-          <EmptyBox text="Amount set karo, usi amount ki battle yaha dikhegi" />
-        ) : visibleOpenBattles.length === 0 ? (
-          <EmptyBox text={`₹${searchedAmount} ki koi open battle nahi hai`} />
+        {visibleOpenBattles.length === 0 ? (
+          <EmptyBox text="Abhi koi open battle nahi hai" />
         ) : (
           visibleOpenBattles.map((battle) => (
             <BattleCard
