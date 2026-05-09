@@ -1,5 +1,3 @@
-const path = require("path");
-const fs = require("fs");
 const PaymentSetting = require("../models/paymentSetting");
 
 const getOrCreateSetting = async () => {
@@ -8,10 +6,19 @@ const getOrCreateSetting = async () => {
   return setting;
 };
 
+const normalizeSetting = (setting) => ({
+  _id: setting._id,
+  scannerImage: setting.scanner?.image || "",
+  scanner: setting.scanner || { image: "", min: 0, max: 2000, active: true },
+  upiList: setting.upiList || [],
+  upiLimit: setting.upiLimit || { min: 2000, max: 100000 },
+  bank: setting.bank || { name: "", accountNumber: "", ifsc: "" },
+});
+
 exports.getPaymentSettings = async (req, res) => {
   try {
     const setting = await getOrCreateSetting();
-    res.json(setting);
+    res.json(normalizeSetting(setting));
   } catch (err) {
     res.status(500).json({ msg: err.message });
   }
@@ -22,15 +29,24 @@ exports.uploadScanner = async (req, res) => {
     const setting = await getOrCreateSetting();
 
     if (req.file) {
-      setting.scannerImage = `/uploads/payment/${req.file.filename}`;
+      setting.scanner.image = `/uploads/payment/${req.file.filename}`;
     }
 
     if (req.body.scannerLimit) {
-      setting.scannerLimit = JSON.parse(req.body.scannerLimit);
+      const limit = JSON.parse(req.body.scannerLimit);
+      setting.scanner.min = Number(limit.min || 0);
+      setting.scanner.max = Number(limit.max || 2000);
     }
 
+    setting.scanner.active = true;
+
     await setting.save();
-    res.json({ success: true, msg: "Scanner saved", setting });
+
+    res.json({
+      success: true,
+      msg: "Scanner saved",
+      setting: normalizeSetting(setting),
+    });
   } catch (err) {
     res.status(500).json({ msg: err.message });
   }
@@ -44,10 +60,20 @@ exports.saveUpi = async (req, res) => {
       ? req.body.upiList.map((x) => String(x).trim()).filter(Boolean)
       : [];
 
-    setting.upiLimit = req.body.upiLimit || setting.upiLimit;
+    if (req.body.upiLimit) {
+      setting.upiLimit = {
+        min: Number(req.body.upiLimit.min || 2000),
+        max: Number(req.body.upiLimit.max || 100000),
+      };
+    }
 
     await setting.save();
-    res.json({ success: true, msg: "UPI saved", setting });
+
+    res.json({
+      success: true,
+      msg: "UPI saved",
+      setting: normalizeSetting(setting),
+    });
   } catch (err) {
     res.status(500).json({ msg: err.message });
   }
@@ -64,7 +90,12 @@ exports.saveBank = async (req, res) => {
     };
 
     await setting.save();
-    res.json({ success: true, msg: "Bank saved", setting });
+
+    res.json({
+      success: true,
+      msg: "Bank saved",
+      setting: normalizeSetting(setting),
+    });
   } catch (err) {
     res.status(500).json({ msg: err.message });
   }
