@@ -9,11 +9,6 @@ const API_BASE =
     ? "http://localhost:5000/api"
     : "https://api.addaludo.com/api");
 
-const FILE_BASE =
-  window.location.hostname === "localhost"
-    ? "http://localhost:5000"
-    : "https://api.addaludo.com";
-
 function getUserId() {
   try {
     const user = JSON.parse(localStorage.getItem("user") || "{}");
@@ -62,6 +57,7 @@ export default function RoomCode() {
     }
 
     fetchBattle();
+
     const interval = setInterval(fetchBattle, 3000);
     const timerInterval = setInterval(() => setNow(Date.now()), 1000);
 
@@ -75,6 +71,13 @@ export default function RoomCode() {
   const isCreator = useMemo(() => {
     const creatorId = String(battle?.createdBy?._id || battle?.createdBy || "");
     return creatorId === myId;
+  }, [battle, myId]);
+
+  const myResultSubmitted = useMemo(() => {
+    return (battle?.results || []).some((item) => {
+      const itemUser = String(item?.user?._id || item?.user || "");
+      return itemUser === myId;
+    });
   }, [battle, myId]);
 
   const timerLeft = useMemo(() => {
@@ -134,12 +137,11 @@ export default function RoomCode() {
       const formData = new FormData();
       formData.append("result", selectedResult);
 
-      // ✅ Screenshot sirf WIN me jayega
       if (selectedResult === "win" && screenshot) {
         formData.append("screenshot", screenshot);
       }
 
-      await axios.post(`${API_BASE}/battle/result/${battleId}`, formData, {
+      const res = await axios.post(`${API_BASE}/battle/result/${battleId}`, formData, {
         headers: {
           Authorization: `Bearer ${token}`,
           "Content-Type": "multipart/form-data",
@@ -149,12 +151,15 @@ export default function RoomCode() {
       await fetchBattle();
 
       if (selectedResult === "win") {
-        alert("Win result submitted. Admin approval pending.");
+        alert(res.data?.msg || "You Won ✅ Result submitted.");
       } else if (selectedResult === "loss") {
-        alert("Loss submitted. Admin approval pending.");
+        alert(res.data?.msg || "Loss submitted.");
       } else {
-        alert("Cancel request submitted.");
+        alert(res.data?.msg || "Cancel request submitted.");
       }
+
+      setSelectedResult("");
+      setScreenshot(null);
     } catch (err) {
       alert(err.response?.data?.msg || "Result submit failed");
     } finally {
@@ -172,9 +177,10 @@ export default function RoomCode() {
 
   if (!battle) return null;
 
-  const canResult = ["running", "room_submitted", "cancel_requested"].includes(
-    battle.status
-  );
+  const canResult =
+    ["running", "room_submitted", "cancel_requested", "result_submitted"].includes(
+      String(battle.status || "").toLowerCase()
+    ) && !myResultSubmitted;
 
   return (
     <div className="min-h-screen bg-[#f4f6f8] px-3 pt-20 pb-28 text-black">
@@ -219,14 +225,10 @@ export default function RoomCode() {
                   <p className="text-xl font-black">₹{battle.prize}</p>
                 </div>
               </div>
-
-              <div className="mt-4 rounded-xl bg-white/10 p-3 text-center text-xs font-bold">
-                Status: {battle.status}
-              </div>
             </div>
 
             {!battle.opponent && (
-              <InfoBox text="Opponent ka wait ho raha hai. Jab koi player join karega tab timer start hoga." />
+              <InfoBox text="Opponent ka wait ho raha hai. Jab koi player join karega tab creator start karega." />
             )}
 
             {battle.opponent && !battle.ludoKingRoomCode && !isCreator && (
@@ -346,11 +348,11 @@ export default function RoomCode() {
                 )}
 
                 {selectedResult === "loss" && (
-                  <InfoBox text="Loss submit karne ke baad battle admin pending me jayegi. Screenshot ki zarurat nahi hai." />
+                  <InfoBox text="Loss submit karne ke liye screenshot ki zarurat nahi hai." />
                 )}
 
                 {selectedResult === "cancel" && (
-                  <InfoBox text="Cancel tabhi complete hoga jab dono users cancel submit karenge. Screenshot ki zarurat nahi hai." />
+                  <InfoBox text="Cancel tabhi complete hoga jab dono users cancel submit karenge." />
                 )}
 
                 <button
@@ -361,6 +363,10 @@ export default function RoomCode() {
                   {loading ? "Submitting..." : "Submit Result"}
                 </button>
               </div>
+            )}
+
+            {myResultSubmitted && ["running", "room_submitted", "result_submitted", "cancel_requested"].includes(battle.status) && (
+              <StatusBox color="yellow" text="Aapka result submit ho chuka hai. Dusre user/admin ka wait hai." />
             )}
 
             {battle.status === "result_submitted" && (
@@ -389,15 +395,7 @@ export default function RoomCode() {
             )}
 
             {battle.status === "cancelled" && (
-              <StatusBox color="red" text="Battle cancelled. Amount refunded." />
-            )}
-
-            {battle.screenshot && (
-              <img
-                src={`${FILE_BASE}${battle.screenshot}`}
-                alt="result"
-                className="mx-auto max-h-72 rounded-xl border"
-              />
+              <StatusBox color="red" text="Battle cancelled." />
             )}
           </div>
         </div>
@@ -448,7 +446,3 @@ function ResultButton({ text, active, color, onClick }) {
     </button>
   );
 }
-
-
-
-

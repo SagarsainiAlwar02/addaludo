@@ -6,6 +6,9 @@ const API_BASE =
   import.meta.env.VITE_API_URL?.replace(/\/$/, "") ||
   "http://localhost:5000/api";
 
+const OPEN_BATTLE_SECONDS = 60;
+const MAX_SEARCHING_BATTLES = 2;
+
 function calculatePrize(amount) {
   const totalPool = Number(amount) * 2;
   const commissionPercentPerUser = Number(amount) <= 500 ? 5 : 2.5;
@@ -37,6 +40,12 @@ function getBattleOpponentId(battle) {
   return String(battle?.opponent?._id || battle?.opponent?.id || battle?.opponent || "");
 }
 
+function getBattleLeftSeconds(battle) {
+  const createdAt = battle?.createdAt ? new Date(battle.createdAt).getTime() : Date.now();
+  const used = Math.floor((Date.now() - createdAt) / 1000);
+  return Math.max(0, OPEN_BATTLE_SECONDS - used);
+}
+
 export default function Battle() {
   const navigate = useNavigate();
 
@@ -45,6 +54,7 @@ export default function Battle() {
   const [openBattles, setOpenBattles] = useState([]);
   const [myBattles, setMyBattles] = useState([]);
   const [loading, setLoading] = useState(false);
+  const [tick, setTick] = useState(0);
 
   const token = localStorage.getItem("token");
   const myId = getUserId();
@@ -95,14 +105,34 @@ export default function Battle() {
     }
 
     fetchBattles();
-    const interval = setInterval(fetchBattles, 3000);
 
-    return () => clearInterval(interval);
+    const fetchInterval = setInterval(fetchBattles, 3000);
+    const clockInterval = setInterval(() => {
+      setTick((prev) => prev + 1);
+    }, 1000);
+
+    return () => {
+      clearInterval(fetchInterval);
+      clearInterval(clockInterval);
+    };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  const mySearchingBattles = useMemo(() => {
+    return myBattles.filter((battle) => {
+      const status = String(battle?.status || "").toLowerCase();
+      const isCreator = getBattleCreatorId(battle) === myId;
+      return isCreator && status === "open";
+    });
+  }, [myBattles, myId, tick]);
+
   const createBattle = async () => {
     if (!validateAmount(amount)) return;
+
+    if (mySearchingBattles.length >= MAX_SEARCHING_BATTLES) {
+      alert("Searching me maximum 2 battle hi create kar sakte ho");
+      return;
+    }
 
     const finalAmount = Number(amount);
 
@@ -170,7 +200,7 @@ export default function Battle() {
       await axios.post(`${API_BASE}/battle/reject/${battleId}`, {}, authHeader());
 
       await fetchBattles();
-      alert("Request reject ho gayi, player amount refund ho gaya");
+      alert("Request reject ho gayi");
     } catch (err) {
       alert(err.response?.data?.msg || "Reject failed");
     } finally {
@@ -191,7 +221,7 @@ export default function Battle() {
       );
 
       await fetchBattles();
-      alert("Battle cancelled aur amount refund ho gaya");
+      alert("Battle cancelled");
     } catch (err) {
       alert(err.response?.data?.msg || "Cancel failed");
     } finally {
@@ -217,8 +247,8 @@ export default function Battle() {
       }
     });
 
-    return Array.from(map.values());
-  }, [openBattles, myBattles, searchedAmount]);
+    return Array.from(map.values()).slice(0, MAX_SEARCHING_BATTLES);
+  }, [openBattles, myBattles, searchedAmount, tick]);
 
   const runningBattles = useMemo(() => {
     return myBattles.filter((b) =>
@@ -228,13 +258,10 @@ export default function Battle() {
         "result_submitted",
         "loss_submitted",
         "cancel_requested",
-      ].includes(b.status)
-    );
-  }, [myBattles]);
-
-  const historyBattles = useMemo(() => {
-    return myBattles.filter((b) =>
-      ["approved", "rejected", "cancelled"].includes(b.status)
+        "approved",
+        "rejected",
+        "cancelled",
+      ].includes(String(b.status || "").toLowerCase())
     );
   }, [myBattles]);
 
@@ -250,6 +277,7 @@ export default function Battle() {
       return (
         <div className="flex flex-col items-center gap-2">
           <WaitingSpinner />
+          <CountdownText battle={battle} />
           <button
             disabled={loading}
             onClick={() => cancelOpenBattle(battle.battleId)}
@@ -263,13 +291,16 @@ export default function Battle() {
 
     if (status === "open" && !isCreator) {
       return (
-        <button
-          disabled={loading}
-          onClick={() => playBattle(battle.battleId)}
-          className="rounded-xl bg-green-600 px-5 py-2 text-sm font-black text-white disabled:opacity-60"
-        >
-          Play
-        </button>
+        <div className="flex flex-col items-center gap-2">
+          <CountdownText battle={battle} />
+          <button
+            disabled={loading}
+            onClick={() => playBattle(battle.battleId)}
+            className="rounded-xl bg-green-600 px-5 py-2 text-sm font-black text-white disabled:opacity-60"
+          >
+            Play
+          </button>
+        </div>
       );
     }
 
@@ -339,12 +370,16 @@ export default function Battle() {
             />
 
             <button
-              disabled={loading}
+              disabled={loading || mySearchingBattles.length >= MAX_SEARCHING_BATTLES}
               onClick={createBattle}
               className="w-full rounded-xl bg-gradient-to-b from-red-500 to-red-700 py-3 font-black text-white disabled:opacity-60"
             >
               Set Amount
             </button>
+
+            <p className="text-center text-xs font-black text-slate-500">
+              Searching battle: {mySearchingBattles.length}/{MAX_SEARCHING_BATTLES} • open battle 60 second me auto remove hogi
+            </p>
           </div>
         </div>
 
@@ -385,29 +420,18 @@ export default function Battle() {
             />
           ))
         )}
-
-        <SectionTitle title="📜 Battle History" />
-
-        {historyBattles.length === 0 ? (
-          <EmptyBox text="History empty hai" />
-        ) : (
-          historyBattles.map((battle) => (
-            <BattleCard
-              key={battle.battleId}
-              battle={battle}
-              action={
-                <button
-                  onClick={() => navigate(`/room-code/${battle.battleId}`)}
-                  className="rounded-xl bg-slate-800 px-5 py-2 text-sm font-black text-white"
-                >
-                  View
-                </button>
-              }
-            />
-          ))
-        )}
       </div>
     </div>
+  );
+}
+
+function CountdownText({ battle }) {
+  const left = getBattleLeftSeconds(battle);
+
+  return (
+    <p className={`text-xs font-black ${left <= 10 ? "text-red-600" : "text-slate-600"}`}>
+      {left}s wait
+    </p>
   );
 }
 
@@ -487,14 +511,6 @@ function BattleCard({ battle, action, dark = false }) {
             ₹{winPrize}
           </p>
         </div>
-      </div>
-
-      <div
-        className={`px-4 pb-3 text-xs font-bold ${
-          dark ? "text-white/70" : "text-slate-500"
-        }`}
-      >
-        Status: {battle.status}
       </div>
     </div>
   );

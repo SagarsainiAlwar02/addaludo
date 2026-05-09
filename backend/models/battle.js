@@ -22,6 +22,7 @@ const battleSchema = new mongoose.Schema(
     },
 
     ludoKingRoomCode: { type: String, default: "" },
+
     roomCodeSetBy: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "User",
@@ -48,6 +49,29 @@ const battleSchema = new mongoose.Schema(
       default: "",
     },
 
+    results: [
+      {
+        user: {
+          type: mongoose.Schema.Types.ObjectId,
+          ref: "User",
+          required: true,
+        },
+        result: {
+          type: String,
+          enum: ["win", "loss", "cancel"],
+          required: true,
+        },
+        screenshot: {
+          type: String,
+          default: "",
+        },
+        submittedAt: {
+          type: Date,
+          default: Date.now,
+        },
+      },
+    ],
+
     cancelVotes: [
       {
         type: mongoose.Schema.Types.ObjectId,
@@ -58,6 +82,16 @@ const battleSchema = new mongoose.Schema(
     timerStartedAt: {
       type: Date,
       default: null,
+    },
+
+    entryLocked: {
+      type: Boolean,
+      default: false,
+    },
+
+    resultSettled: {
+      type: Boolean,
+      default: false,
     },
 
     status: {

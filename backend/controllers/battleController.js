@@ -50,12 +50,12 @@ async function getWallet(userId) {
 async function lockAmount(userId, amount, roomId) {
   const wallet = await getWallet(userId);
 
-  if (Number(wallet.balance || 0) < amount) {
+  if (Number(wallet.balance || 0) < Number(amount || 0)) {
     throw new Error("Insufficient wallet balance");
   }
 
-  wallet.balance = Number(wallet.balance || 0) - amount;
-  wallet.locked = Number(wallet.locked || 0) + amount;
+  wallet.balance = Number(wallet.balance || 0) - Number(amount || 0);
+  wallet.locked = Number(wallet.locked || 0) + Number(amount || 0);
   await wallet.save();
 
   await Transaction.create({
@@ -91,6 +91,38 @@ async function refundAmount(userId, amount, roomId, note = "Battle amount refund
   return wallet;
 }
 
+async function settleWinner(battle, winnerId) {
+  if (battle.resultSettled) return;
+
+  const creatorId = battle.createdBy.toString();
+  const opponentId = battle.opponent.toString();
+  const winnerString = winnerId.toString();
+  const loserId = winnerString === creatorId ? battle.opponent : battle.createdBy;
+
+  const winnerWallet = await getWallet(winnerId);
+  const loserWallet = await getWallet(loserId);
+
+  winnerWallet.locked = Math.max(0, Number(winnerWallet.locked || 0) - Number(battle.amount || 0));
+  winnerWallet.winnings = Number(winnerWallet.winnings || 0) + Number(battle.prize || 0);
+  await winnerWallet.save();
+
+  loserWallet.locked = Math.max(0, Number(loserWallet.locked || 0) - Number(battle.amount || 0));
+  await loserWallet.save();
+
+  await Transaction.create({
+    userId: winnerId,
+    amount: battle.prize,
+    type: "game_win",
+    status: "success",
+    roomId: battle.battleId,
+    note: "Battle winning prize",
+    balanceAfter: winnerWallet.balance,
+  });
+
+  battle.winner = winnerId;
+  battle.resultSettled = true;
+}
+
 async function expireOldOpenBattles() {
   const expiryDate = new Date(Date.now() - OPEN_BATTLE_EXPIRE_MS);
 
@@ -100,13 +132,6 @@ async function expireOldOpenBattles() {
   });
 
   for (const battle of oldBattles) {
-    await refundAmount(
-      battle.createdBy,
-      battle.amount,
-      battle.battleId,
-      "Open battle expired after 60 seconds"
-    );
-
     battle.status = "cancelled";
     battle.adminNote = "Auto cancelled after 60 seconds";
     await battle.save();
@@ -121,13 +146,6 @@ async function cancelOtherOpenBattles(userId, excludeBattleId) {
   });
 
   for (const battle of battles) {
-    await refundAmount(
-      battle.createdBy,
-      battle.amount,
-      battle.battleId,
-      "Other open battle auto cancelled after match joined"
-    );
-
     battle.status = "cancelled";
     battle.adminNote = "Auto cancelled because another battle was joined";
     await battle.save();
@@ -158,10 +176,16 @@ exports.createBattle = async (req, res) => {
       });
     }
 
+    const wallet = await getWallet(userId);
+    if (Number(wallet.balance || 0) < amount) {
+      return res.status(400).json({
+        success: false,
+        msg: "Insufficient wallet balance",
+      });
+    }
+
     const battleId = makeBattleId();
     const prize = calculateBattlePrize(amount);
-
-    await lockAmount(userId, amount, battleId);
 
     const battle = await Battle.create({
       battleId,
@@ -279,7 +303,13 @@ exports.joinBattle = async (req, res) => {
       });
     }
 
-    await lockAmount(userId, battle.amount, battle.battleId);
+    const wallet = await getWallet(userId);
+    if (Number(wallet.balance || 0) < Number(battle.amount || 0)) {
+      return res.status(400).json({
+        success: false,
+        msg: "Insufficient wallet balance",
+      });
+    }
 
     battle.opponent = userId;
     battle.status = "join_requested";
@@ -325,6 +355,30 @@ exports.startBattle = async (req, res) => {
       });
     }
 
+    if (!battle.entryLocked) {
+      const creatorWallet = await getWallet(battle.createdBy);
+      const opponentWallet = await getWallet(battle.opponent);
+
+      if (Number(creatorWallet.balance || 0) < Number(battle.amount || 0)) {
+        return res.status(400).json({
+          success: false,
+          msg: "Creator wallet me insufficient balance hai",
+        });
+      }
+
+      if (Number(opponentWallet.balance || 0) < Number(battle.amount || 0)) {
+        return res.status(400).json({
+          success: false,
+          msg: "Opponent wallet me insufficient balance hai",
+        });
+      }
+
+      await lockAmount(battle.createdBy, battle.amount, battle.battleId);
+      await lockAmount(battle.opponent, battle.amount, battle.battleId);
+
+      battle.entryLocked = true;
+    }
+
     battle.status = "running";
     battle.timerStartedAt = new Date();
     await battle.save();
@@ -365,15 +419,6 @@ exports.rejectBattleRequest = async (req, res) => {
       });
     }
 
-    const opponentId = battle.opponent;
-
-    await refundAmount(
-      opponentId,
-      battle.amount,
-      battle.battleId,
-      "Battle request rejected by creator"
-    );
-
     battle.opponent = null;
     battle.status = "open";
     battle.timerStartedAt = null;
@@ -381,7 +426,7 @@ exports.rejectBattleRequest = async (req, res) => {
 
     return res.json({
       success: true,
-      msg: "Request rejected. Opponent amount refunded.",
+      msg: "Request rejected.",
       battle,
     });
   } catch (err) {
@@ -446,8 +491,11 @@ exports.submitResult = async (req, res) => {
       return res.status(404).json({ success: false, msg: "Battle not found" });
     }
 
-    const isCreator = battle.createdBy.toString() === userId;
-    const isOpponent = battle.opponent?.toString() === userId;
+    const creatorId = battle.createdBy.toString();
+    const opponentId = battle.opponent?.toString();
+
+    const isCreator = creatorId === userId;
+    const isOpponent = opponentId === userId;
 
     if (!isCreator && !isOpponent) {
       return res.status(403).json({
@@ -456,61 +504,84 @@ exports.submitResult = async (req, res) => {
       });
     }
 
-    if (!["running", "room_submitted"].includes(battle.status)) {
+    if (!["running", "room_submitted", "cancel_requested", "result_submitted"].includes(battle.status)) {
       return res.status(400).json({
         success: false,
         msg: "Result cannot be submitted now",
       });
     }
 
-    if (result === "win") {
-      if (!req.file) {
-        return res.status(400).json({
-          success: false,
-          msg: "Winning screenshot required",
-        });
-      }
+    if (!["win", "loss", "cancel"].includes(result)) {
+      return res.status(400).json({
+        success: false,
+        msg: "Invalid result type",
+      });
+    }
 
-      battle.screenshot = `/uploads/results/${req.file.filename}`;
-      battle.winner = userId;
-      battle.resultSubmittedBy = userId;
-      battle.resultType = "win";
-      battle.status = "result_submitted";
+    if (result === "win" && !req.file) {
+      return res.status(400).json({
+        success: false,
+        msg: "Winning screenshot required",
+      });
+    }
+
+    const alreadySubmitted = battle.results.some(
+      (item) => item.user.toString() === userId
+    );
+
+    if (alreadySubmitted) {
+      return res.status(400).json({
+        success: false,
+        msg: "Aap result already submit kar chuke ho",
+      });
+    }
+
+    const screenshotPath =
+      result === "win" && req.file ? `/uploads/results/${req.file.filename}` : "";
+
+    battle.results.push({
+      user: userId,
+      result,
+      screenshot: screenshotPath,
+      submittedAt: new Date(),
+    });
+
+    if (screenshotPath && !battle.screenshot) {
+      battle.screenshot = screenshotPath;
+    }
+
+    battle.resultSubmittedBy = userId;
+    battle.resultType = result;
+
+    const creatorResult = battle.results.find(
+      (item) => item.user.toString() === creatorId
+    );
+
+    const opponentResult = battle.results.find(
+      (item) => item.user.toString() === opponentId
+    );
+
+    if (!creatorResult || !opponentResult) {
+      battle.status = result === "cancel" ? "cancel_requested" : "result_submitted";
       await battle.save();
 
       return res.json({
         success: true,
-        msg: "Win result submitted. Admin approval pending.",
+        msg:
+          result === "win"
+            ? "You Won ✅ Result submitted."
+            : result === "loss"
+            ? "Loss submitted. Waiting for other user."
+            : "Cancel request submitted. Waiting for other user.",
         battle,
       });
     }
 
-    if (result === "loss") {
-      const winner = isCreator ? battle.opponent : battle.createdBy;
+    const r1 = creatorResult.result;
+    const r2 = opponentResult.result;
 
-      battle.winner = winner;
-      battle.resultSubmittedBy = userId;
-      battle.resultType = "loss";
-      battle.status = "result_submitted";
-      await battle.save();
-
-      return res.json({
-        success: true,
-        msg: "Loss submitted. Admin approval pending.",
-        battle,
-      });
-    }
-
-    if (result === "cancel") {
-      const alreadyVoted = battle.cancelVotes.some(
-        (id) => id.toString() === userId
-      );
-
-      if (!alreadyVoted) {
-        battle.cancelVotes.push(userId);
-      }
-
-      if (battle.cancelVotes.length >= 2) {
+    if (r1 === "cancel" && r2 === "cancel") {
+      if (battle.entryLocked && !battle.resultSettled) {
         await refundAmount(
           battle.createdBy,
           battle.amount,
@@ -518,37 +589,54 @@ exports.submitResult = async (req, res) => {
           "Battle cancelled by both users"
         );
 
-        if (battle.opponent) {
-          await refundAmount(
-            battle.opponent,
-            battle.amount,
-            battle.battleId,
-            "Battle cancelled by both users"
-          );
-        }
-
-        battle.status = "cancelled";
-      } else {
-        battle.status = "cancel_requested";
+        await refundAmount(
+          battle.opponent,
+          battle.amount,
+          battle.battleId,
+          "Battle cancelled by both users"
+        );
       }
 
-      battle.resultSubmittedBy = userId;
-      battle.resultType = "cancel";
+      battle.status = "cancelled";
+      battle.winner = null;
+      battle.resultSettled = true;
+      battle.adminNote = "Auto cancelled because both users cancelled";
       await battle.save();
 
       return res.json({
         success: true,
-        msg:
-          battle.status === "cancelled"
-            ? "Battle cancelled and amount refunded"
-            : "Cancel request submitted. Waiting for other user.",
+        msg: "Battle cancelled by both users.",
         battle,
       });
     }
 
-    return res.status(400).json({
-      success: false,
-      msg: "Invalid result type",
+    if (
+      (r1 === "win" && r2 === "loss") ||
+      (r1 === "loss" && r2 === "win")
+    ) {
+      const winnerId = r1 === "win" ? battle.createdBy : battle.opponent;
+
+      await settleWinner(battle, winnerId);
+
+      battle.status = "approved";
+      battle.adminNote = "Auto approved because one user submitted win and other submitted loss";
+      await battle.save();
+
+      return res.json({
+        success: true,
+        msg: "Result auto approved.",
+        battle,
+      });
+    }
+
+    battle.status = "result_submitted";
+    battle.adminNote = "Admin approval required because result conflict found";
+    await battle.save();
+
+    return res.json({
+      success: true,
+      msg: "Result submitted. Admin approval pending.",
+      battle,
     });
   } catch (err) {
     console.log("SUBMIT RESULT ERROR:", err);
@@ -575,19 +663,13 @@ exports.cancelBattle = async (req, res) => {
         });
       }
 
-      await refundAmount(
-        battle.createdBy,
-        battle.amount,
-        battle.battleId,
-        "Open battle cancelled"
-      );
-
       battle.status = "cancelled";
+      battle.adminNote = "Open battle cancelled by creator";
       await battle.save();
 
       return res.json({
         success: true,
-        msg: "Battle cancelled and refunded",
+        msg: "Battle cancelled",
         battle,
       });
     }
