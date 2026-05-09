@@ -7,7 +7,7 @@ export default function Support() {
     const [loading, setLoading] = useState(false);
     const [ticketId, setTicketId] = useState(null);
 
-    const supportNumber = "+919999999999";
+  const supportNumber = "919158054155";
 
     // 🎫 SUBMIT TICKET
     const submitTicket = async () => {
