@@ -27,13 +27,7 @@ const Battle = () => {
       if (!jwt) return "";
 
       const payload = JSON.parse(atob(jwt.split(".")[1] || ""));
-      return String(
-        payload?._id ||
-          payload?.id ||
-          payload?.userId ||
-          payload?.user ||
-          ""
-      );
+      return String(payload?._id || payload?.id || payload?.userId || payload?.user || "");
     } catch {
       return "";
     }
@@ -42,34 +36,19 @@ const Battle = () => {
   const myId = getUserId();
 
   const authHeader = () => ({
-    headers: {
-      Authorization: `Bearer ${token}`,
-    },
+    headers: { Authorization: `Bearer ${token}` },
   });
 
   const getCreatorId = (battle) =>
-    String(
-      battle?.createdBy?._id ||
-        battle?.createdBy?.id ||
-        battle?.createdBy ||
-        ""
-    );
+    String(battle?.createdBy?._id || battle?.createdBy?.id || battle?.createdBy || "");
 
   const getOpponentId = (battle) =>
-    String(
-      battle?.opponent?._id ||
-        battle?.opponent?.id ||
-        battle?.opponent ||
-        ""
-    );
+    String(battle?.opponent?._id || battle?.opponent?.id || battle?.opponent || "");
 
-  const hasMyResult = (battle) => {
-    return Array.isArray(battle?.results)
-      ? battle.results.some(
-          (item) => String(item?.user?._id || item?.user || "") === myId
-        )
+  const hasMyResult = (battle) =>
+    Array.isArray(battle?.results)
+      ? battle.results.some((item) => String(item?.user?._id || item?.user || "") === myId)
       : false;
-  };
 
   const calculatePrize = (amount) => {
     const amt = Number(amount);
@@ -110,11 +89,9 @@ const Battle = () => {
 
   const allBattles = useMemo(() => {
     const map = new Map();
-
     [...openBattles, ...myBattles].forEach((battle) => {
       if (battle?.battleId) map.set(battle.battleId, battle);
     });
-
     return Array.from(map.values());
   }, [openBattles, myBattles]);
 
@@ -154,10 +131,7 @@ const Battle = () => {
         const isCreator = getCreatorId(battle) === myId;
         const isOpponent = getOpponentId(battle) === myId;
 
-        return (
-          status === "open" ||
-          (status === "join_requested" && (isCreator || isOpponent))
-        );
+        return status === "open" || (status === "join_requested" && (isCreator || isOpponent));
       })
       .sort((a, b) => new Date(b.createdAt || 0) - new Date(a.createdAt || 0));
   }, [allBattles, myId]);
@@ -236,9 +210,7 @@ const Battle = () => {
 
     try {
       setLoading(true);
-
       await axios.post(`${API_BASE}/battle/create`, { amount: amt }, authHeader());
-
       setBetAmount("");
       await fetchBattles();
       alert("Battle set ho gayi!");
@@ -258,12 +230,7 @@ const Battle = () => {
     try {
       setLoading(true);
 
-      const res = await axios.post(
-        `${API_BASE}/battle/join/${battleId}`,
-        {},
-        authHeader()
-      );
-
+      const res = await axios.post(`${API_BASE}/battle/join/${battleId}`, {}, authHeader());
       const joinedId = res.data?.battle?.battleId || battleId;
 
       await fetchBattles();
@@ -279,12 +246,7 @@ const Battle = () => {
     try {
       setLoading(true);
 
-      const res = await axios.post(
-        `${API_BASE}/battle/start/${battleId}`,
-        {},
-        authHeader()
-      );
-
+      const res = await axios.post(`${API_BASE}/battle/start/${battleId}`, {}, authHeader());
       const startedId = res.data?.battle?.battleId || battleId;
 
       await fetchBattles();
@@ -301,9 +263,7 @@ const Battle = () => {
 
     try {
       setLoading(true);
-
       await axios.post(`${API_BASE}/battle/reject/${battleId}`, {}, authHeader());
-
       await fetchBattles();
       alert("Request reject ho gayi");
     } catch (err) {
@@ -318,13 +278,7 @@ const Battle = () => {
 
     try {
       setLoading(true);
-
-      await axios.patch(
-        `${API_BASE}/battle/cancel/${battleId}`,
-        {},
-        authHeader()
-      );
-
+      await axios.patch(`${API_BASE}/battle/cancel/${battleId}`, {}, authHeader());
       await fetchBattles();
       alert("Battle cancelled");
     } catch (err) {
@@ -344,7 +298,7 @@ const Battle = () => {
         <button
           disabled={loading}
           onClick={() => cancelBattle(battle.battleId)}
-          className="bg-red-100 text-red-600 px-4 py-2 rounded-xl font-black text-xs uppercase disabled:opacity-50"
+          className="rounded-full bg-red-500 px-4 py-2 text-xs font-black text-white shadow-lg disabled:opacity-50"
         >
           Cancel
         </button>
@@ -356,9 +310,9 @@ const Battle = () => {
         <button
           disabled={loading}
           onClick={() => joinMatch(battle.battleId)}
-          className="bg-green-500 text-white px-6 py-2 rounded-xl font-black text-xs shadow-md disabled:opacity-50"
+          className="rounded-lg bg-gradient-to-b from-[#293241] via-[#6d3b3b] to-[#ef3b2d] px-8 py-3 text-base font-bold text-white shadow-md disabled:opacity-50"
         >
-          PLAY
+          Play
         </button>
       );
     }
@@ -369,7 +323,7 @@ const Battle = () => {
           <button
             disabled={loading}
             onClick={() => startBattle(battle.battleId)}
-            className="bg-green-500 text-white px-5 py-2 rounded-xl font-black text-xs shadow-md disabled:opacity-50"
+            className="rounded-lg bg-green-600 px-5 py-2 text-xs font-black text-white shadow-md disabled:opacity-50"
           >
             START
           </button>
@@ -377,7 +331,7 @@ const Battle = () => {
           <button
             disabled={loading}
             onClick={() => rejectBattle(battle.battleId)}
-            className="bg-red-100 text-red-600 px-5 py-2 rounded-xl font-black text-xs disabled:opacity-50"
+            className="rounded-lg bg-red-600 px-5 py-2 text-xs font-black text-white shadow-md disabled:opacity-50"
           >
             REJECT
           </button>
@@ -388,156 +342,239 @@ const Battle = () => {
     if (status === "join_requested" && isOpponent) {
       return (
         <div className="flex flex-col items-center gap-1">
-          <div className="h-6 w-6 animate-spin rounded-full border-4 border-gray-200 border-t-green-500" />
-          <p className="text-[10px] font-black text-gray-500">WAITING</p>
+          <div className="h-7 w-7 animate-spin rounded-full border-4 border-gray-200 border-t-green-500" />
+          <p className="text-[10px] font-black text-slate-700">WAITING</p>
         </div>
       );
     }
 
     return (
-      <button
-        disabled
-        className="bg-gray-300 text-gray-600 px-4 py-2 rounded-xl font-black text-xs"
-      >
+      <button disabled className="rounded-lg bg-gray-400 px-5 py-2 text-xs font-black text-white">
         BUSY
       </button>
     );
   };
 
   return (
-    <div className="p-4 max-w-md mx-auto bg-gray-100 min-h-screen font-sans pb-24">
-      <h2 className="text-2xl font-black text-center italic text-indigo-900 mb-6">
-        ADDA LUDO
-      </h2>
+    <div className="mx-auto min-h-screen max-w-md bg-[#f7f7f7] px-4 pt-4 pb-28 font-sans text-black">
+      <div className="mb-5 rounded-md bg-[#1f2b38] px-4 py-4 text-center text-[17px] font-semibold leading-8 text-white shadow">
+        गोटी open होने के बाद अगर कोई भी user left होता है तो lose माना जायेगा
+      </div>
 
-      <div className="bg-white p-6 rounded-3xl shadow-md mb-8">
-        <input
-          type="number"
-          placeholder="Enter Amount"
-          className="w-full p-4 bg-gray-50 rounded-2xl mb-3 outline-none font-bold"
-          value={betAmount}
-          min="50"
-          max="100000"
-          step="50"
-          onChange={(e) => setBetAmount(e.target.value)}
-        />
+      <div className="mb-7 rounded-2xl border-2 border-black bg-white p-4 shadow-sm">
+        <div className="mb-4 flex items-center justify-between">
+          <h2 className="text-xl font-black text-black">Create a Battle</h2>
 
-        <button
-          disabled={loading}
-          onClick={handleCreate}
-          className="w-full bg-indigo-600 text-white py-4 rounded-2xl font-black shadow-lg disabled:opacity-50"
-        >
-          {loading ? "SETTING..." : "SET BATTLE"}
-        </button>
+          <button
+            type="button"
+            className="flex items-center gap-2 rounded-md bg-green-500 px-3 py-2 text-sm font-bold text-white shadow"
+          >
+            Rules
+            <span className="flex h-7 w-7 items-center justify-center rounded-full border-2 border-white text-lg font-black">
+              i
+            </span>
+          </button>
+        </div>
 
-        <p className="text-center text-[11px] font-bold text-gray-400 mt-3">
-          Searching battle: {mySearchingBattles.length}/{MAX_SEARCHING_BATTLES}
+        <div className="flex overflow-hidden rounded-xl border-2 border-black bg-white">
+          <input
+            type="number"
+            placeholder="Enter Coin"
+            className="min-w-0 flex-1 px-4 py-4 text-lg font-semibold outline-none"
+            value={betAmount}
+            min="50"
+            max="100000"
+            step="50"
+            onChange={(e) => setBetAmount(e.target.value)}
+          />
+
+          <button
+            disabled={loading}
+            onClick={handleCreate}
+            className="min-w-[95px] bg-[#1f2b38] px-6 text-xl font-black tracking-widest text-white disabled:opacity-60"
+          >
+            {loading ? "..." : "SET"}
+          </button>
+        </div>
+
+        <p className="mt-3 text-center text-[11px] font-black text-slate-500">
+          Searching Battle: {mySearchingBattles.length}/{MAX_SEARCHING_BATTLES}
         </p>
       </div>
 
+      <SectionTitle icon="🕺" title="Open Battles" />
+
       <div className="space-y-4">
-        <h3 className="font-black px-2 text-gray-500 text-xs uppercase">
-          Open Battles
-        </h3>
+        {visibleOpenBattles.length === 0 && <EmptyBox text="No Battles Available" />}
 
-        {visibleOpenBattles.length === 0 && (
-          <p className="text-center text-gray-400 py-4 font-bold">
-            No Battles Live
-          </p>
-        )}
-
-        {visibleOpenBattles.map((b) => (
-          <div
-            key={b.battleId}
-            className="bg-white p-4 rounded-2xl flex justify-between items-center shadow-sm relative"
-          >
-            <div className="flex items-center space-x-3">
-              <div className="bg-indigo-50 p-2 rounded-xl text-center min-w-[60px]">
-                <p className="font-black text-sm text-indigo-700">₹{b.amount}</p>
-              </div>
-
-              <div>
-                <p className="text-[10px] text-gray-400 font-bold uppercase">
-                  Winning
-                </p>
-                <p className="text-xs font-black text-green-600">
-                  Win: ₹{b.prize || calculatePrize(b.amount)}
-                </p>
-                <p className="text-[10px] font-bold text-gray-400">
-                  {b.createdBy?.name || "Player"} vs{" "}
-                  {b.opponent?.name || "Waiting..."}
-                </p>
-              </div>
-            </div>
-
-            <div className="flex items-center">{getOpenAction(b)}</div>
-          </div>
+        {visibleOpenBattles.map((battle) => (
+          <OpenBattleCard
+            key={battle.battleId}
+            battle={battle}
+            action={getOpenAction(battle)}
+            calculatePrize={calculatePrize}
+          />
         ))}
       </div>
 
-      {runningBattles.length > 0 && (
-        <div className="mt-8">
-          <h3 className="font-black mb-3 text-orange-500 text-xs uppercase px-2 tracking-widest">
-            Running Matches
-          </h3>
+      <SectionTitle icon="🏃‍♂️" title="Running Battles" />
 
-          {runningBattles.map((rb) => (
-            <div
-              key={rb.battleId}
-              className="bg-white p-4 rounded-2xl flex justify-between items-center mb-3 border-l-4 border-orange-500 shadow-sm"
-            >
-              <div>
-                <p className="font-black text-sm text-slate-800">
-                  ₹{rb.amount} Battle
-                </p>
-                <p className="text-[10px] text-orange-600 font-bold animate-pulse">
-                  MATCH LIVE
-                </p>
-              </div>
+      <div className="space-y-4">
+        {runningBattles.length === 0 && <EmptyBox text="No Running Battles" />}
 
-              <button
-                onClick={() => navigate(`/room-code/${rb.battleId}`)}
-                className="bg-orange-500 text-white px-4 py-2 rounded-xl font-black text-xs"
-              >
-                VIEW
-              </button>
-            </div>
-          ))}
-        </div>
-      )}
+        {runningBattles.map((battle) => (
+          <RunningCard
+            key={battle.battleId}
+            battle={battle}
+            calculatePrize={calculatePrize}
+            onClick={() => navigate(`/room-code/${battle.battleId}`)}
+          />
+        ))}
+      </div>
 
-      {pendingBattles.length > 0 && (
-        <div className="mt-8">
-          <h3 className="font-black mb-3 text-yellow-500 text-xs uppercase px-2 tracking-widest">
-            Pending Results
-          </h3>
+      <SectionTitle icon="⏳" title="Pending Results" />
 
-          {pendingBattles.map((rb) => (
-            <div
-              key={rb.battleId}
-              className="bg-white p-4 rounded-2xl flex justify-between items-center mb-3 border-l-4 border-yellow-500 shadow-sm"
-            >
-              <div>
-                <p className="font-black text-sm text-slate-800">
-                  ₹{rb.amount} Battle
-                </p>
-                <p className="text-[10px] text-yellow-600 font-bold animate-pulse">
-                  RESULT PENDING
-                </p>
-              </div>
+      <div className="space-y-4">
+        {pendingBattles.length === 0 && <EmptyBox text="No Pending Results" />}
 
-              <button
-                onClick={() => navigate(`/room-code/${rb.battleId}`)}
-                className="bg-yellow-500 text-white px-4 py-2 rounded-xl font-black text-xs"
-              >
-                VIEW
-              </button>
-            </div>
-          ))}
-        </div>
-      )}
+        {pendingBattles.map((battle) => (
+          <PendingCard
+            key={battle.battleId}
+            battle={battle}
+            calculatePrize={calculatePrize}
+            onClick={() => navigate(`/room-code/${battle.battleId}`)}
+          />
+        ))}
+      </div>
     </div>
   );
 };
+
+function SectionTitle({ icon, title }) {
+  return (
+    <div className="my-5 overflow-hidden rounded-lg border-2 border-black bg-white shadow-sm">
+      <div className="flex items-center gap-3 bg-gradient-to-r from-white via-[#111] to-white px-5 py-3">
+        <span className="text-2xl">{icon}</span>
+        <h3 className="text-2xl font-black text-white drop-shadow">{title}</h3>
+      </div>
+    </div>
+  );
+}
+
+function EmptyBox({ text }) {
+  return (
+    <div className="rounded-xl border border-slate-200 bg-white p-5 text-center text-sm font-black uppercase text-slate-400 shadow-sm">
+      {text}
+    </div>
+  );
+}
+
+function OpenBattleCard({ battle, action, calculatePrize }) {
+  return (
+    <div className="overflow-hidden rounded-lg border border-cyan-200 bg-[#b6edf1] shadow-md">
+      <div className="border-b border-black/20 px-4 py-3">
+        <h3 className="text-xl font-black text-black">
+          Challenge From {battle.createdBy?.name || "Player"}
+        </h3>
+      </div>
+
+      <div className="grid grid-cols-3 items-center gap-2 px-4 py-4">
+        <div>
+          <p className="text-base font-semibold text-slate-800">Entry Fee</p>
+          <p className="mt-1 flex items-center gap-2 text-3xl font-black text-black">
+            💸 {battle.amount}
+          </p>
+        </div>
+
+        <div className="flex justify-center">{action}</div>
+
+        <div className="text-right">
+          <p className="text-base font-semibold text-slate-800">Winning Prize</p>
+          <p className="mt-1 flex items-center justify-end gap-2 text-3xl font-black text-black">
+            💸 {battle.prize || calculatePrize(battle.amount)}
+          </p>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function RunningCard({ battle, calculatePrize, onClick }) {
+  return (
+    <div
+      onClick={onClick}
+      className="cursor-pointer overflow-hidden rounded-lg border border-violet-300 bg-[#4f4394] text-white shadow-md"
+    >
+      <div className="border-b border-white/20 px-4 py-3">
+        <h3 className="text-xl font-black">
+          Game Play between {battle.createdBy?.name || "Player"} &{" "}
+          {battle.opponent?.name || "Opponent"}
+        </h3>
+      </div>
+
+      <div className="grid grid-cols-3 items-center gap-2 px-4 py-4">
+        <div>
+          <p className="text-base font-semibold text-white/90">Entry Fee</p>
+          <p className="mt-1 flex items-center gap-2 text-3xl font-black">
+            💸 {battle.amount}
+          </p>
+        </div>
+
+        <div className="flex justify-center">
+          <div className="flex h-14 w-14 items-center justify-center rounded-full bg-white text-lg font-black text-[#4f4394] shadow-lg">
+            VS
+          </div>
+        </div>
+
+        <div className="text-right">
+          <p className="text-base font-semibold text-white/90">Winning Prize</p>
+          <p className="mt-1 flex items-center justify-end gap-2 text-3xl font-black">
+            💸 {battle.prize || calculatePrize(battle.amount)}
+          </p>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function PendingCard({ battle, calculatePrize, onClick }) {
+  const status = String(battle?.status || "").toLowerCase();
+
+  return (
+    <div
+      onClick={onClick}
+      className="cursor-pointer overflow-hidden rounded-lg border border-yellow-300 bg-[#fff2b8] text-black shadow-md"
+    >
+      <div className="border-b border-black/20 px-4 py-3">
+        <h3 className="text-xl font-black">
+          Pending Result: {battle.createdBy?.name || "Player"} &{" "}
+          {battle.opponent?.name || "Opponent"}
+        </h3>
+      </div>
+
+      <div className="grid grid-cols-3 items-center gap-2 px-4 py-4">
+        <div>
+          <p className="text-base font-semibold text-slate-800">Entry Fee</p>
+          <p className="mt-1 flex items-center gap-2 text-3xl font-black">
+            💸 {battle.amount}
+          </p>
+        </div>
+
+        <div className="text-center">
+          <div className="mx-auto rounded-full bg-yellow-500 px-3 py-2 text-[11px] font-black uppercase text-white shadow">
+            {status === "cancel_requested" ? "Cancel Wait" : "Result Wait"}
+          </div>
+        </div>
+
+        <div className="text-right">
+          <p className="text-base font-semibold text-slate-800">Winning Prize</p>
+          <p className="mt-1 flex items-center justify-end gap-2 text-3xl font-black">
+            💸 {battle.prize || calculatePrize(battle.amount)}
+          </p>
+        </div>
+      </div>
+    </div>
+  );
+}
 
 export default Battle;
