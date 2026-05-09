@@ -248,11 +248,20 @@ export default function Battle() {
 
     [...openBattles, ...myBattles].forEach((battle) => {
       const status = String(battle?.status || "").toLowerCase();
+      const creatorId = getBattleCreatorId(battle);
+      const opponentId = getBattleOpponentId(battle);
 
-      if (
-        battle?.battleId &&
-        ["open", "join_requested"].includes(status)
-      ) {
+      const isCreator = creatorId && myId && creatorId === myId;
+      const isOpponent = opponentId && myId && opponentId === myId;
+
+      if (!battle?.battleId) return;
+
+      if (status === "open") {
+        map.set(battle.battleId, battle);
+        return;
+      }
+
+      if (status === "join_requested" && (isCreator || isOpponent)) {
         map.set(battle.battleId, battle);
       }
     });
@@ -260,7 +269,7 @@ export default function Battle() {
     return Array.from(map.values()).sort(
       (a, b) => new Date(b.createdAt || 0) - new Date(a.createdAt || 0)
     );
-  }, [openBattles, myBattles, tick]);
+  }, [openBattles, myBattles, myId, tick]);
 
   const realRunningBattles = useMemo(() => {
     return myBattles.filter((b) =>
@@ -284,10 +293,7 @@ export default function Battle() {
   const getAction = (battle) => {
     if (battle.battleId?.startsWith("bot_")) {
       return (
-        <button
-          disabled
-          className="rounded-xl bg-white/20 px-5 py-2 text-sm font-black text-white"
-        >
+        <button disabled className="rounded-xl bg-white/20 px-5 py-2 text-sm font-black text-white">
           Running
         </button>
       );
@@ -364,10 +370,10 @@ export default function Battle() {
 
     return (
       <button
-        onClick={() => navigate(`/room-code/${battle.battleId}`)}
-        className="rounded-xl bg-slate-800 px-5 py-2 text-sm font-black text-white"
+        disabled
+        className="rounded-xl bg-slate-400 px-5 py-2 text-sm font-black text-white opacity-70"
       >
-        View
+        Busy
       </button>
     );
   };
@@ -497,11 +503,7 @@ function BattleCard({ battle, action, dark = false }) {
 
       <div className="grid grid-cols-3 items-center gap-2 px-4 py-3">
         <div>
-          <p
-            className={`text-xs font-black ${
-              dark ? "text-white/70" : "text-slate-500"
-            }`}
-          >
+          <p className={`text-xs font-black ${dark ? "text-white/70" : "text-slate-500"}`}>
             Entry Fee
           </p>
           <p className="mt-1 text-2xl font-black">₹{battle.amount}</p>
@@ -510,18 +512,10 @@ function BattleCard({ battle, action, dark = false }) {
         <div className="text-center">{action}</div>
 
         <div className="text-right">
-          <p
-            className={`text-xs font-black ${
-              dark ? "text-white/70" : "text-slate-500"
-            }`}
-          >
+          <p className={`text-xs font-black ${dark ? "text-white/70" : "text-slate-500"}`}>
             Winning
           </p>
-          <p
-            className={`mt-1 text-2xl font-black ${
-              dark ? "" : "text-emerald-700"
-            }`}
-          >
+          <p className={`mt-1 text-2xl font-black ${dark ? "" : "text-emerald-700"}`}>
             ₹{winPrize}
           </p>
         </div>
