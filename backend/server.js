@@ -76,6 +76,7 @@ require("./socket/gameSocket")(io);
 app.use("/api/user", require("./routes/userAuth"));
 app.use("/api/admin-auth", require("./routes/adminAuth"));
 app.use("/api/admin", require("./routes/admin"));
+app.use("/api/admin", require("./routes/paymentRoutes"));
 app.use("/api/wallet", require("./routes/wallet"));
 app.use("/api/deposit", require("./routes/depositRoutes"));
 app.use("/api/redeem", require("./routes/redeemRoutes"));

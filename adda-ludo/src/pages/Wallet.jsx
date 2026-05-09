@@ -3,6 +3,7 @@ import axios from "axios";
 import { useNavigate } from "react-router-dom";
 
 const API_BASE = import.meta.env.VITE_API_URL || "http://localhost:5000/api";
+const SERVER_BASE = API_BASE.replace(/\/api$/, "");
 
 export default function Wallet() {
   const navigate = useNavigate();
@@ -10,29 +11,25 @@ export default function Wallet() {
 
   const MIN_AMOUNT = 100;
   const MAX_AMOUNT = 100000;
-  const QR_LIMIT = 2000;
 
-  const [wallet, setWallet] = useState({
-    balance: 0,
-    winnings: 0,
-    bonus: 0,
-    referralBalance: 0,
-  });
-
+  const [wallet, setWallet] = useState({ balance: 0, winnings: 0, bonus: 0, locked: 0 });
   const [amount, setAmount] = useState("");
   const [utr, setUtr] = useState("");
   const [screenshot, setScreenshot] = useState(null);
+
   const [showAddCash, setShowAddCash] = useState(false);
   const [showPayment, setShowPayment] = useState(false);
+
   const [loading, setLoading] = useState(false);
   const [pageLoading, setPageLoading] = useState(true);
   const [error, setError] = useState("");
+
   const [deposits, setDeposits] = useState([]);
+  const [withdraws, setWithdraws] = useState([]);
+  const [payment, setPayment] = useState(null);
   const [timeLeft, setTimeLeft] = useState(300);
 
-  const authHeader = {
-    headers: { Authorization: `Bearer ${token}` },
-  };
+  const authHeader = { headers: { Authorization: `Bearer ${token}` } };
 
   useEffect(() => {
     if (!token) navigate("/login");
@@ -40,12 +37,11 @@ export default function Wallet() {
 
   const loadWallet = async () => {
     const res = await axios.get(`${API_BASE}/wallet`, authHeader);
-
     setWallet({
       balance: res.data.balance || 0,
       winnings: res.data.winnings || 0,
       bonus: res.data.bonus || 0,
-      referralBalance: res.data.referralBalance || res.data.referBalance || 0,
+      locked: res.data.locked || 0,
     });
   };
 
@@ -58,24 +54,39 @@ export default function Wallet() {
     }
   };
 
+  const loadWithdraws = async () => {
+    try {
+      const res = await axios.get(`${API_BASE}/redeem/withdraw-history`, authHeader);
+      setWithdraws(res.data.withdraws || []);
+    } catch (err) {
+      console.log("Withdraw load error:", err.response?.data || err.message);
+    }
+  };
+
+  const loadPaymentSettings = async () => {
+    try {
+      const res = await axios.get(`${API_BASE}/admin/payment-settings`);
+      setPayment(res.data);
+    } catch (err) {
+      console.log("Payment setting load error:", err.response?.data || err.message);
+    }
+  };
+
+  const init = async () => {
+    try {
+      setPageLoading(true);
+      await Promise.all([loadWallet(), loadDeposits(), loadWithdraws(), loadPaymentSettings()]);
+    } catch {
+      setError("Failed to load wallet");
+    } finally {
+      setPageLoading(false);
+    }
+  };
+
   useEffect(() => {
-    const init = async () => {
-      try {
-        setPageLoading(true);
-        await loadWallet();
-        await loadDeposits();
-      } catch {
-        setError("Failed to load wallet");
-      } finally {
-        setPageLoading(false);
-      }
-    };
-
     init();
-
     const refreshWallet = () => init();
     window.addEventListener("walletUpdated", refreshWallet);
-
     return () => window.removeEventListener("walletUpdated", refreshWallet);
     // eslint-disable-next-line
   }, []);
@@ -84,14 +95,12 @@ export default function Wallet() {
     if (!showPayment) return;
 
     setTimeLeft(300);
-
     const interval = setInterval(() => {
       setTimeLeft((prev) => {
         if (prev <= 1) {
           clearInterval(interval);
           return 0;
         }
-
         return prev - 1;
       });
     }, 1000);
@@ -103,6 +112,26 @@ export default function Wallet() {
     const m = Math.floor(seconds / 60);
     const s = seconds % 60;
     return `${m}:${String(s).padStart(2, "0")}`;
+  };
+
+  const copyText = async (text) => {
+    if (!text) return;
+    await navigator.clipboard.writeText(String(text));
+    alert("Copied");
+  };
+
+  const getStatusStyle = (status) => {
+    const s = String(status || "").toLowerCase();
+
+    if (s === "success" || s === "approved") {
+      return { background: "#dcfce7", color: "#166534" };
+    }
+
+    if (s === "rejected" || s === "failed") {
+      return { background: "#fee2e2", color: "#991b1b" };
+    }
+
+    return { background: "#fef3c7", color: "#92400e" };
   };
 
   const openAddCash = () => {
@@ -129,14 +158,8 @@ export default function Wallet() {
   const submitDeposit = async () => {
     const addAmount = Number(amount);
 
-    if (!addAmount || addAmount < MIN_AMOUNT) {
-      return setError("Minimum deposit ₹100 hai");
-    }
-
-    if (addAmount > MAX_AMOUNT) {
-      return setError("Maximum deposit ₹1,00,000 hai");
-    }
-
+    if (!addAmount || addAmount < MIN_AMOUNT) return setError("Minimum deposit ₹100 hai");
+    if (addAmount > MAX_AMOUNT) return setError("Maximum deposit ₹1,00,000 hai");
     if (!utr.trim()) return setError("UTR / Transaction ID enter karo");
     if (!screenshot) return setError("Payment screenshot upload karo");
 
@@ -163,8 +186,7 @@ export default function Wallet() {
       setUtr("");
       setScreenshot(null);
 
-      await loadDeposits();
-      await loadWallet();
+      await Promise.all([loadDeposits(), loadWallet()]);
     } catch (err) {
       setError(err.response?.data?.msg || "Deposit request failed");
     } finally {
@@ -172,19 +194,17 @@ export default function Wallet() {
     }
   };
 
-  const isLargePayment = Number(amount) > QR_LIMIT;
+  if (pageLoading) return <div style={styles.loading}>⏳ Loading Wallet...</div>;
 
-  if (pageLoading) {
-    return <div style={styles.loading}>⏳ Loading Wallet...</div>;
-  }
+  const scannerImage = payment?.scannerImage ? `${SERVER_BASE}${payment.scannerImage}` : "";
+  const upiId = payment?.upiList?.[0] || "";
+  const bank = payment?.bank || {};
 
   return (
     <div style={styles.page}>
       <div style={styles.container}>
         <div style={styles.headerRow}>
-          <button style={styles.backBtn} onClick={() => navigate(-1)}>
-            ←
-          </button>
+          <button style={styles.backBtn} onClick={() => navigate(-1)}>←</button>
           <h2 style={styles.title}>Balance</h2>
           <span style={styles.online}>0 online</span>
         </div>
@@ -193,20 +213,10 @@ export default function Wallet() {
 
         <div style={styles.card}>
           <div style={styles.cardMain}>
-            <div
-              style={{
-                ...styles.iconBox,
-                background: "linear-gradient(135deg,#2563eb,#06b6d4)",
-              }}
-            >
-              💰
-            </div>
-
+            <div style={{ ...styles.iconBox, background: "linear-gradient(135deg,#2563eb,#06b6d4)" }}>💰</div>
             <div style={styles.info}>
               <p style={styles.label}>Deposit Coin</p>
-              <h1 style={styles.amount}>
-                ₹ {Number(wallet.balance || 0).toFixed(2)}
-              </h1>
+              <h1 style={styles.amount}>₹ {Number(wallet.balance || 0).toFixed(2)}</h1>
             </div>
           </div>
 
@@ -221,55 +231,14 @@ export default function Wallet() {
 
         <div style={styles.card}>
           <div style={styles.cardMain}>
-            <div
-              style={{
-                ...styles.iconBox,
-                background: "linear-gradient(135deg,#7c3aed,#ec4899)",
-              }}
-            >
-              🎁
-            </div>
-
-            <div style={styles.info}>
-              <p style={styles.label}>Referral Earning</p>
-              <h1 style={styles.amount}>
-                ₹ {Number(wallet.referralBalance || 0).toFixed(2)}
-              </h1>
-            </div>
-          </div>
-
-          <div style={styles.btnRow}>
-            <button style={styles.redeemBtn} onClick={() => navigate("/redeem")}>
-              Redeem 🎁
-            </button>
-          </div>
-
-          <p style={styles.desc}>
-            Referral earning ₹200 hone ke baad redeem karke wallet me add kar sakte ho.
-          </p>
-        </div>
-
-        <div style={styles.card}>
-          <div style={styles.cardMain}>
-            <div
-              style={{
-                ...styles.iconBox,
-                background: "linear-gradient(135deg,#16a34a,#86efac)",
-              }}
-            >
-              🏆
-            </div>
-
+            <div style={{ ...styles.iconBox, background: "linear-gradient(135deg,#16a34a,#86efac)" }}>🏆</div>
             <div style={styles.info}>
               <p style={styles.label}>Winning Coin</p>
-              <h1 style={styles.amount}>
-                ₹ {Number(wallet.winnings || 0).toFixed(2)}
-              </h1>
+              <h1 style={styles.amount}>₹ {Number(wallet.winnings || 0).toFixed(2)}</h1>
             </div>
           </div>
 
           <div style={styles.btnRow}>
-            {/* ✅ Winning withdraw = /withdraw */}
             <button style={styles.withdrawBtn} onClick={() => navigate("/withdraw")}>
               Withdraw 🏦
             </button>
@@ -278,32 +247,27 @@ export default function Wallet() {
           <p style={styles.desc}>Withdrawable to UPI or Bank. Also usable for play.</p>
         </div>
 
-        <div style={styles.card}>
-          <h3 style={styles.historyTitle}>Deposit Requests</h3>
+        <HistoryBox
+          title="Deposit History"
+          empty="No deposit request yet."
+          items={deposits}
+          getStatusStyle={getStatusStyle}
+          type="deposit"
+        />
 
-          {deposits.length === 0 ? (
-            <p style={styles.desc}>No deposit request yet.</p>
-          ) : (
-            deposits.slice(0, 8).map((d) => (
-              <div key={d._id} style={styles.depositItem}>
-                <div>
-                  <b>₹{d.amount}</b>
-                  <p style={styles.small}>UTR: {d.utr}</p>
-                </div>
-
-                <span style={styles.status}>{d.status}</span>
-              </div>
-            ))
-          )}
-        </div>
+        <HistoryBox
+          title="Withdraw History"
+          empty="No withdraw request yet."
+          items={withdraws}
+          getStatusStyle={getStatusStyle}
+          type="withdraw"
+        />
       </div>
 
       {showAddCash && (
         <div style={styles.modalOverlay}>
           <div style={styles.modal}>
-            <button style={styles.closeBtn} onClick={() => setShowAddCash(false)}>
-              ×
-            </button>
+            <button style={styles.closeBtn} onClick={() => setShowAddCash(false)}>×</button>
 
             <h2 style={styles.modalTitle}>Add Money</h2>
             <p style={styles.modalSub}>Minimum ₹100 और Maximum ₹1,00,000</p>
@@ -320,19 +284,13 @@ export default function Wallet() {
 
             <div style={styles.quickRow}>
               {[100, 500, 1000, 2000, 5000, 10000].map((amt) => (
-                <button
-                  key={amt}
-                  style={styles.quickBtn}
-                  onClick={() => setAmount(String(amt))}
-                >
+                <button key={amt} style={styles.quickBtn} onClick={() => setAmount(String(amt))}>
                   ₹{amt}
                 </button>
               ))}
             </div>
 
-            <button style={styles.payBtn} onClick={goToPayment}>
-              Pay Fast
-            </button>
+            <button style={styles.payBtn} onClick={goToPayment}>Pay Fast</button>
           </div>
         </div>
       )}
@@ -350,23 +308,29 @@ export default function Wallet() {
               >
                 ←
               </button>
-
               <div style={styles.logo}>⚔️ AddaLudo</div>
               <h2 style={styles.paymentTitle}>Complete Payment</h2>
             </div>
 
             <div style={styles.paymentBody}>
               <div style={styles.paymentTopCard}>
-                <p style={styles.scanText}>
-                  {isLargePayment ? "🏦 Pay by UPI / Bank Transfer" : "▦ Scan to Pay"}
-                </p>
-
-                <h1 style={styles.bigAmount}>₹ {Number(amount || 0).toFixed(2)}</h1>
-
-                <div style={styles.timerBox}>
-                  ⏱ Time remaining: <b>{formatTime(timeLeft)}</b>
-                </div>
+                <p style={styles.scanText}>Pay ₹{Number(amount || 0).toFixed(2)}</p>
+                <div style={styles.timerBox}>⏱ Time remaining: <b>{formatTime(timeLeft)}</b></div>
               </div>
+
+              {scannerImage && (
+                <div style={styles.qrBox}>
+                  <img src={scannerImage} alt="Payment QR" style={styles.qrImg} />
+                </div>
+              )}
+
+              {upiId && (
+                <CopyRow label="UPI ID" value={upiId} onCopy={copyText} />
+              )}
+
+              {bank?.name && <CopyRow label="A/C Name" value={bank.name} onCopy={copyText} />}
+              {bank?.accountNumber && <CopyRow label="A/C No." value={bank.accountNumber} onCopy={copyText} />}
+              {bank?.ifsc && <CopyRow label="IFSC" value={bank.ifsc} onCopy={copyText} />}
 
               <input
                 type="text"
@@ -384,16 +348,13 @@ export default function Wallet() {
               />
 
               {screenshot && <p style={styles.small}>Selected: {screenshot.name}</p>}
-
               {error && <div style={{ ...styles.error, marginTop: 14 }}>{error}</div>}
 
               <button style={styles.submitBtn} onClick={submitDeposit} disabled={loading}>
                 {loading ? "Submitting..." : "Submit Payment Proof"}
               </button>
 
-              <button style={styles.cancelBtn} onClick={() => setShowPayment(false)}>
-                Cancel
-              </button>
+              <button style={styles.cancelBtn} onClick={() => setShowPayment(false)}>Cancel</button>
             </div>
           </div>
         </div>
@@ -402,52 +363,97 @@ export default function Wallet() {
   );
 }
 
+function CopyRow({ label, value, onCopy }) {
+  return (
+    <div style={styles.copyRow}>
+      <div style={{ minWidth: 0 }}>
+        <p style={styles.copyLabel}>{label}</p>
+        <p style={styles.copyValue}>{value}</p>
+      </div>
+      <button style={styles.copyBtn} onClick={() => onCopy(value)}>Copy</button>
+    </div>
+  );
+}
+
+function HistoryBox({ title, empty, items, getStatusStyle, type }) {
+  return (
+    <div style={styles.card}>
+      <h3 style={styles.historyTitle}>{title}</h3>
+
+      {items.length === 0 ? (
+        <p style={styles.desc}>{empty}</p>
+      ) : (
+        items.slice(0, 10).map((item) => (
+          <div key={item._id} style={styles.depositItem}>
+            <div>
+              <b>₹{item.amount}</b>
+              <p style={styles.small}>
+                {type === "deposit" ? `UTR: ${item.utr || "-"}` : `Method: ${item.method || "-"}`
+                }
+              </p>
+              <p style={styles.small}>{new Date(item.createdAt).toLocaleString("en-IN")}</p>
+            </div>
+
+            <span style={{ ...styles.status, ...getStatusStyle(item.status) }}>
+              {item.status}
+            </span>
+          </div>
+        ))
+      )}
+    </div>
+  );
+}
+
 const styles = {
   page: { minHeight: "100vh", background: "linear-gradient(135deg,#f8fafc,#eef2ff)" },
-  container: { padding: "76px 14px 105px", maxWidth: "480px", margin: "0 auto" },
-  headerRow: { display: "flex", alignItems: "center", gap: "14px", marginBottom: "24px" },
-  backBtn: { width: 48, height: 48, borderRadius: 15, border: "none", background: "#fff", fontSize: 28, fontWeight: 900 },
-  title: { flex: 1, margin: 0, fontSize: 30, fontWeight: 900, color: "#0f172a" },
-  online: { color: "#64748b", fontSize: 15, fontWeight: 700 },
-  card: { background: "#fff", borderRadius: 28, padding: 24, marginBottom: 22, boxShadow: "0 24px 60px rgba(15,23,42,.08)" },
-  cardMain: { display: "flex", alignItems: "center", gap: 20 },
-  iconBox: { width: 94, height: 94, borderRadius: 24, display: "flex", alignItems: "center", justifyContent: "center", color: "#fff", fontSize: 40 },
+  container: { padding: "72px 14px 105px", maxWidth: "480px", margin: "0 auto" },
+  headerRow: { display: "flex", alignItems: "center", gap: "12px", marginBottom: "20px" },
+  backBtn: { width: 42, height: 42, borderRadius: 14, border: "none", background: "#fff", fontSize: 24, fontWeight: 900 },
+  title: { flex: 1, margin: 0, fontSize: 27, fontWeight: 900, color: "#0f172a" },
+  online: { color: "#64748b", fontSize: 13, fontWeight: 700 },
+  card: { background: "#fff", borderRadius: 22, padding: 18, marginBottom: 16, boxShadow: "0 18px 45px rgba(15,23,42,.07)" },
+  cardMain: { display: "flex", alignItems: "center", gap: 15 },
+  iconBox: { width: 70, height: 70, borderRadius: 20, display: "flex", alignItems: "center", justifyContent: "center", color: "#fff", fontSize: 32 },
   info: { flex: 1 },
-  label: { margin: "0 0 10px", color: "#64748b", fontSize: 18, fontWeight: 800 },
-  amount: { margin: 0, color: "#0f172a", fontSize: 31, fontWeight: 900 },
-  btnRow: { display: "flex", justifyContent: "flex-end", marginTop: 16 },
-  addBtn: { border: "none", background: "linear-gradient(135deg,#2563eb,#06b6d4)", color: "#fff", borderRadius: 16, padding: "14px 18px", fontSize: 19, fontWeight: 900 },
-  redeemBtn: { border: "none", background: "linear-gradient(135deg,#7c3aed,#ec4899)", color: "#fff", borderRadius: 16, padding: "14px 18px", fontSize: 19, fontWeight: 900 },
-  withdrawBtn: { border: "1px solid #bbf7d0", background: "#f0fdf4", color: "#166534", borderRadius: 16, padding: "14px 18px", fontSize: 19, fontWeight: 900 },
-  plus: { marginLeft: 10, fontSize: 24 },
-  desc: { margin: "16px 0 0", color: "#64748b", fontSize: 15, lineHeight: 1.5 },
-  error: { background: "#fee2e2", color: "#991b1b", padding: 12, borderRadius: 14, marginBottom: 16, fontWeight: 800 },
+  label: { margin: "0 0 6px", color: "#64748b", fontSize: 15, fontWeight: 800 },
+  amount: { margin: 0, color: "#0f172a", fontSize: 27, fontWeight: 900 },
+  btnRow: { display: "flex", justifyContent: "flex-end", marginTop: 12 },
+  addBtn: { border: "none", background: "linear-gradient(135deg,#2563eb,#06b6d4)", color: "#fff", borderRadius: 14, padding: "11px 15px", fontSize: 16, fontWeight: 900 },
+  withdrawBtn: { border: "1px solid #bbf7d0", background: "#f0fdf4", color: "#166534", borderRadius: 14, padding: "11px 15px", fontSize: 16, fontWeight: 900 },
+  plus: { marginLeft: 7, fontSize: 20 },
+  desc: { margin: "12px 0 0", color: "#64748b", fontSize: 13, lineHeight: 1.45 },
+  error: { background: "#fee2e2", color: "#991b1b", padding: 10, borderRadius: 12, marginBottom: 12, fontWeight: 800, fontSize: 13 },
   loading: { minHeight: "70vh", display: "flex", alignItems: "center", justifyContent: "center", fontWeight: 900 },
-  historyTitle: { margin: "0 0 14px", fontSize: 22, fontWeight: 900, color: "#0f172a" },
-  depositItem: { display: "flex", justifyContent: "space-between", alignItems: "center", borderBottom: "1px solid #e5e7eb", padding: "12px 0" },
-  small: { margin: "5px 0 0", color: "#64748b", fontSize: 13 },
-  status: { padding: "7px 10px", borderRadius: 999, fontWeight: 900, fontSize: 12, background: "#fef3c7", color: "#92400e", textTransform: "uppercase" },
-  modalOverlay: { position: "fixed", inset: 0, background: "rgba(15,23,42,.65)", display: "flex", alignItems: "center", justifyContent: "center", padding: 20, zIndex: 9999 },
-  modal: { width: "100%", maxWidth: 430, background: "#fff", borderRadius: 28, padding: 26, position: "relative" },
-  closeBtn: { position: "absolute", right: 18, top: 14, border: "none", background: "#e0f2fe", width: 38, height: 38, borderRadius: "50%", fontSize: 26, fontWeight: 900 },
-  modalTitle: { margin: "0 0 6px", fontSize: 30, fontWeight: 900, color: "#0f172a" },
-  modalSub: { margin: "0 0 18px", color: "#64748b", fontSize: 15, fontWeight: 700 },
-  input: { width: "100%", boxSizing: "border-box", border: "2px solid #e2e8f0", borderRadius: 18, padding: 17, fontSize: 18, fontWeight: 800, outline: "none", marginTop: 12, background: "#fff" },
-  quickRow: { display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12, marginTop: 16 },
-  quickBtn: { border: "1px solid #bfdbfe", background: "#eff6ff", color: "#1d4ed8", borderRadius: 15, padding: 13, fontSize: 18, fontWeight: 900 },
-  payBtn: { width: "100%", marginTop: 18, border: "none", borderRadius: 17, padding: 16, background: "linear-gradient(135deg,#2563eb,#7c3aed)", color: "#fff", fontSize: 22, fontWeight: 900 },
+  historyTitle: { margin: "0 0 12px", fontSize: 19, fontWeight: 900, color: "#0f172a" },
+  depositItem: { display: "flex", justifyContent: "space-between", alignItems: "center", borderBottom: "1px solid #e5e7eb", padding: "10px 0", gap: 10 },
+  small: { margin: "4px 0 0", color: "#64748b", fontSize: 12 },
+  status: { padding: "6px 9px", borderRadius: 999, fontWeight: 900, fontSize: 11, textTransform: "uppercase", whiteSpace: "nowrap" },
+  modalOverlay: { position: "fixed", inset: 0, background: "rgba(15,23,42,.65)", display: "flex", alignItems: "center", justifyContent: "center", padding: 18, zIndex: 9999 },
+  modal: { width: "100%", maxWidth: 380, background: "#fff", borderRadius: 24, padding: 20, position: "relative" },
+  closeBtn: { position: "absolute", right: 14, top: 12, border: "none", background: "#e0f2fe", width: 34, height: 34, borderRadius: "50%", fontSize: 22, fontWeight: 900 },
+  modalTitle: { margin: "0 0 5px", fontSize: 25, fontWeight: 900, color: "#0f172a" },
+  modalSub: { margin: "0 0 13px", color: "#64748b", fontSize: 13, fontWeight: 700 },
+  input: { width: "100%", boxSizing: "border-box", border: "2px solid #e2e8f0", borderRadius: 15, padding: 13, fontSize: 15, fontWeight: 800, outline: "none", marginTop: 10, background: "#fff" },
+  quickRow: { display: "grid", gridTemplateColumns: "1fr 1fr", gap: 9, marginTop: 13 },
+  quickBtn: { border: "1px solid #bfdbfe", background: "#eff6ff", color: "#1d4ed8", borderRadius: 13, padding: 10, fontSize: 15, fontWeight: 900 },
+  payBtn: { width: "100%", marginTop: 14, border: "none", borderRadius: 15, padding: 13, background: "linear-gradient(135deg,#2563eb,#7c3aed)", color: "#fff", fontSize: 18, fontWeight: 900 },
   paymentPage: { position: "fixed", inset: 0, background: "#eef2ff", zIndex: 99999, overflowY: "auto" },
-  paymentCard: { maxWidth: 720, margin: "0 auto", background: "#fff", minHeight: "100vh" },
-  paymentHeader: { background: "linear-gradient(135deg,#0f172a,#1d4ed8,#7c3aed)", color: "#fff", display: "grid", gridTemplateColumns: "54px 1fr 1.4fr", alignItems: "center", padding: "14px 18px", gap: 10 },
-  paymentBack: { border: "none", background: "rgba(255,255,255,.12)", color: "#fff", fontSize: 26, fontWeight: 900, borderRadius: 14, height: 42 },
-  logo: { fontSize: 20, fontWeight: 900 },
-  paymentTitle: { margin: 0, textAlign: "center", fontSize: 22, fontWeight: 900 },
-  paymentBody: { padding: 22 },
-  paymentTopCard: { background: "#eff6ff", border: "1px solid #dbeafe", borderRadius: 24, padding: 18 },
-  scanText: { color: "#2563eb", fontSize: 20, fontWeight: 900, margin: "0 0 10px" },
-  bigAmount: { textAlign: "center", fontSize: 40, color: "#0f172a", margin: "14px 0 18px", fontWeight: 900 },
-  timerBox: { marginTop: 16, background: "#ecfeff", padding: 12, borderRadius: 16, textAlign: "center", fontSize: 16, color: "#0f172a", fontWeight: 800 },
-  fileInput: { width: "100%", marginTop: 14, border: "2px dashed #93c5fd", borderRadius: 18, padding: 15, boxSizing: "border-box", background: "#f8fafc" },
-  submitBtn: { width: "100%", marginTop: 18, border: "none", borderRadius: 18, padding: 17, background: "linear-gradient(135deg,#16a34a,#22c55e)", color: "#fff", fontSize: 20, fontWeight: 900 },
-  cancelBtn: { width: "100%", marginTop: 10, border: "none", borderRadius: 18, padding: 15, background: "#e5e7eb", color: "#0f172a", fontSize: 18, fontWeight: 900 },
+  paymentCard: { maxWidth: 430, margin: "0 auto", background: "#fff", minHeight: "100vh" },
+  paymentHeader: { background: "linear-gradient(135deg,#0f172a,#1d4ed8,#7c3aed)", color: "#fff", display: "grid", gridTemplateColumns: "42px 1fr 1.2fr", alignItems: "center", padding: "11px 12px", gap: 7 },
+  paymentBack: { border: "none", background: "rgba(255,255,255,.12)", color: "#fff", fontSize: 22, fontWeight: 900, borderRadius: 12, height: 36 },
+  logo: { fontSize: 15, fontWeight: 900 },
+  paymentTitle: { margin: 0, textAlign: "center", fontSize: 17, fontWeight: 900 },
+  paymentBody: { padding: 14 },
+  paymentTopCard: { background: "#eff6ff", border: "1px solid #dbeafe", borderRadius: 18, padding: 13 },
+  scanText: { color: "#2563eb", fontSize: 17, fontWeight: 900, margin: "0 0 8px", textAlign: "center" },
+  timerBox: { background: "#ecfeff", padding: 9, borderRadius: 13, textAlign: "center", fontSize: 13, color: "#0f172a", fontWeight: 800 },
+  qrBox: { display: "flex", justifyContent: "center", marginTop: 13 },
+  qrImg: { width: 190, height: 190, objectFit: "contain", background: "#fff", borderRadius: 16, border: "1px solid #e2e8f0", padding: 8 },
+  copyRow: { display: "flex", alignItems: "center", justifyContent: "space-between", gap: 10, background: "#f8fafc", border: "1px solid #e2e8f0", borderRadius: 14, padding: "10px 11px", marginTop: 10 },
+  copyLabel: { margin: 0, color: "#64748b", fontSize: 11, fontWeight: 900 },
+  copyValue: { margin: "3px 0 0", color: "#0f172a", fontSize: 13, fontWeight: 900, wordBreak: "break-all" },
+  copyBtn: { border: "none", background: "#0f172a", color: "#fff", borderRadius: 10, padding: "8px 10px", fontSize: 12, fontWeight: 900 },
+  fileInput: { width: "100%", marginTop: 12, border: "2px dashed #93c5fd", borderRadius: 15, padding: 12, boxSizing: "border-box", background: "#f8fafc" },
+  submitBtn: { width: "100%", marginTop: 14, border: "none", borderRadius: 15, padding: 14, background: "linear-gradient(135deg,#16a34a,#22c55e)", color: "#fff", fontSize: 17, fontWeight: 900 },
+  cancelBtn: { width: "100%", marginTop: 9, border: "none", borderRadius: 15, padding: 12, background: "#e5e7eb", color: "#0f172a", fontSize: 15, fontWeight: 900 },
 };
