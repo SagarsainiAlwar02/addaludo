@@ -27,7 +27,13 @@ const Battle = () => {
       if (!jwt) return "";
 
       const payload = JSON.parse(atob(jwt.split(".")[1] || ""));
-      return String(payload?._id || payload?.id || payload?.userId || payload?.user || "");
+      return String(
+        payload?._id ||
+          payload?.id ||
+          payload?.userId ||
+          payload?.user ||
+          ""
+      );
     } catch {
       return "";
     }
@@ -42,10 +48,28 @@ const Battle = () => {
   });
 
   const getCreatorId = (battle) =>
-    String(battle?.createdBy?._id || battle?.createdBy?.id || battle?.createdBy || "");
+    String(
+      battle?.createdBy?._id ||
+        battle?.createdBy?.id ||
+        battle?.createdBy ||
+        ""
+    );
 
   const getOpponentId = (battle) =>
-    String(battle?.opponent?._id || battle?.opponent?.id || battle?.opponent || "");
+    String(
+      battle?.opponent?._id ||
+        battle?.opponent?.id ||
+        battle?.opponent ||
+        ""
+    );
+
+  const hasMyResult = (battle) => {
+    return Array.isArray(battle?.results)
+      ? battle.results.some(
+          (item) => String(item?.user?._id || item?.user || "") === myId
+        )
+      : false;
+  };
 
   const calculatePrize = (amount) => {
     const amt = Number(amount);
@@ -104,15 +128,24 @@ const Battle = () => {
   const myActiveBattle = useMemo(() => {
     return myBattles.find((battle) => {
       const status = String(battle?.status || "").toLowerCase();
-      return [
+
+      const activeStatuses = [
         "join_requested",
         "running",
         "room_submitted",
-        "cancel_requested",
         "result_submitted",
-      ].includes(status);
+        "cancel_requested",
+      ];
+
+      if (!activeStatuses.includes(status)) return false;
+
+      if (["result_submitted", "cancel_requested"].includes(status)) {
+        return !hasMyResult(battle);
+      }
+
+      return true;
     });
-  }, [myBattles]);
+  }, [myBattles, myId]);
 
   const visibleOpenBattles = useMemo(() => {
     return allBattles
@@ -121,7 +154,10 @@ const Battle = () => {
         const isCreator = getCreatorId(battle) === myId;
         const isOpponent = getOpponentId(battle) === myId;
 
-        return status === "open" || (status === "join_requested" && (isCreator || isOpponent));
+        return (
+          status === "open" ||
+          (status === "join_requested" && (isCreator || isOpponent))
+        );
       })
       .sort((a, b) => new Date(b.createdAt || 0) - new Date(a.createdAt || 0));
   }, [allBattles, myId]);
@@ -131,6 +167,19 @@ const Battle = () => {
       .filter((battle) => {
         const status = String(battle?.status || "").toLowerCase();
         return ["running", "room_submitted"].includes(status);
+      })
+      .sort(
+        (a, b) =>
+          new Date(b.updatedAt || b.createdAt || 0) -
+          new Date(a.updatedAt || a.createdAt || 0)
+      );
+  }, [allBattles]);
+
+  const pendingBattles = useMemo(() => {
+    return allBattles
+      .filter((battle) => {
+        const status = String(battle?.status || "").toLowerCase();
+        return ["result_submitted", "cancel_requested"].includes(status);
       })
       .sort(
         (a, b) =>
@@ -449,6 +498,37 @@ const Battle = () => {
               <button
                 onClick={() => navigate(`/room-code/${rb.battleId}`)}
                 className="bg-orange-500 text-white px-4 py-2 rounded-xl font-black text-xs"
+              >
+                VIEW
+              </button>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {pendingBattles.length > 0 && (
+        <div className="mt-8">
+          <h3 className="font-black mb-3 text-yellow-500 text-xs uppercase px-2 tracking-widest">
+            Pending Results
+          </h3>
+
+          {pendingBattles.map((rb) => (
+            <div
+              key={rb.battleId}
+              className="bg-white p-4 rounded-2xl flex justify-between items-center mb-3 border-l-4 border-yellow-500 shadow-sm"
+            >
+              <div>
+                <p className="font-black text-sm text-slate-800">
+                  ₹{rb.amount} Battle
+                </p>
+                <p className="text-[10px] text-yellow-600 font-bold animate-pulse">
+                  RESULT PENDING
+                </p>
+              </div>
+
+              <button
+                onClick={() => navigate(`/room-code/${rb.battleId}`)}
+                className="bg-yellow-500 text-white px-4 py-2 rounded-xl font-black text-xs"
               >
                 VIEW
               </button>
