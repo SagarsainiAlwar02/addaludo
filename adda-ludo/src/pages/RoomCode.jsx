@@ -54,7 +54,13 @@ export default function RoomCode() {
     try {
       const res = await axios.get(`${API_BASE}/battle/${battleId}`, authHeader());
       setBattle(res.data.battle);
-      setRoomCode(res.data.battle?.ludoKingRoomCode || "");
+        const serverRoomCode = res.data.battle?.ludoKingRoomCode || "";
+
+setRoomCode((prev) => {
+  if (serverRoomCode) return serverRoomCode;
+  return prev;
+});
+
     } catch (err) {
       alert(err.response?.data?.msg || "Battle load failed");
       navigate("/battle");
