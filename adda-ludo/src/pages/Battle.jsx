@@ -9,6 +9,17 @@ const API_BASE =
 const OPEN_BATTLE_SECONDS = 60;
 const MAX_SEARCHING_BATTLES = 2;
 
+const BOT_RUNNING_BATTLES = [
+  { battleId: "bot_1", amount: 50, createdBy: { name: "Rohit" }, opponent: { name: "Amit" } },
+  { battleId: "bot_2", amount: 100, createdBy: { name: "Vikas" }, opponent: { name: "Rahul" } },
+  { battleId: "bot_3", amount: 200, createdBy: { name: "Deepak" }, opponent: { name: "Sahil" } },
+  { battleId: "bot_4", amount: 300, createdBy: { name: "Mohit" }, opponent: { name: "Karan" } },
+  { battleId: "bot_5", amount: 500, createdBy: { name: "Arjun" }, opponent: { name: "Nitin" } },
+  { battleId: "bot_6", amount: 1000, createdBy: { name: "Sameer" }, opponent: { name: "Yash" } },
+  { battleId: "bot_7", amount: 2500, createdBy: { name: "Ravi" }, opponent: { name: "Manish" } },
+  { battleId: "bot_8", amount: 5000, createdBy: { name: "Ajay" }, opponent: { name: "Sandeep" } },
+];
+
 function calculatePrize(amount) {
   const totalPool = Number(amount) * 2;
   const commissionPercentPerUser = Number(amount) <= 500 ? 5 : 2.5;
@@ -250,7 +261,7 @@ export default function Battle() {
     return Array.from(map.values()).slice(0, MAX_SEARCHING_BATTLES);
   }, [openBattles, myBattles, searchedAmount, tick]);
 
-  const runningBattles = useMemo(() => {
+  const realRunningBattles = useMemo(() => {
     return myBattles.filter((b) =>
       [
         "running",
@@ -265,7 +276,22 @@ export default function Battle() {
     );
   }, [myBattles]);
 
+  const runningBattles = useMemo(() => {
+    return [...realRunningBattles, ...BOT_RUNNING_BATTLES];
+  }, [realRunningBattles]);
+
   const getAction = (battle) => {
+    if (battle.battleId?.startsWith("bot_")) {
+      return (
+        <button
+          disabled
+          className="rounded-xl bg-white/20 px-5 py-2 text-sm font-black text-white"
+        >
+          Running
+        </button>
+      );
+    }
+
     const status = String(battle?.status || "").toLowerCase();
     const creatorId = getBattleCreatorId(battle);
     const opponentId = getBattleOpponentId(battle);
@@ -401,25 +427,14 @@ export default function Battle() {
 
         <SectionTitle title="🏃 Running Battles" />
 
-        {runningBattles.length === 0 ? (
-          <EmptyBox text="Abhi koi running battle nahi hai" />
-        ) : (
-          runningBattles.map((battle) => (
-            <BattleCard
-              key={battle.battleId}
-              battle={battle}
-              dark
-              action={
-                <button
-                  onClick={() => navigate(`/room-code/${battle.battleId}`)}
-                  className="rounded-xl bg-white px-5 py-2 text-sm font-black text-blue-700"
-                >
-                  View
-                </button>
-              }
-            />
-          ))
-        )}
+        {runningBattles.map((battle) => (
+          <BattleCard
+            key={battle.battleId}
+            battle={battle}
+            dark
+            action={getAction(battle)}
+          />
+        ))}
       </div>
     </div>
   );
