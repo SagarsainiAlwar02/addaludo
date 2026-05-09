@@ -66,6 +66,99 @@ const Battle = () => {
     return Math.floor(totalPool - platformFee);
   };
 
+  const FAKE_RUNNING_BATTLES = [
+    {
+      battleId: "fake_run_1",
+      amount: 100,
+      prize: calculatePrize(100),
+      status: "running",
+      isFake: true,
+      createdBy: { name: "Player 482" },
+      opponent: { name: "Player 913" },
+    },
+    {
+      battleId: "fake_run_2",
+      amount: 250,
+      prize: calculatePrize(250),
+      status: "running",
+      isFake: true,
+      createdBy: { name: "Player 128" },
+      opponent: { name: "Player 674" },
+    },
+    {
+      battleId: "fake_run_3",
+      amount: 350,
+      prize: calculatePrize(350),
+      status: "running",
+      isFake: true,
+      createdBy: { name: "Player 739" },
+      opponent: { name: "Player 205" },
+    },
+    {
+      battleId: "fake_run_4",
+      amount: 50,
+      prize: calculatePrize(50),
+      status: "running",
+      isFake: true,
+      createdBy: { name: "Player 951" },
+      opponent: { name: "Player 318" },
+    },
+    {
+      battleId: "fake_run_5",
+      amount: 500,
+      prize: calculatePrize(500),
+      status: "running",
+      isFake: true,
+      createdBy: { name: "Player 611" },
+      opponent: { name: "Player 827" },
+    },
+    {
+      battleId: "fake_run_6",
+      amount: 750,
+      prize: calculatePrize(750),
+      status: "running",
+      isFake: true,
+      createdBy: { name: "Player 220" },
+      opponent: { name: "Player 446" },
+    },
+    {
+      battleId: "fake_run_7",
+      amount: 1000,
+      prize: calculatePrize(1000),
+      status: "running",
+      isFake: true,
+      createdBy: { name: "Player 792" },
+      opponent: { name: "Player 104" },
+    },
+    {
+      battleId: "fake_run_8",
+      amount: 1500,
+      prize: calculatePrize(1500),
+      status: "running",
+      isFake: true,
+      createdBy: { name: "Player 384" },
+      opponent: { name: "Player 569" },
+    },
+    {
+      battleId: "fake_run_9",
+      amount: 2000,
+      prize: calculatePrize(2000),
+      status: "running",
+      isFake: true,
+      createdBy: { name: "Player 735" },
+      opponent: { name: "Player 908" },
+    },
+    {
+      battleId: "fake_run_10",
+      amount: 5000,
+      prize: calculatePrize(5000),
+      status: "running",
+      isFake: true,
+      createdBy: { name: "Player 163" },
+      opponent: { name: "Player 741" },
+    },
+  ];
+
   const fetchBattles = async () => {
     if (!token) return;
 
@@ -147,7 +240,7 @@ const Battle = () => {
   }, [allBattles, myId]);
 
   const runningBattles = useMemo(() => {
-    return allBattles
+    const realRunningBattles = allBattles
       .filter((battle) =>
         ["running", "room_submitted"].includes(String(battle?.status || "").toLowerCase())
       )
@@ -156,6 +249,8 @@ const Battle = () => {
           new Date(b.updatedAt || b.createdAt || 0) -
           new Date(a.updatedAt || a.createdAt || 0)
       );
+
+    return [...realRunningBattles, ...FAKE_RUNNING_BATTLES];
   }, [allBattles]);
 
   const pendingBattles = useMemo(() => {
@@ -362,7 +457,7 @@ const Battle = () => {
             </div>
 
             <div className="mt-4 rounded-2xl bg-black/20 px-4 py-3 text-center text-sm font-bold leading-6 text-white ring-1 ring-white/10">
-             अगर कोई Popular में Code देता है तो I'D Block कर दी जाएगी !
+              अगर कोई Popular में Code देता है तो I'D Block कर दी जाएगी !
             </div>
           </div>
         </div>
@@ -431,7 +526,10 @@ const Battle = () => {
               battle={battle}
               type="running"
               calculatePrize={calculatePrize}
-              onClick={() => navigate(`/room-code/${battle.battleId}`)}
+              onClick={() => {
+                if (battle.isFake) return;
+                navigate(`/room-code/${battle.battleId}`);
+              }}
             />
           ))}
         </div>
