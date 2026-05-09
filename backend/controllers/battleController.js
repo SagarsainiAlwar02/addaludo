@@ -2,6 +2,9 @@ const Battle = require("../models/battle");
 const Wallet = require("../models/wallet");
 const Transaction = require("../models/transaction");
 
+const OPEN_BATTLE_EXPIRE_MS = 60 * 1000;
+const MAX_SEARCHING_BATTLES = 2;
+
 function makeBattleId() {
   return "battle_" + Date.now() + "_" + Math.floor(Math.random() * 9999);
 }
@@ -71,8 +74,8 @@ async function lockAmount(userId, amount, roomId) {
 async function refundAmount(userId, amount, roomId, note = "Battle amount refunded") {
   const wallet = await getWallet(userId);
 
-  wallet.locked = Math.max(0, Number(wallet.locked || 0) - amount);
-  wallet.balance = Number(wallet.balance || 0) + amount;
+  wallet.locked = Math.max(0, Number(wallet.locked || 0) - Number(amount || 0));
+  wallet.balance = Number(wallet.balance || 0) + Number(amount || 0);
   await wallet.save();
 
   await Transaction.create({
@@ -88,14 +91,71 @@ async function refundAmount(userId, amount, roomId, note = "Battle amount refund
   return wallet;
 }
 
+async function expireOldOpenBattles() {
+  const expiryDate = new Date(Date.now() - OPEN_BATTLE_EXPIRE_MS);
+
+  const oldBattles = await Battle.find({
+    status: "open",
+    createdAt: { $lte: expiryDate },
+  });
+
+  for (const battle of oldBattles) {
+    await refundAmount(
+      battle.createdBy,
+      battle.amount,
+      battle.battleId,
+      "Open battle expired after 60 seconds"
+    );
+
+    battle.status = "cancelled";
+    battle.adminNote = "Auto cancelled after 60 seconds";
+    await battle.save();
+  }
+}
+
+async function cancelOtherOpenBattles(userId, excludeBattleId) {
+  const battles = await Battle.find({
+    battleId: { $ne: excludeBattleId },
+    createdBy: userId,
+    status: "open",
+  });
+
+  for (const battle of battles) {
+    await refundAmount(
+      battle.createdBy,
+      battle.amount,
+      battle.battleId,
+      "Other open battle auto cancelled after match joined"
+    );
+
+    battle.status = "cancelled";
+    battle.adminNote = "Auto cancelled because another battle was joined";
+    await battle.save();
+  }
+}
+
 exports.createBattle = async (req, res) => {
   try {
+    await expireOldOpenBattles();
+
     const userId = getUserId(req);
     const amount = Number(req.body.amount);
 
     const amountError = validateBattleAmount(amount);
     if (amountError) {
       return res.status(400).json({ success: false, msg: amountError });
+    }
+
+    const searchingCount = await Battle.countDocuments({
+      createdBy: userId,
+      status: "open",
+    });
+
+    if (searchingCount >= MAX_SEARCHING_BATTLES) {
+      return res.status(400).json({
+        success: false,
+        msg: "Maximum 2 searching battles allowed. Pehle kisi battle ka wait/cancel karein.",
+      });
     }
 
     const battleId = makeBattleId();
@@ -124,6 +184,8 @@ exports.createBattle = async (req, res) => {
 
 exports.getOpenBattles = async (req, res) => {
   try {
+    await expireOldOpenBattles();
+
     const battles = await Battle.find({
       status: { $in: ["open", "join_requested"] },
     })
@@ -139,6 +201,8 @@ exports.getOpenBattles = async (req, res) => {
 
 exports.getMyBattles = async (req, res) => {
   try {
+    await expireOldOpenBattles();
+
     const userId = getUserId(req);
 
     const battles = await Battle.find({
@@ -157,6 +221,8 @@ exports.getMyBattles = async (req, res) => {
 
 exports.getSingleBattle = async (req, res) => {
   try {
+    await expireOldOpenBattles();
+
     const userId = getUserId(req);
     const { battleId } = req.params;
 
@@ -188,6 +254,8 @@ exports.getSingleBattle = async (req, res) => {
 
 exports.joinBattle = async (req, res) => {
   try {
+    await expireOldOpenBattles();
+
     const userId = getUserId(req);
     const { battleId } = req.params;
 
@@ -218,9 +286,12 @@ exports.joinBattle = async (req, res) => {
     battle.timerStartedAt = null;
     await battle.save();
 
+    await cancelOtherOpenBattles(battle.createdBy, battle.battleId);
+    await cancelOtherOpenBattles(userId, battle.battleId);
+
     return res.json({
       success: true,
-      msg: "Play request sent. Waiting for creator start.",
+      msg: "Play request sent. Other searching battles removed.",
       battle,
     });
   } catch (err) {
