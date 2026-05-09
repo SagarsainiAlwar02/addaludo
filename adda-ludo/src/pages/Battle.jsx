@@ -170,10 +170,16 @@ export default function Battle() {
     try {
       setLoading(true);
 
-      await axios.post(`${API_BASE}/battle/join/${battleId}`, {}, authHeader());
+      const res = await axios.post(
+        `${API_BASE}/battle/join/${battleId}`,
+        {},
+        authHeader()
+      );
+
+      const joinedId = res.data?.battle?.battleId || battleId;
 
       await fetchBattles();
-      alert("Play request sent. Creator Start karega tab room page khulega.");
+      navigate(`/room-code/${joinedId}`);
     } catch (err) {
       alert(err.response?.data?.msg || "Play request failed");
     } finally {
