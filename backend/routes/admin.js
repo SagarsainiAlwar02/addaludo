@@ -377,7 +377,7 @@ router.get("/settings-report", auth, async (req, res) => {
 });
 
 // ================= PAYMENT SETTINGS =================
-router.get("/payment-settings", auth, async (req, res) => {
+router.get("/payment-settings", async (req, res) => {
   try {
     const setting = await getPaymentSetting();
 
