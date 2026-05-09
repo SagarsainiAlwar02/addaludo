@@ -38,11 +38,21 @@ function validateBattleAmount(amount) {
   return null;
 }
 
+// ✅ NEW COMMISSION LOGIC
 function calculateBattlePrize(amount) {
-  const totalPool = Number(amount) * 2;
-  const commissionPercentPerUser = Number(amount) <= 500 ? 5 : 2.5;
-  const commission = Math.floor((totalPool * commissionPercentPerUser * 2) / 100);
-  return totalPool - commission;
+  const amt = parseInt(amount, 10);
+  if (isNaN(amt)) return 0;
+
+  const totalPool = amt * 2;
+  let platformFee = 0;
+
+  if (amt >= 50 && amt <= 500) {
+    platformFee = amt * 0.05 * 2;
+  } else if (amt > 500 && amt <= 100000) {
+    platformFee = amt * 0.025 * 2;
+  }
+
+  return Math.floor(totalPool - platformFee);
 }
 
 function hasSubmittedResult(battle, userId) {
@@ -132,6 +142,9 @@ async function refundAmount(userId, amount, roomId, note = "Battle amount refund
 async function settleWinner(battle, winnerId) {
   if (battle.resultSettled) return;
 
+  // ✅ safety: old battle me prize galat ho to latest logic se correct prize
+  const finalPrize = calculateBattlePrize(battle.amount);
+
   const creatorId = battle.createdBy.toString();
   const winnerString = winnerId.toString();
   const loserId = winnerString === creatorId ? battle.opponent : battle.createdBy;
@@ -139,16 +152,22 @@ async function settleWinner(battle, winnerId) {
   const winnerWallet = await getWallet(winnerId);
   const loserWallet = await getWallet(loserId);
 
-  winnerWallet.locked = Math.max(0, Number(winnerWallet.locked || 0) - Number(battle.amount || 0));
-  winnerWallet.winnings = Number(winnerWallet.winnings || 0) + Number(battle.prize || 0);
+  winnerWallet.locked = Math.max(
+    0,
+    Number(winnerWallet.locked || 0) - Number(battle.amount || 0)
+  );
+  winnerWallet.winnings = Number(winnerWallet.winnings || 0) + Number(finalPrize || 0);
   await winnerWallet.save();
 
-  loserWallet.locked = Math.max(0, Number(loserWallet.locked || 0) - Number(battle.amount || 0));
+  loserWallet.locked = Math.max(
+    0,
+    Number(loserWallet.locked || 0) - Number(battle.amount || 0)
+  );
   await loserWallet.save();
 
   await Transaction.create({
     userId: winnerId,
-    amount: battle.prize,
+    amount: finalPrize,
     type: "game_win",
     status: "success",
     roomId: battle.battleId,
@@ -156,6 +175,7 @@ async function settleWinner(battle, winnerId) {
     balanceAfter: winnerWallet.balance,
   });
 
+  battle.prize = finalPrize;
   battle.winner = winnerId;
   battle.resultSettled = true;
 }
@@ -419,6 +439,9 @@ exports.startBattle = async (req, res) => {
         msg: "No player request found",
       });
     }
+
+    // ✅ ensure prize always latest commission logic
+    battle.prize = calculateBattlePrize(battle.amount);
 
     if (!battle.entryLocked) {
       const creatorWallet = await getWallet(battle.createdBy);
