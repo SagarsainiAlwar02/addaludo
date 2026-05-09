@@ -89,9 +89,11 @@ const Battle = () => {
 
   const allBattles = useMemo(() => {
     const map = new Map();
+
     [...openBattles, ...myBattles].forEach((battle) => {
       if (battle?.battleId) map.set(battle.battleId, battle);
     });
+
     return Array.from(map.values());
   }, [openBattles, myBattles]);
 
@@ -138,10 +140,7 @@ const Battle = () => {
 
   const runningBattles = useMemo(() => {
     return allBattles
-      .filter((battle) => {
-        const status = String(battle?.status || "").toLowerCase();
-        return ["running", "room_submitted"].includes(status);
-      })
+      .filter((battle) => ["running", "room_submitted"].includes(String(battle?.status || "").toLowerCase()))
       .sort(
         (a, b) =>
           new Date(b.updatedAt || b.createdAt || 0) -
@@ -151,10 +150,9 @@ const Battle = () => {
 
   const pendingBattles = useMemo(() => {
     return allBattles
-      .filter((battle) => {
-        const status = String(battle?.status || "").toLowerCase();
-        return ["result_submitted", "cancel_requested"].includes(status);
-      })
+      .filter((battle) =>
+        ["result_submitted", "cancel_requested"].includes(String(battle?.status || "").toLowerCase())
+      )
       .sort(
         (a, b) =>
           new Date(b.updatedAt || b.createdAt || 0) -
@@ -165,20 +163,9 @@ const Battle = () => {
   const validateAmount = () => {
     const amt = Number(betAmount);
 
-    if (!amt || amt < 50) {
-      alert("Minimum battle amount ₹50 hai");
-      return false;
-    }
-
-    if (amt > 100000) {
-      alert("Maximum battle amount ₹100000 hai");
-      return false;
-    }
-
-    if (amt % 50 !== 0) {
-      alert("Amount ₹50 ke multiple me hona chahiye");
-      return false;
-    }
+    if (!amt || amt < 50) return alert("Minimum battle amount ₹50 hai"), false;
+    if (amt > 100000) return alert("Maximum battle amount ₹100000 hai"), false;
+    if (amt % 50 !== 0) return alert("Amount ₹50 ke multiple me hona chahiye"), false;
 
     return true;
   };
@@ -229,7 +216,6 @@ const Battle = () => {
 
     try {
       setLoading(true);
-
       const res = await axios.post(`${API_BASE}/battle/join/${battleId}`, {}, authHeader());
       const joinedId = res.data?.battle?.battleId || battleId;
 
@@ -245,7 +231,6 @@ const Battle = () => {
   const startBattle = async (battleId) => {
     try {
       setLoading(true);
-
       const res = await axios.post(`${API_BASE}/battle/start/${battleId}`, {}, authHeader());
       const startedId = res.data?.battle?.battleId || battleId;
 
@@ -298,7 +283,7 @@ const Battle = () => {
         <button
           disabled={loading}
           onClick={() => cancelBattle(battle.battleId)}
-          className="rounded-full bg-red-500 px-4 py-2 text-xs font-black text-white shadow-lg disabled:opacity-50"
+          className="rounded-2xl bg-red-500/10 px-4 py-2 text-xs font-black text-red-600 ring-1 ring-red-200 disabled:opacity-50"
         >
           Cancel
         </button>
@@ -310,9 +295,9 @@ const Battle = () => {
         <button
           disabled={loading}
           onClick={() => joinMatch(battle.battleId)}
-          className="rounded-lg bg-gradient-to-b from-[#293241] via-[#6d3b3b] to-[#ef3b2d] px-8 py-3 text-base font-bold text-white shadow-md disabled:opacity-50"
+          className="rounded-2xl bg-gradient-to-r from-emerald-500 to-green-600 px-6 py-3 text-sm font-black text-white shadow-lg shadow-green-500/30 active:scale-95 disabled:opacity-50"
         >
-          Play
+          PLAY
         </button>
       );
     }
@@ -323,7 +308,7 @@ const Battle = () => {
           <button
             disabled={loading}
             onClick={() => startBattle(battle.battleId)}
-            className="rounded-lg bg-green-600 px-5 py-2 text-xs font-black text-white shadow-md disabled:opacity-50"
+            className="rounded-xl bg-green-600 px-4 py-2 text-xs font-black text-white"
           >
             START
           </button>
@@ -331,7 +316,7 @@ const Battle = () => {
           <button
             disabled={loading}
             onClick={() => rejectBattle(battle.battleId)}
-            className="rounded-lg bg-red-600 px-5 py-2 text-xs font-black text-white shadow-md disabled:opacity-50"
+            className="rounded-xl bg-red-500 px-4 py-2 text-xs font-black text-white"
           >
             REJECT
           </button>
@@ -342,120 +327,148 @@ const Battle = () => {
     if (status === "join_requested" && isOpponent) {
       return (
         <div className="flex flex-col items-center gap-1">
-          <div className="h-7 w-7 animate-spin rounded-full border-4 border-gray-200 border-t-green-500" />
-          <p className="text-[10px] font-black text-slate-700">WAITING</p>
+          <div className="h-7 w-7 animate-spin rounded-full border-4 border-emerald-100 border-t-emerald-500" />
+          <p className="text-[10px] font-black text-slate-500">WAITING</p>
         </div>
       );
     }
 
     return (
-      <button disabled className="rounded-lg bg-gray-400 px-5 py-2 text-xs font-black text-white">
+      <button disabled className="rounded-xl bg-slate-200 px-4 py-2 text-xs font-black text-slate-500">
         BUSY
       </button>
     );
   };
 
   return (
-    <div className="mx-auto min-h-screen max-w-md bg-[#f7f7f7] px-4 pt-4 pb-28 font-sans text-black">
-      <div className="mb-5 rounded-md bg-[#1f2b38] px-4 py-4 text-center text-[17px] font-semibold leading-8 text-white shadow">
-        गोटी open होने के बाद अगर कोई भी user left होता है तो lose माना जायेगा
-      </div>
+    <div className="min-h-screen bg-[#eef3ff] px-3 pb-28 pt-4 text-slate-950">
+      <div className="mx-auto max-w-md">
+        <div className="mb-4 overflow-hidden rounded-[28px] bg-gradient-to-br from-[#111827] via-[#202b65] to-[#06b6d4] p-[1px] shadow-2xl shadow-blue-900/20">
+          <div className="rounded-[27px] bg-white/10 p-4 backdrop-blur-xl">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-xs font-black uppercase tracking-[0.25em] text-cyan-100">
+                  Adda Ludo
+                </p>
+                <h1 className="mt-1 text-2xl font-black text-white">
+                  Battle Arena
+                </h1>
+              </div>
 
-      <div className="mb-7 rounded-2xl border-2 border-black bg-white p-4 shadow-sm">
-        <div className="mb-4 flex items-center justify-between">
-          <h2 className="text-xl font-black text-black">Create a Battle</h2>
+              <div className="rounded-2xl bg-white/15 px-3 py-2 text-right ring-1 ring-white/20">
+                <p className="text-[10px] font-black uppercase text-cyan-100">
+                  Searching
+                </p>
+                <p className="text-lg font-black text-white">
+                  {mySearchingBattles.length}/{MAX_SEARCHING_BATTLES}
+                </p>
+              </div>
+            </div>
 
-          <button
-            type="button"
-            className="flex items-center gap-2 rounded-md bg-green-500 px-3 py-2 text-sm font-bold text-white shadow"
-          >
-            Rules
-            <span className="flex h-7 w-7 items-center justify-center rounded-full border-2 border-white text-lg font-black">
-              i
-            </span>
-          </button>
+            <div className="mt-4 rounded-2xl bg-black/20 px-4 py-3 text-center text-sm font-bold leading-6 text-white ring-1 ring-white/10">
+              गोटी open होने के बाद अगर कोई भी user left होता है तो lose माना जायेगा
+            </div>
+          </div>
         </div>
 
-        <div className="flex overflow-hidden rounded-xl border-2 border-black bg-white">
-          <input
-            type="number"
-            placeholder="Enter Coin"
-            className="min-w-0 flex-1 px-4 py-4 text-lg font-semibold outline-none"
-            value={betAmount}
-            min="50"
-            max="100000"
-            step="50"
-            onChange={(e) => setBetAmount(e.target.value)}
-          />
+        <div className="mb-6 rounded-[28px] bg-white p-4 shadow-xl shadow-slate-200/80 ring-1 ring-slate-200">
+          <div className="mb-4 flex items-center justify-between">
+            <div>
+              <h2 className="text-xl font-black">Create Battle</h2>
+              <p className="text-xs font-bold text-slate-400">
+                Amount डालो और challenge create करो
+              </p>
+            </div>
 
-          <button
-            disabled={loading}
-            onClick={handleCreate}
-            className="min-w-[95px] bg-[#1f2b38] px-6 text-xl font-black tracking-widest text-white disabled:opacity-60"
-          >
-            {loading ? "..." : "SET"}
-          </button>
+            <button className="rounded-2xl bg-gradient-to-r from-indigo-500 to-violet-600 px-4 py-2 text-xs font-black text-white shadow-lg shadow-indigo-500/25">
+              Rules
+            </button>
+          </div>
+
+          <div className="flex items-center gap-3 rounded-3xl bg-slate-100 p-2 ring-1 ring-slate-200">
+            <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-white text-xl shadow-sm">
+              ₹
+            </div>
+
+            <input
+              type="number"
+              placeholder="Enter Coin"
+              className="min-w-0 flex-1 bg-transparent py-3 text-lg font-black outline-none placeholder:text-slate-400"
+              value={betAmount}
+              min="50"
+              max="100000"
+              step="50"
+              onChange={(e) => setBetAmount(e.target.value)}
+            />
+
+            <button
+              disabled={loading}
+              onClick={handleCreate}
+              className="rounded-2xl bg-gradient-to-r from-slate-900 to-slate-700 px-6 py-4 text-sm font-black tracking-wider text-white shadow-lg active:scale-95 disabled:opacity-60"
+            >
+              {loading ? "..." : "SET"}
+            </button>
+          </div>
         </div>
 
-        <p className="mt-3 text-center text-[11px] font-black text-slate-500">
-          Searching Battle: {mySearchingBattles.length}/{MAX_SEARCHING_BATTLES}
-        </p>
-      </div>
+        <SectionTitle title="Open Battles" badge={visibleOpenBattles.length} gradient="from-cyan-500 to-blue-600" />
 
-      <SectionTitle icon="🕺" title="Open Battles" />
+        <div className="space-y-4">
+          {visibleOpenBattles.length === 0 && <EmptyBox text="No Battles Live" />}
+          {visibleOpenBattles.map((battle) => (
+            <OpenCard
+              key={battle.battleId}
+              battle={battle}
+              action={getOpenAction(battle)}
+              calculatePrize={calculatePrize}
+            />
+          ))}
+        </div>
 
-      <div className="space-y-4">
-        {visibleOpenBattles.length === 0 && <EmptyBox text="No Battles Available" />}
+        <SectionTitle title="Running Battles" badge={runningBattles.length} gradient="from-violet-600 to-indigo-700" />
 
-        {visibleOpenBattles.map((battle) => (
-          <OpenBattleCard
-            key={battle.battleId}
-            battle={battle}
-            action={getOpenAction(battle)}
-            calculatePrize={calculatePrize}
-          />
-        ))}
-      </div>
+        <div className="space-y-4">
+          {runningBattles.length === 0 && <EmptyBox text="No Running Battles" />}
+          {runningBattles.map((battle) => (
+            <MatchCard
+              key={battle.battleId}
+              battle={battle}
+              type="running"
+              calculatePrize={calculatePrize}
+              onClick={() => navigate(`/room-code/${battle.battleId}`)}
+            />
+          ))}
+        </div>
 
-      <SectionTitle icon="🏃‍♂️" title="Running Battles" />
+        <SectionTitle title="Pending Results" badge={pendingBattles.length} gradient="from-amber-500 to-orange-600" />
 
-      <div className="space-y-4">
-        {runningBattles.length === 0 && <EmptyBox text="No Running Battles" />}
-
-        {runningBattles.map((battle) => (
-          <RunningCard
-            key={battle.battleId}
-            battle={battle}
-            calculatePrize={calculatePrize}
-            onClick={() => navigate(`/room-code/${battle.battleId}`)}
-          />
-        ))}
-      </div>
-
-      <SectionTitle icon="⏳" title="Pending Results" />
-
-      <div className="space-y-4">
-        {pendingBattles.length === 0 && <EmptyBox text="No Pending Results" />}
-
-        {pendingBattles.map((battle) => (
-          <PendingCard
-            key={battle.battleId}
-            battle={battle}
-            calculatePrize={calculatePrize}
-            onClick={() => navigate(`/room-code/${battle.battleId}`)}
-          />
-        ))}
+        <div className="space-y-4">
+          {pendingBattles.length === 0 && <EmptyBox text="No Pending Results" />}
+          {pendingBattles.map((battle) => (
+            <MatchCard
+              key={battle.battleId}
+              battle={battle}
+              type="pending"
+              calculatePrize={calculatePrize}
+              onClick={() => navigate(`/room-code/${battle.battleId}`)}
+            />
+          ))}
+        </div>
       </div>
     </div>
   );
 };
 
-function SectionTitle({ icon, title }) {
+function SectionTitle({ title, badge, gradient }) {
   return (
-    <div className="my-5 overflow-hidden rounded-lg border-2 border-black bg-white shadow-sm">
-      <div className="flex items-center gap-3 bg-gradient-to-r from-white via-[#111] to-white px-5 py-3">
-        <span className="text-2xl">{icon}</span>
-        <h3 className="text-2xl font-black text-white drop-shadow">{title}</h3>
+    <div className="mb-3 mt-7 flex items-center justify-between">
+      <div>
+        <h3 className="text-lg font-black text-slate-900">{title}</h3>
+        <p className="text-xs font-bold text-slate-400">Live updates every 3 seconds</p>
+      </div>
+
+      <div className={`rounded-2xl bg-gradient-to-r ${gradient} px-4 py-2 text-sm font-black text-white shadow-lg`}>
+        {badge}
       </div>
     </div>
   );
@@ -463,116 +476,84 @@ function SectionTitle({ icon, title }) {
 
 function EmptyBox({ text }) {
   return (
-    <div className="rounded-xl border border-slate-200 bg-white p-5 text-center text-sm font-black uppercase text-slate-400 shadow-sm">
+    <div className="rounded-[24px] border border-dashed border-slate-300 bg-white/70 p-6 text-center text-sm font-black uppercase text-slate-400">
       {text}
     </div>
   );
 }
 
-function OpenBattleCard({ battle, action, calculatePrize }) {
+function OpenCard({ battle, action, calculatePrize }) {
   return (
-    <div className="overflow-hidden rounded-lg border border-cyan-200 bg-[#b6edf1] shadow-md">
-      <div className="border-b border-black/20 px-4 py-3">
-        <h3 className="text-xl font-black text-black">
-          Challenge From {battle.createdBy?.name || "Player"}
+    <div className="overflow-hidden rounded-[28px] bg-white shadow-xl shadow-cyan-100/70 ring-1 ring-cyan-100">
+      <div className="bg-gradient-to-r from-cyan-50 to-blue-50 px-4 py-3">
+        <p className="text-xs font-black uppercase tracking-widest text-cyan-700">
+          Challenge From
+        </p>
+        <h3 className="text-lg font-black text-slate-900">
+          {battle.createdBy?.name || "Player"}
         </h3>
       </div>
 
-      <div className="grid grid-cols-3 items-center gap-2 px-4 py-4">
-        <div>
-          <p className="text-base font-semibold text-slate-800">Entry Fee</p>
-          <p className="mt-1 flex items-center gap-2 text-3xl font-black text-black">
-            💸 {battle.amount}
-          </p>
-        </div>
-
+      <div className="grid grid-cols-3 items-center gap-2 p-4">
+        <MoneyBlock label="Entry Fee" value={battle.amount} />
         <div className="flex justify-center">{action}</div>
-
-        <div className="text-right">
-          <p className="text-base font-semibold text-slate-800">Winning Prize</p>
-          <p className="mt-1 flex items-center justify-end gap-2 text-3xl font-black text-black">
-            💸 {battle.prize || calculatePrize(battle.amount)}
-          </p>
-        </div>
+        <MoneyBlock label="Winning" value={battle.prize || calculatePrize(battle.amount)} right />
       </div>
     </div>
   );
 }
 
-function RunningCard({ battle, calculatePrize, onClick }) {
+function MatchCard({ battle, type, calculatePrize, onClick }) {
+  const isPending = type === "pending";
+  const bg = isPending
+    ? "from-[#fff7d6] via-[#fff0b8] to-[#ffd166]"
+    : "from-[#33206d] via-[#4f46e5] to-[#7c3aed]";
+
+  const textColor = isPending ? "text-slate-950" : "text-white";
+  const muted = isPending ? "text-slate-600" : "text-white/75";
+
   return (
     <div
       onClick={onClick}
-      className="cursor-pointer overflow-hidden rounded-lg border border-violet-300 bg-[#4f4394] text-white shadow-md"
+      className={`cursor-pointer overflow-hidden rounded-[28px] bg-gradient-to-br ${bg} p-4 shadow-xl active:scale-[0.99]`}
     >
-      <div className="border-b border-white/20 px-4 py-3">
-        <h3 className="text-xl font-black">
-          Game Play between {battle.createdBy?.name || "Player"} &{" "}
-          {battle.opponent?.name || "Opponent"}
-        </h3>
-      </div>
-
-      <div className="grid grid-cols-3 items-center gap-2 px-4 py-4">
+      <div className="mb-4 flex items-center justify-between gap-3">
         <div>
-          <p className="text-base font-semibold text-white/90">Entry Fee</p>
-          <p className="mt-1 flex items-center gap-2 text-3xl font-black">
-            💸 {battle.amount}
+          <p className={`text-[10px] font-black uppercase tracking-widest ${muted}`}>
+            {isPending ? "Result Waiting" : "Game Play"}
           </p>
+          <h3 className={`text-base font-black leading-5 ${textColor}`}>
+            {battle.createdBy?.name || "Player"} VS {battle.opponent?.name || "Opponent"}
+          </h3>
         </div>
 
+        <div className={`rounded-2xl px-3 py-2 text-xs font-black ${isPending ? "bg-black/10 text-slate-900" : "bg-white/15 text-white"}`}>
+          {isPending ? "PENDING" : "LIVE"}
+        </div>
+      </div>
+
+      <div className="grid grid-cols-3 items-center gap-2">
+        <MoneyBlock label="Entry Fee" value={battle.amount} dark={!isPending} />
         <div className="flex justify-center">
-          <div className="flex h-14 w-14 items-center justify-center rounded-full bg-white text-lg font-black text-[#4f4394] shadow-lg">
+          <div className={`flex h-14 w-14 items-center justify-center rounded-full text-sm font-black shadow-lg ${isPending ? "bg-white text-orange-600" : "bg-white text-indigo-700"}`}>
             VS
           </div>
         </div>
-
-        <div className="text-right">
-          <p className="text-base font-semibold text-white/90">Winning Prize</p>
-          <p className="mt-1 flex items-center justify-end gap-2 text-3xl font-black">
-            💸 {battle.prize || calculatePrize(battle.amount)}
-          </p>
-        </div>
+        <MoneyBlock label="Winning" value={battle.prize || calculatePrize(battle.amount)} right dark={!isPending} />
       </div>
     </div>
   );
 }
 
-function PendingCard({ battle, calculatePrize, onClick }) {
-  const status = String(battle?.status || "").toLowerCase();
-
+function MoneyBlock({ label, value, right = false, dark = false }) {
   return (
-    <div
-      onClick={onClick}
-      className="cursor-pointer overflow-hidden rounded-lg border border-yellow-300 bg-[#fff2b8] text-black shadow-md"
-    >
-      <div className="border-b border-black/20 px-4 py-3">
-        <h3 className="text-xl font-black">
-          Pending Result: {battle.createdBy?.name || "Player"} &{" "}
-          {battle.opponent?.name || "Opponent"}
-        </h3>
-      </div>
-
-      <div className="grid grid-cols-3 items-center gap-2 px-4 py-4">
-        <div>
-          <p className="text-base font-semibold text-slate-800">Entry Fee</p>
-          <p className="mt-1 flex items-center gap-2 text-3xl font-black">
-            💸 {battle.amount}
-          </p>
-        </div>
-
-        <div className="text-center">
-          <div className="mx-auto rounded-full bg-yellow-500 px-3 py-2 text-[11px] font-black uppercase text-white shadow">
-            {status === "cancel_requested" ? "Cancel Wait" : "Result Wait"}
-          </div>
-        </div>
-
-        <div className="text-right">
-          <p className="text-base font-semibold text-slate-800">Winning Prize</p>
-          <p className="mt-1 flex items-center justify-end gap-2 text-3xl font-black">
-            💸 {battle.prize || calculatePrize(battle.amount)}
-          </p>
-        </div>
-      </div>
+    <div className={right ? "text-right" : "text-left"}>
+      <p className={`text-[11px] font-black uppercase ${dark ? "text-white/70" : "text-slate-500"}`}>
+        {label}
+      </p>
+      <p className={`mt-1 text-2xl font-black ${dark ? "text-white" : "text-slate-950"}`}>
+        ₹{value}
+      </p>
     </div>
   );
 }
