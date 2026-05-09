@@ -220,7 +220,7 @@ const Battle = () => {
 
   const joinMatch = async (battleId) => {
     if (myActiveBattle) {
-      alert("Aapki ek battle already chal rahi hai. Pehle uska result update karo.");
+      alert("You are already in game.");
       return;
     }
 
