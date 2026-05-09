@@ -362,7 +362,7 @@ const Battle = () => {
             </div>
 
             <div className="mt-4 rounded-2xl bg-black/20 px-4 py-3 text-center text-sm font-bold leading-6 text-white ring-1 ring-white/10">
-              गोटी open होने के बाद अगर कोई भी user left होता है तो lose माना जायेगा
+             अगर कोई Popular में Code देता है तो I'D Block कर दी जाएगी !
             </div>
           </div>
         </div>
