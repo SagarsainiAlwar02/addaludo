@@ -51,11 +51,19 @@ const Battle = () => {
       : false;
 
   const calculatePrize = (amount) => {
-    const amt = Number(amount);
+    const amt = parseInt(amount, 10);
+    if (isNaN(amt)) return 0;
+
     const totalPool = amt * 2;
-    const commissionPercent = amt <= 500 ? 5 : 2.5;
-    const commission = Math.floor((totalPool * commissionPercent) / 100);
-    return totalPool - commission;
+    let platformFee = 0;
+
+    if (amt >= 50 && amt <= 500) {
+      platformFee = amt * 0.05 * 2;
+    } else if (amt > 500 && amt <= 100000) {
+      platformFee = amt * 0.025 * 2;
+    }
+
+    return Math.floor(totalPool - platformFee);
   };
 
   const fetchBattles = async () => {
@@ -140,7 +148,9 @@ const Battle = () => {
 
   const runningBattles = useMemo(() => {
     return allBattles
-      .filter((battle) => ["running", "room_submitted"].includes(String(battle?.status || "").toLowerCase()))
+      .filter((battle) =>
+        ["running", "room_submitted"].includes(String(battle?.status || "").toLowerCase())
+      )
       .sort(
         (a, b) =>
           new Date(b.updatedAt || b.createdAt || 0) -
@@ -345,24 +355,10 @@ const Battle = () => {
       <div className="mx-auto max-w-md">
         <div className="mb-4 overflow-hidden rounded-[28px] bg-gradient-to-br from-[#111827] via-[#202b65] to-[#06b6d4] p-[1px] shadow-2xl shadow-blue-900/20">
           <div className="rounded-[27px] bg-white/10 p-4 backdrop-blur-xl">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-xs font-black uppercase tracking-[0.25em] text-cyan-100">
-                  Adda Ludo
-                </p>
-                <h1 className="mt-1 text-2xl font-black text-white">
-                  Battle Arena
-                </h1>
-              </div>
-
-              <div className="rounded-2xl bg-white/15 px-3 py-2 text-right ring-1 ring-white/20">
-                <p className="text-[10px] font-black uppercase text-cyan-100">
-                  Searching
-                </p>
-                <p className="text-lg font-black text-white">
-                  {mySearchingBattles.length}/{MAX_SEARCHING_BATTLES}
-                </p>
-              </div>
+            <div className="flex items-center justify-center">
+              <p className="text-xs font-black uppercase tracking-[0.25em] text-cyan-100">
+                Adda Ludo
+              </p>
             </div>
 
             <div className="mt-4 rounded-2xl bg-black/20 px-4 py-3 text-center text-sm font-bold leading-6 text-white ring-1 ring-white/10">
@@ -462,10 +458,7 @@ const Battle = () => {
 function SectionTitle({ title, badge, gradient }) {
   return (
     <div className="mb-3 mt-7 flex items-center justify-between">
-      <div>
-        <h3 className="text-lg font-black text-slate-900">{title}</h3>
-        <p className="text-xs font-bold text-slate-400">Live updates every 3 seconds</p>
-      </div>
+      <h3 className="text-lg font-black text-slate-900">{title}</h3>
 
       <div className={`rounded-2xl bg-gradient-to-r ${gradient} px-4 py-2 text-sm font-black text-white shadow-lg`}>
         {badge}
