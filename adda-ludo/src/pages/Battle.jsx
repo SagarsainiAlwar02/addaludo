@@ -6,24 +6,13 @@ const API_BASE =
   import.meta.env.VITE_API_URL?.replace(/\/$/, "") ||
   "http://localhost:5000/api";
 
-const OPEN_BATTLE_SECONDS = 60;
 const MAX_SEARCHING_BATTLES = 2;
 
-const BOT_RUNNING_BATTLES = [
-  { battleId: "bot_1", amount: 50, createdBy: { name: "Rohit" }, opponent: { name: "Amit" } },
-  { battleId: "bot_2", amount: 100, createdBy: { name: "Vikas" }, opponent: { name: "Rahul" } },
-  { battleId: "bot_3", amount: 200, createdBy: { name: "Deepak" }, opponent: { name: "Sahil" } },
-  { battleId: "bot_4", amount: 300, createdBy: { name: "Mohit" }, opponent: { name: "Karan" } },
-  { battleId: "bot_5", amount: 500, createdBy: { name: "Arjun" }, opponent: { name: "Nitin" } },
-  { battleId: "bot_6", amount: 1000, createdBy: { name: "Sameer" }, opponent: { name: "Yash" } },
-  { battleId: "bot_7", amount: 2500, createdBy: { name: "Ravi" }, opponent: { name: "Manish" } },
-  { battleId: "bot_8", amount: 5000, createdBy: { name: "Ajay" }, opponent: { name: "Sandeep" } },
-];
-
 function calculatePrize(amount) {
-  const totalPool = Number(amount) * 2;
-  const commissionPercentPerUser = Number(amount) <= 500 ? 5 : 2.5;
-  const commission = Math.floor((totalPool * commissionPercentPerUser * 2) / 100);
+  const amt = Number(amount);
+  const totalPool = amt * 2;
+  const commissionPercent = amt <= 500 ? 5 : 2.5;
+  const commission = Math.floor((totalPool * commissionPercent) / 100);
   return totalPool - commission;
 }
 
@@ -42,25 +31,12 @@ function getUserId() {
   }
 }
 
-function getBattleCreatorId(battle) {
+function getCreatorId(battle) {
   return String(battle?.createdBy?._id || battle?.createdBy?.id || battle?.createdBy || "");
 }
 
-function getBattleOpponentId(battle) {
+function getOpponentId(battle) {
   return String(battle?.opponent?._id || battle?.opponent?.id || battle?.opponent || "");
-}
-
-function getBattleLeftSeconds(battle) {
-  const createdAt = battle?.createdAt ? new Date(battle.createdAt).getTime() : Date.now();
-  const used = Math.floor((Date.now() - createdAt) / 1000);
-  return Math.max(0, OPEN_BATTLE_SECONDS - used);
-}
-
-function hasUserSubmittedResult(battle, userId) {
-  if (!userId) return false;
-  return Array.isArray(battle?.results)
-    ? battle.results.some((item) => String(item?.user?._id || item?.user) === String(userId))
-    : false;
 }
 
 export default function Battle() {
@@ -70,37 +46,19 @@ export default function Battle() {
   const [openBattles, setOpenBattles] = useState([]);
   const [myBattles, setMyBattles] = useState([]);
   const [loading, setLoading] = useState(false);
-  const [tick, setTick] = useState(0);
 
   const token = localStorage.getItem("token");
   const myId = getUserId();
 
   const authHeader = () => ({
-    headers: { Authorization: `Bearer ${token}` },
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
   });
 
-  const validateAmount = (amountValue) => {
-    const value = Number(amountValue);
-
-    if (!value || value < 50) {
-      alert("Minimum battle amount ₹50 hai");
-      return false;
-    }
-
-    if (value > 100000) {
-      alert("Maximum battle amount ₹100000 hai");
-      return false;
-    }
-
-    if (value % 50 !== 0) {
-      alert("Amount ₹50 ke multiple me hona chahiye");
-      return false;
-    }
-
-    return true;
-  };
-
   const fetchBattles = async () => {
+    if (!token) return;
+
     try {
       const [openRes, myRes] = await Promise.all([
         axios.get(`${API_BASE}/battle/open`, authHeader()),
@@ -121,14 +79,9 @@ export default function Battle() {
     }
 
     fetchBattles();
+    const interval = setInterval(fetchBattles, 3000);
 
-    const fetchInterval = setInterval(fetchBattles, 3000);
-    const clockInterval = setInterval(() => setTick((prev) => prev + 1), 1000);
-
-    return () => {
-      clearInterval(fetchInterval);
-      clearInterval(clockInterval);
-    };
+    return () => clearInterval(interval);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -145,43 +98,79 @@ export default function Battle() {
   const mySearchingBattles = useMemo(() => {
     return myBattles.filter((battle) => {
       const status = String(battle?.status || "").toLowerCase();
-      const isCreator = getBattleCreatorId(battle) === myId;
-      return isCreator && status === "open";
+      return status === "open" && getCreatorId(battle) === myId;
     });
-  }, [myBattles, myId, tick]);
+  }, [myBattles, myId]);
 
-  const myActiveUnsubmittedBattle = useMemo(() => {
+  const myActiveBattle = useMemo(() => {
     return myBattles.find((battle) => {
       const status = String(battle?.status || "").toLowerCase();
-
-      const activeStatuses = [
+      return [
         "join_requested",
         "running",
         "room_submitted",
         "cancel_requested",
         "result_submitted",
-      ];
-
-      if (!activeStatuses.includes(status)) return false;
-
-      if (["cancel_requested", "result_submitted"].includes(status)) {
-        return !hasUserSubmittedResult(battle, myId);
-      }
-
-      return true;
+      ].includes(status);
     });
-  }, [myBattles, myId, tick]);
+  }, [myBattles]);
+
+  const visibleOpenBattles = useMemo(() => {
+    return allBattles
+      .filter((battle) => {
+        const status = String(battle?.status || "").toLowerCase();
+        const isCreator = getCreatorId(battle) === myId;
+        const isOpponent = getOpponentId(battle) === myId;
+
+        return status === "open" || (status === "join_requested" && (isCreator || isOpponent));
+      })
+      .sort((a, b) => new Date(b.createdAt || 0) - new Date(a.createdAt || 0));
+  }, [allBattles, myId]);
+
+  const runningBattles = useMemo(() => {
+    return allBattles
+      .filter((battle) => {
+        const status = String(battle?.status || "").toLowerCase();
+        return ["running", "room_submitted"].includes(status);
+      })
+      .sort(
+        (a, b) =>
+          new Date(b.updatedAt || b.createdAt || 0) -
+          new Date(a.updatedAt || a.createdAt || 0)
+      );
+  }, [allBattles]);
+
+  const validateAmount = () => {
+    const value = Number(amount);
+
+    if (!value || value < 50) {
+      alert("Minimum battle amount ₹50 hai");
+      return false;
+    }
+
+    if (value > 100000) {
+      alert("Maximum battle amount ₹100000 hai");
+      return false;
+    }
+
+    if (value % 50 !== 0) {
+      alert("Amount ₹50 ke multiple me hona chahiye");
+      return false;
+    }
+
+    return true;
+  };
 
   const createBattle = async () => {
-    if (!validateAmount(amount)) return;
+    if (!validateAmount()) return;
 
-    if (myActiveUnsubmittedBattle) {
+    if (myActiveBattle) {
       alert("Aapki ek battle already chal rahi hai. Pehle uska result update karo.");
       return;
     }
 
     if (mySearchingBattles.length >= MAX_SEARCHING_BATTLES) {
-      alert("Searching me maximum 2 battle hi create kar sakte ho");
+      alert("Searching me maximum 2 battle hi create kar sakte ho.");
       return;
     }
 
@@ -193,7 +182,7 @@ export default function Battle() {
     });
 
     if (sameOpenAmount) {
-      alert(`₹${finalAmount} ki open battle already lagi hui hai`);
+      alert(`₹${finalAmount} ki open battle already lagi hui hai.`);
       return;
     }
 
@@ -208,6 +197,7 @@ export default function Battle() {
 
       setAmount("");
       await fetchBattles();
+      alert("Battle set ho gayi!");
     } catch (err) {
       alert(err.response?.data?.msg || "Battle create failed");
     } finally {
@@ -216,7 +206,7 @@ export default function Battle() {
   };
 
   const playBattle = async (battleId) => {
-    if (myActiveUnsubmittedBattle) {
+    if (myActiveBattle) {
       alert("Aapki ek battle already chal rahi hai. Pehle uska result update karo.");
       return;
     }
@@ -279,8 +269,8 @@ export default function Battle() {
     }
   };
 
-  const cancelOpenBattle = async (battleId) => {
-    if (!window.confirm("Open battle cancel karni hai?")) return;
+  const cancelBattle = async (battleId) => {
+    if (!window.confirm("Battle cancel karni hai?")) return;
 
     try {
       setLoading(true);
@@ -300,77 +290,20 @@ export default function Battle() {
     }
   };
 
-  const visibleOpenBattles = useMemo(() => {
-    const map = new Map();
-
-    allBattles.forEach((battle) => {
-      const status = String(battle?.status || "").toLowerCase();
-      const creatorId = getBattleCreatorId(battle);
-      const opponentId = getBattleOpponentId(battle);
-
-      const isCreator = creatorId && myId && creatorId === myId;
-      const isOpponent = opponentId && myId && opponentId === myId;
-
-      if (!battle?.battleId) return;
-
-      if (status === "open") {
-        map.set(battle.battleId, battle);
-        return;
-      }
-
-      if (status === "join_requested" && (isCreator || isOpponent)) {
-        map.set(battle.battleId, battle);
-      }
-    });
-
-    return Array.from(map.values()).sort(
-      (a, b) => new Date(b.createdAt || 0) - new Date(a.createdAt || 0)
-    );
-  }, [allBattles, myId, tick]);
-
-  const runningBattles = useMemo(() => {
-    const map = new Map();
-
-    allBattles.forEach((battle) => {
-      const status = String(battle?.status || "").toLowerCase();
-
-      if (["running", "room_submitted"].includes(status)) {
-        map.set(battle.battleId, battle);
-      }
-    });
-
-    BOT_RUNNING_BATTLES.forEach((battle) => {
-      if (!map.has(battle.battleId)) map.set(battle.battleId, battle);
-    });
-
-    return Array.from(map.values()).sort((a, b) => {
-      if (String(a.battleId || "").startsWith("bot_")) return 1;
-      if (String(b.battleId || "").startsWith("bot_")) return -1;
-      return new Date(b.updatedAt || b.createdAt || 0) - new Date(a.updatedAt || a.createdAt || 0);
-    });
-  }, [allBattles]);
-
   const getOpenAction = (battle) => {
     const status = String(battle?.status || "").toLowerCase();
-    const creatorId = getBattleCreatorId(battle);
-    const opponentId = getBattleOpponentId(battle);
-
-    const isCreator = creatorId && myId && creatorId === myId;
-    const isOpponent = opponentId && myId && opponentId === myId;
+    const isCreator = getCreatorId(battle) === myId;
+    const isOpponent = getOpponentId(battle) === myId;
 
     if (status === "open" && isCreator) {
       return (
-        <div className="flex flex-col items-center gap-2">
-          <WaitingSpinner />
-          <CountdownText battle={battle} />
-          <button
-            disabled={loading}
-            onClick={() => cancelOpenBattle(battle.battleId)}
-            className="rounded-xl bg-red-600 px-5 py-2 text-sm font-black text-white disabled:opacity-60"
-          >
-            Cancel
-          </button>
-        </div>
+        <button
+          disabled={loading}
+          onClick={() => cancelBattle(battle.battleId)}
+          className="rounded-xl bg-red-600 px-5 py-2 text-sm font-black text-white disabled:opacity-60"
+        >
+          Cancel
+        </button>
       );
     }
 
@@ -411,7 +344,7 @@ export default function Battle() {
     if (status === "join_requested" && isOpponent) {
       return (
         <div className="flex flex-col items-center gap-2">
-          <WaitingSpinner />
+          <div className="h-7 w-7 animate-spin rounded-full border-4 border-slate-300 border-t-green-600" />
           <p className="text-xs font-black text-slate-600">Waiting Start</p>
         </div>
       );
@@ -420,20 +353,9 @@ export default function Battle() {
     return (
       <button
         disabled
-        className="rounded-xl bg-slate-400 px-5 py-2 text-sm font-black text-white opacity-70"
+        className="rounded-xl bg-slate-400 px-5 py-2 text-sm font-black text-white"
       >
         Busy
-      </button>
-    );
-  };
-
-  const getRunningAction = () => {
-    return (
-      <button
-        disabled
-        className="rounded-xl bg-white/20 px-5 py-2 text-sm font-black text-white"
-      >
-        Running
       </button>
     );
   };
@@ -467,11 +389,11 @@ export default function Battle() {
               onClick={createBattle}
               className="w-full rounded-xl bg-gradient-to-b from-red-500 to-red-700 py-3 font-black text-white disabled:opacity-60"
             >
-              Set Amount
+              {loading ? "Please wait..." : "Set Amount"}
             </button>
 
             <p className="text-center text-xs font-black text-slate-500">
-              Searching battle: {mySearchingBattles.length}/{MAX_SEARCHING_BATTLES} • open battle 60 second me auto remove hogi
+              Searching battle: {mySearchingBattles.length}/{MAX_SEARCHING_BATTLES}
             </p>
           </div>
         </div>
@@ -500,29 +422,18 @@ export default function Battle() {
               key={battle.battleId}
               battle={battle}
               dark
-              action={getRunningAction(battle)}
+              action={
+                <button
+                  onClick={() => navigate(`/room-code/${battle.battleId}`)}
+                  className="rounded-xl bg-orange-500 px-5 py-2 text-sm font-black text-white"
+                >
+                  View
+                </button>
+              }
             />
           ))
         )}
       </div>
-    </div>
-  );
-}
-
-function CountdownText({ battle }) {
-  const left = getBattleLeftSeconds(battle);
-
-  return (
-    <p className={`text-xs font-black ${left <= 10 ? "text-red-600" : "text-slate-600"}`}>
-      {left}s wait
-    </p>
-  );
-}
-
-function WaitingSpinner() {
-  return (
-    <div className="flex items-center justify-center">
-      <div className="h-8 w-8 animate-spin rounded-full border-4 border-slate-300 border-t-green-600" />
     </div>
   );
 }
