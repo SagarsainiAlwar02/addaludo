@@ -56,6 +56,13 @@ function getBattleLeftSeconds(battle) {
   return Math.max(0, OPEN_BATTLE_SECONDS - used);
 }
 
+function hasUserSubmittedResult(battle, userId) {
+  if (!userId) return false;
+  return Array.isArray(battle?.results)
+    ? battle.results.some((item) => String(item?.user?._id || item?.user) === String(userId))
+    : false;
+}
+
 export default function Battle() {
   const navigate = useNavigate();
 
@@ -116,9 +123,7 @@ export default function Battle() {
     fetchBattles();
 
     const fetchInterval = setInterval(fetchBattles, 3000);
-    const clockInterval = setInterval(() => {
-      setTick((prev) => prev + 1);
-    }, 1000);
+    const clockInterval = setInterval(() => setTick((prev) => prev + 1), 1000);
 
     return () => {
       clearInterval(fetchInterval);
@@ -126,6 +131,16 @@ export default function Battle() {
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  const allBattles = useMemo(() => {
+    const map = new Map();
+
+    [...openBattles, ...myBattles].forEach((battle) => {
+      if (battle?.battleId) map.set(battle.battleId, battle);
+    });
+
+    return Array.from(map.values());
+  }, [openBattles, myBattles]);
 
   const mySearchingBattles = useMemo(() => {
     return myBattles.filter((battle) => {
@@ -135,8 +150,35 @@ export default function Battle() {
     });
   }, [myBattles, myId, tick]);
 
+  const myActiveUnsubmittedBattle = useMemo(() => {
+    return myBattles.find((battle) => {
+      const status = String(battle?.status || "").toLowerCase();
+
+      const activeStatuses = [
+        "join_requested",
+        "running",
+        "room_submitted",
+        "cancel_requested",
+        "result_submitted",
+      ];
+
+      if (!activeStatuses.includes(status)) return false;
+
+      if (["cancel_requested", "result_submitted"].includes(status)) {
+        return !hasUserSubmittedResult(battle, myId);
+      }
+
+      return true;
+    });
+  }, [myBattles, myId, tick]);
+
   const createBattle = async () => {
     if (!validateAmount(amount)) return;
+
+    if (myActiveUnsubmittedBattle) {
+      alert("Aapki ek battle already chal rahi hai. Pehle uska result update karo.");
+      return;
+    }
 
     if (mySearchingBattles.length >= MAX_SEARCHING_BATTLES) {
       alert("Searching me maximum 2 battle hi create kar sakte ho");
@@ -144,6 +186,16 @@ export default function Battle() {
     }
 
     const finalAmount = Number(amount);
+
+    const sameOpenAmount = allBattles.some((battle) => {
+      const status = String(battle?.status || "").toLowerCase();
+      return status === "open" && Number(battle?.amount) === finalAmount;
+    });
+
+    if (sameOpenAmount) {
+      alert(`₹${finalAmount} ki open battle already lagi hui hai`);
+      return;
+    }
 
     try {
       setLoading(true);
@@ -164,6 +216,11 @@ export default function Battle() {
   };
 
   const playBattle = async (battleId) => {
+    if (myActiveUnsubmittedBattle) {
+      alert("Aapki ek battle already chal rahi hai. Pehle uska result update karo.");
+      return;
+    }
+
     try {
       setLoading(true);
 
@@ -246,7 +303,7 @@ export default function Battle() {
   const visibleOpenBattles = useMemo(() => {
     const map = new Map();
 
-    [...openBattles, ...myBattles].forEach((battle) => {
+    allBattles.forEach((battle) => {
       const status = String(battle?.status || "").toLowerCase();
       const creatorId = getBattleCreatorId(battle);
       const opponentId = getBattleOpponentId(battle);
@@ -269,36 +326,31 @@ export default function Battle() {
     return Array.from(map.values()).sort(
       (a, b) => new Date(b.createdAt || 0) - new Date(a.createdAt || 0)
     );
-  }, [openBattles, myBattles, myId, tick]);
-
-  const realRunningBattles = useMemo(() => {
-    return myBattles.filter((b) =>
-      [
-        "running",
-        "room_submitted",
-        "result_submitted",
-        "loss_submitted",
-        "cancel_requested",
-        "approved",
-        "rejected",
-        "cancelled",
-      ].includes(String(b.status || "").toLowerCase())
-    );
-  }, [myBattles]);
+  }, [allBattles, myId, tick]);
 
   const runningBattles = useMemo(() => {
-    return [...realRunningBattles, ...BOT_RUNNING_BATTLES];
-  }, [realRunningBattles]);
+    const map = new Map();
 
-  const getAction = (battle) => {
-    if (battle.battleId?.startsWith("bot_")) {
-      return (
-        <button disabled className="rounded-xl bg-white/20 px-5 py-2 text-sm font-black text-white">
-          Running
-        </button>
-      );
-    }
+    allBattles.forEach((battle) => {
+      const status = String(battle?.status || "").toLowerCase();
 
+      if (["running", "room_submitted"].includes(status)) {
+        map.set(battle.battleId, battle);
+      }
+    });
+
+    BOT_RUNNING_BATTLES.forEach((battle) => {
+      if (!map.has(battle.battleId)) map.set(battle.battleId, battle);
+    });
+
+    return Array.from(map.values()).sort((a, b) => {
+      if (String(a.battleId || "").startsWith("bot_")) return 1;
+      if (String(b.battleId || "").startsWith("bot_")) return -1;
+      return new Date(b.updatedAt || b.createdAt || 0) - new Date(a.updatedAt || a.createdAt || 0);
+    });
+  }, [allBattles]);
+
+  const getOpenAction = (battle) => {
     const status = String(battle?.status || "").toLowerCase();
     const creatorId = getBattleCreatorId(battle);
     const opponentId = getBattleOpponentId(battle);
@@ -324,16 +376,13 @@ export default function Battle() {
 
     if (status === "open" && !isCreator) {
       return (
-        <div className="flex flex-col items-center gap-2">
-          <CountdownText battle={battle} />
-          <button
-            disabled={loading}
-            onClick={() => playBattle(battle.battleId)}
-            className="rounded-xl bg-green-600 px-5 py-2 text-sm font-black text-white disabled:opacity-60"
-          >
-            Play
-          </button>
-        </div>
+        <button
+          disabled={loading}
+          onClick={() => playBattle(battle.battleId)}
+          className="rounded-xl bg-green-600 px-5 py-2 text-sm font-black text-white disabled:opacity-60"
+        >
+          Play
+        </button>
       );
     }
 
@@ -374,6 +423,17 @@ export default function Battle() {
         className="rounded-xl bg-slate-400 px-5 py-2 text-sm font-black text-white opacity-70"
       >
         Busy
+      </button>
+    );
+  };
+
+  const getRunningAction = () => {
+    return (
+      <button
+        disabled
+        className="rounded-xl bg-white/20 px-5 py-2 text-sm font-black text-white"
+      >
+        Running
       </button>
     );
   };
@@ -425,21 +485,25 @@ export default function Battle() {
             <BattleCard
               key={battle.battleId}
               battle={battle}
-              action={getAction(battle)}
+              action={getOpenAction(battle)}
             />
           ))
         )}
 
         <SectionTitle title="🏃 Running Battles" />
 
-        {runningBattles.map((battle) => (
-          <BattleCard
-            key={battle.battleId}
-            battle={battle}
-            dark
-            action={getAction(battle)}
-          />
-        ))}
+        {runningBattles.length === 0 ? (
+          <EmptyBox text="Abhi koi running battle nahi hai" />
+        ) : (
+          runningBattles.map((battle) => (
+            <BattleCard
+              key={battle.battleId}
+              battle={battle}
+              dark
+              action={getRunningAction(battle)}
+            />
+          ))
+        )}
       </div>
     </div>
   );

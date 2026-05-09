@@ -5,6 +5,21 @@ const Transaction = require("../models/transaction");
 const OPEN_BATTLE_EXPIRE_MS = 60 * 1000;
 const MAX_SEARCHING_BATTLES = 2;
 
+const PUBLIC_BATTLE_STATUSES = [
+  "open",
+  "join_requested",
+  "running",
+  "room_submitted",
+];
+
+const ACTIVE_USER_BLOCK_STATUSES = [
+  "join_requested",
+  "running",
+  "room_submitted",
+  "cancel_requested",
+  "result_submitted",
+];
+
 function makeBattleId() {
   return "battle_" + Date.now() + "_" + Math.floor(Math.random() * 9999);
 }
@@ -28,6 +43,29 @@ function calculateBattlePrize(amount) {
   const commissionPercentPerUser = Number(amount) <= 500 ? 5 : 2.5;
   const commission = Math.floor((totalPool * commissionPercentPerUser * 2) / 100);
   return totalPool - commission;
+}
+
+function hasSubmittedResult(battle, userId) {
+  return Array.isArray(battle.results)
+    ? battle.results.some((item) => item.user.toString() === userId.toString())
+    : false;
+}
+
+async function hasUserActiveUnsubmittedBattle(userId) {
+  const battles = await Battle.find({
+    status: { $in: ACTIVE_USER_BLOCK_STATUSES },
+    $or: [{ createdBy: userId }, { opponent: userId }],
+  }).select("status results createdBy opponent battleId");
+
+  return battles.some((battle) => {
+    const status = String(battle.status || "").toLowerCase();
+
+    if (["cancel_requested", "result_submitted"].includes(status)) {
+      return !hasSubmittedResult(battle, userId);
+    }
+
+    return true;
+  });
 }
 
 async function getWallet(userId) {
@@ -95,7 +133,6 @@ async function settleWinner(battle, winnerId) {
   if (battle.resultSettled) return;
 
   const creatorId = battle.createdBy.toString();
-  const opponentId = battle.opponent.toString();
   const winnerString = winnerId.toString();
   const loserId = winnerString === creatorId ? battle.opponent : battle.createdBy;
 
@@ -164,6 +201,26 @@ exports.createBattle = async (req, res) => {
       return res.status(400).json({ success: false, msg: amountError });
     }
 
+    const activeBattleExists = await hasUserActiveUnsubmittedBattle(userId);
+    if (activeBattleExists) {
+      return res.status(400).json({
+        success: false,
+        msg: "Aapki ek battle already chal rahi hai. Pehle uska result update karo.",
+      });
+    }
+
+    const sameAmountOpenBattle = await Battle.findOne({
+      amount,
+      status: "open",
+    }).select("battleId amount status");
+
+    if (sameAmountOpenBattle) {
+      return res.status(400).json({
+        success: false,
+        msg: `₹${amount} ki open battle already lagi hui hai`,
+      });
+    }
+
     const searchingCount = await Battle.countDocuments({
       createdBy: userId,
       status: "open",
@@ -211,11 +268,11 @@ exports.getOpenBattles = async (req, res) => {
     await expireOldOpenBattles();
 
     const battles = await Battle.find({
-      status: { $in: ["open", "join_requested"] },
+      status: { $in: PUBLIC_BATTLE_STATUSES },
     })
       .populate("createdBy", "name phone")
       .populate("opponent", "name phone")
-      .sort({ createdAt: -1 });
+      .sort({ updatedAt: -1, createdAt: -1 });
 
     return res.json({ success: true, battles });
   } catch (err) {
@@ -235,7 +292,7 @@ exports.getMyBattles = async (req, res) => {
       .populate("createdBy", "name phone")
       .populate("opponent", "name phone")
       .populate("winner", "name phone")
-      .sort({ createdAt: -1 });
+      .sort({ updatedAt: -1, createdAt: -1 });
 
     return res.json({ success: true, battles });
   } catch (err) {
@@ -282,6 +339,14 @@ exports.joinBattle = async (req, res) => {
 
     const userId = getUserId(req);
     const { battleId } = req.params;
+
+    const activeBattleExists = await hasUserActiveUnsubmittedBattle(userId);
+    if (activeBattleExists) {
+      return res.status(400).json({
+        success: false,
+        msg: "Aapki ek battle already chal rahi hai. Pehle uska result update karo.",
+      });
+    }
 
     const battle = await Battle.findOne({ battleId });
 
