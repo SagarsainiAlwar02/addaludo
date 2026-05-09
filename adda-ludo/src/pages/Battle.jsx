@@ -8,46 +8,31 @@ const API_BASE =
 
 const MAX_SEARCHING_BATTLES = 2;
 
-function calculatePrize(amount) {
-  const amt = Number(amount);
-  const totalPool = amt * 2;
-  const commissionPercent = amt <= 500 ? 5 : 2.5;
-  const commission = Math.floor((totalPool * commissionPercent) / 100);
-  return totalPool - commission;
-}
-
-function getUserId() {
-  try {
-    const user = JSON.parse(localStorage.getItem("user") || "{}");
-    if (user?._id || user?.id) return String(user._id || user.id);
-
-    const token = localStorage.getItem("token");
-    if (!token) return "";
-
-    const payload = JSON.parse(atob(token.split(".")[1] || ""));
-    return String(payload?._id || payload?.id || payload?.userId || payload?.user || "");
-  } catch {
-    return "";
-  }
-}
-
-function getCreatorId(battle) {
-  return String(battle?.createdBy?._id || battle?.createdBy?.id || battle?.createdBy || "");
-}
-
-function getOpponentId(battle) {
-  return String(battle?.opponent?._id || battle?.opponent?.id || battle?.opponent || "");
-}
-
-export default function Battle() {
+const Battle = () => {
   const navigate = useNavigate();
 
-  const [amount, setAmount] = useState("");
+  const [betAmount, setBetAmount] = useState("");
   const [openBattles, setOpenBattles] = useState([]);
   const [myBattles, setMyBattles] = useState([]);
   const [loading, setLoading] = useState(false);
 
   const token = localStorage.getItem("token");
+
+  const getUserId = () => {
+    try {
+      const user = JSON.parse(localStorage.getItem("user") || "{}");
+      if (user?._id || user?.id) return String(user._id || user.id);
+
+      const jwt = localStorage.getItem("token");
+      if (!jwt) return "";
+
+      const payload = JSON.parse(atob(jwt.split(".")[1] || ""));
+      return String(payload?._id || payload?.id || payload?.userId || payload?.user || "");
+    } catch {
+      return "";
+    }
+  };
+
   const myId = getUserId();
 
   const authHeader = () => ({
@@ -55,6 +40,20 @@ export default function Battle() {
       Authorization: `Bearer ${token}`,
     },
   });
+
+  const getCreatorId = (battle) =>
+    String(battle?.createdBy?._id || battle?.createdBy?.id || battle?.createdBy || "");
+
+  const getOpponentId = (battle) =>
+    String(battle?.opponent?._id || battle?.opponent?.id || battle?.opponent || "");
+
+  const calculatePrize = (amount) => {
+    const amt = Number(amount);
+    const totalPool = amt * 2;
+    const commissionPercent = amt <= 500 ? 5 : 2.5;
+    const commission = Math.floor((totalPool * commissionPercent) / 100);
+    return totalPool - commission;
+  };
 
   const fetchBattles = async () => {
     if (!token) return;
@@ -68,7 +67,7 @@ export default function Battle() {
       setOpenBattles(openRes.data?.battles || []);
       setMyBattles(myRes.data?.battles || []);
     } catch (err) {
-      console.log("Battle fetch error:", err.response?.data || err.message);
+      console.log("Fetch error:", err.response?.data || err.message);
     }
   };
 
@@ -141,19 +140,19 @@ export default function Battle() {
   }, [allBattles]);
 
   const validateAmount = () => {
-    const value = Number(amount);
+    const amt = Number(betAmount);
 
-    if (!value || value < 50) {
+    if (!amt || amt < 50) {
       alert("Minimum battle amount ₹50 hai");
       return false;
     }
 
-    if (value > 100000) {
+    if (amt > 100000) {
       alert("Maximum battle amount ₹100000 hai");
       return false;
     }
 
-    if (value % 50 !== 0) {
+    if (amt % 50 !== 0) {
       alert("Amount ₹50 ke multiple me hona chahiye");
       return false;
     }
@@ -161,7 +160,7 @@ export default function Battle() {
     return true;
   };
 
-  const createBattle = async () => {
+  const handleCreate = async () => {
     if (!validateAmount()) return;
 
     if (myActiveBattle) {
@@ -174,38 +173,34 @@ export default function Battle() {
       return;
     }
 
-    const finalAmount = Number(amount);
+    const amt = Number(betAmount);
 
     const sameOpenAmount = allBattles.some((battle) => {
       const status = String(battle?.status || "").toLowerCase();
-      return status === "open" && Number(battle?.amount) === finalAmount;
+      return status === "open" && Number(battle?.amount) === amt;
     });
 
     if (sameOpenAmount) {
-      alert(`₹${finalAmount} ki open battle already lagi hui hai.`);
+      alert(`₹${amt} ki open battle already lagi hui hai.`);
       return;
     }
 
     try {
       setLoading(true);
 
-      await axios.post(
-        `${API_BASE}/battle/create`,
-        { amount: finalAmount },
-        authHeader()
-      );
+      await axios.post(`${API_BASE}/battle/create`, { amount: amt }, authHeader());
 
-      setAmount("");
+      setBetAmount("");
       await fetchBattles();
       alert("Battle set ho gayi!");
     } catch (err) {
-      alert(err.response?.data?.msg || "Battle create failed");
+      alert(err.response?.data?.msg || "Create failed");
     } finally {
       setLoading(false);
     }
   };
 
-  const playBattle = async (battleId) => {
+  const joinMatch = async (battleId) => {
     if (myActiveBattle) {
       alert("Aapki ek battle already chal rahi hai. Pehle uska result update karo.");
       return;
@@ -225,7 +220,7 @@ export default function Battle() {
       await fetchBattles();
       navigate(`/room-code/${joinedId}`);
     } catch (err) {
-      alert(err.response?.data?.msg || "Play request failed");
+      alert(err.response?.data?.msg || "Join failed");
     } finally {
       setLoading(false);
     }
@@ -246,7 +241,7 @@ export default function Battle() {
       await fetchBattles();
       navigate(`/room-code/${startedId}`);
     } catch (err) {
-      alert(err.response?.data?.msg || "Start battle failed");
+      alert(err.response?.data?.msg || "Start failed");
     } finally {
       setLoading(false);
     }
@@ -270,7 +265,7 @@ export default function Battle() {
   };
 
   const cancelBattle = async (battleId) => {
-    if (!window.confirm("Battle cancel karni hai?")) return;
+    if (!window.confirm("Cancel this battle?")) return;
 
     try {
       setLoading(true);
@@ -292,50 +287,50 @@ export default function Battle() {
 
   const getOpenAction = (battle) => {
     const status = String(battle?.status || "").toLowerCase();
-    const isCreator = getCreatorId(battle) === myId;
+    const isMine = getCreatorId(battle) === myId;
     const isOpponent = getOpponentId(battle) === myId;
 
-    if (status === "open" && isCreator) {
+    if (status === "open" && isMine) {
       return (
         <button
           disabled={loading}
           onClick={() => cancelBattle(battle.battleId)}
-          className="rounded-xl bg-red-600 px-5 py-2 text-sm font-black text-white disabled:opacity-60"
+          className="bg-red-100 text-red-600 px-4 py-2 rounded-xl font-black text-xs uppercase disabled:opacity-50"
         >
           Cancel
         </button>
       );
     }
 
-    if (status === "open" && !isCreator) {
+    if (status === "open" && !isMine) {
       return (
         <button
           disabled={loading}
-          onClick={() => playBattle(battle.battleId)}
-          className="rounded-xl bg-green-600 px-5 py-2 text-sm font-black text-white disabled:opacity-60"
+          onClick={() => joinMatch(battle.battleId)}
+          className="bg-green-500 text-white px-6 py-2 rounded-xl font-black text-xs shadow-md disabled:opacity-50"
         >
-          Play
+          PLAY
         </button>
       );
     }
 
-    if (status === "join_requested" && isCreator) {
+    if (status === "join_requested" && isMine) {
       return (
         <div className="flex flex-col gap-2">
           <button
             disabled={loading}
             onClick={() => startBattle(battle.battleId)}
-            className="rounded-xl bg-green-600 px-5 py-2 text-sm font-black text-white disabled:opacity-60"
+            className="bg-green-500 text-white px-5 py-2 rounded-xl font-black text-xs shadow-md disabled:opacity-50"
           >
-            Start
+            START
           </button>
 
           <button
             disabled={loading}
             onClick={() => rejectBattle(battle.battleId)}
-            className="rounded-xl bg-red-600 px-5 py-2 text-sm font-black text-white disabled:opacity-60"
+            className="bg-red-100 text-red-600 px-5 py-2 rounded-xl font-black text-xs disabled:opacity-50"
           >
-            Reject
+            REJECT
           </button>
         </div>
       );
@@ -343,9 +338,9 @@ export default function Battle() {
 
     if (status === "join_requested" && isOpponent) {
       return (
-        <div className="flex flex-col items-center gap-2">
-          <div className="h-7 w-7 animate-spin rounded-full border-4 border-slate-300 border-t-green-600" />
-          <p className="text-xs font-black text-slate-600">Waiting Start</p>
+        <div className="flex flex-col items-center gap-1">
+          <div className="h-6 w-6 animate-spin rounded-full border-4 border-gray-200 border-t-green-500" />
+          <p className="text-[10px] font-black text-gray-500">WAITING</p>
         </div>
       );
     }
@@ -353,148 +348,116 @@ export default function Battle() {
     return (
       <button
         disabled
-        className="rounded-xl bg-slate-400 px-5 py-2 text-sm font-black text-white"
+        className="bg-gray-300 text-gray-600 px-4 py-2 rounded-xl font-black text-xs"
       >
-        Busy
+        BUSY
       </button>
     );
   };
 
   return (
-    <div className="min-h-screen bg-[#f4f6f8] px-3 pt-20 pb-28 text-black">
-      <div className="mx-auto max-w-[650px]">
-        <div className="mb-4 rounded-xl bg-[#1f2937] px-4 py-4 text-center text-[15px] font-bold leading-7 text-white shadow-md">
-          गोटी open होने के बाद अगर कोई भी user left होता है तो lose माना जायेगा
-        </div>
+    <div className="p-4 max-w-md mx-auto bg-gray-100 min-h-screen font-sans pb-24">
+      <h2 className="text-2xl font-black text-center italic text-indigo-900 mb-6">
+        ADDA LUDO
+      </h2>
 
-        <div className="mb-4 overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
-          <div className="bg-gradient-to-r from-slate-900 to-slate-600 px-4 py-3 text-lg font-black text-white">
-            ⚔️ Search Battle Amount
+      <div className="bg-white p-6 rounded-3xl shadow-md mb-8">
+        <input
+          type="number"
+          placeholder="Enter Amount"
+          className="w-full p-4 bg-gray-50 rounded-2xl mb-3 outline-none font-bold"
+          value={betAmount}
+          min="50"
+          max="100000"
+          step="50"
+          onChange={(e) => setBetAmount(e.target.value)}
+        />
+
+        <button
+          disabled={loading}
+          onClick={handleCreate}
+          className="w-full bg-indigo-600 text-white py-4 rounded-2xl font-black shadow-lg disabled:opacity-50"
+        >
+          {loading ? "SETTING..." : "SET BATTLE"}
+        </button>
+
+        <p className="text-center text-[11px] font-bold text-gray-400 mt-3">
+          Searching battle: {mySearchingBattles.length}/{MAX_SEARCHING_BATTLES}
+        </p>
+      </div>
+
+      <div className="space-y-4">
+        <h3 className="font-black px-2 text-gray-500 text-xs uppercase">
+          Open Battles
+        </h3>
+
+        {visibleOpenBattles.length === 0 && (
+          <p className="text-center text-gray-400 py-4 font-bold">
+            No Battles Live
+          </p>
+        )}
+
+        {visibleOpenBattles.map((b) => (
+          <div
+            key={b.battleId}
+            className="bg-white p-4 rounded-2xl flex justify-between items-center shadow-sm relative"
+          >
+            <div className="flex items-center space-x-3">
+              <div className="bg-indigo-50 p-2 rounded-xl text-center min-w-[60px]">
+                <p className="font-black text-sm text-indigo-700">₹{b.amount}</p>
+              </div>
+
+              <div>
+                <p className="text-[10px] text-gray-400 font-bold uppercase">
+                  Winning
+                </p>
+                <p className="text-xs font-black text-green-600">
+                  Win: ₹{b.prize || calculatePrize(b.amount)}
+                </p>
+                <p className="text-[10px] font-bold text-gray-400">
+                  {b.createdBy?.name || "Player"} vs{" "}
+                  {b.opponent?.name || "Waiting..."}
+                </p>
+              </div>
+            </div>
+
+            <div className="flex items-center">{getOpenAction(b)}</div>
           </div>
+        ))}
+      </div>
 
-          <div className="space-y-4 p-4">
-            <input
-              type="number"
-              placeholder="Battle amount enter karo"
-              value={amount}
-              min="50"
-              max="100000"
-              step="50"
-              onChange={(e) => setAmount(e.target.value)}
-              className="w-full rounded-xl border border-gray-300 px-3 py-3 font-bold outline-none focus:border-cyan-500"
-            />
+      {runningBattles.length > 0 && (
+        <div className="mt-8">
+          <h3 className="font-black mb-3 text-orange-500 text-xs uppercase px-2 tracking-widest">
+            Running Matches
+          </h3>
 
-            <button
-              disabled={loading || mySearchingBattles.length >= MAX_SEARCHING_BATTLES}
-              onClick={createBattle}
-              className="w-full rounded-xl bg-gradient-to-b from-red-500 to-red-700 py-3 font-black text-white disabled:opacity-60"
+          {runningBattles.map((rb) => (
+            <div
+              key={rb.battleId}
+              className="bg-white p-4 rounded-2xl flex justify-between items-center mb-3 border-l-4 border-orange-500 shadow-sm"
             >
-              {loading ? "Please wait..." : "Set Amount"}
-            </button>
+              <div>
+                <p className="font-black text-sm text-slate-800">
+                  ₹{rb.amount} Battle
+                </p>
+                <p className="text-[10px] text-orange-600 font-bold animate-pulse">
+                  MATCH LIVE
+                </p>
+              </div>
 
-            <p className="text-center text-xs font-black text-slate-500">
-              Searching battle: {mySearchingBattles.length}/{MAX_SEARCHING_BATTLES}
-            </p>
-          </div>
+              <button
+                onClick={() => navigate(`/room-code/${rb.battleId}`)}
+                className="bg-orange-500 text-white px-4 py-2 rounded-xl font-black text-xs"
+              >
+                VIEW
+              </button>
+            </div>
+          ))}
         </div>
-
-        <SectionTitle title="🔥 Open Battles" />
-
-        {visibleOpenBattles.length === 0 ? (
-          <EmptyBox text="Abhi koi open battle nahi hai" />
-        ) : (
-          visibleOpenBattles.map((battle) => (
-            <BattleCard
-              key={battle.battleId}
-              battle={battle}
-              action={getOpenAction(battle)}
-            />
-          ))
-        )}
-
-        <SectionTitle title="🏃 Running Battles" />
-
-        {runningBattles.length === 0 ? (
-          <EmptyBox text="Abhi koi running battle nahi hai" />
-        ) : (
-          runningBattles.map((battle) => (
-            <BattleCard
-              key={battle.battleId}
-              battle={battle}
-              dark
-              action={
-                <button
-                  onClick={() => navigate(`/room-code/${battle.battleId}`)}
-                  className="rounded-xl bg-orange-500 px-5 py-2 text-sm font-black text-white"
-                >
-                  View
-                </button>
-              }
-            />
-          ))
-        )}
-      </div>
+      )}
     </div>
   );
-}
+};
 
-function SectionTitle({ title }) {
-  return (
-    <div className="mt-5 mb-3 overflow-hidden rounded-2xl border border-slate-200 shadow-sm">
-      <div className="bg-gradient-to-r from-slate-900 to-slate-600 px-4 py-3 text-lg font-black text-white">
-        {title}
-      </div>
-    </div>
-  );
-}
-
-function EmptyBox({ text }) {
-  return (
-    <div className="mb-3 rounded-2xl bg-white p-5 text-center font-black text-slate-500 shadow-sm">
-      {text}
-    </div>
-  );
-}
-
-function BattleCard({ battle, action, dark = false }) {
-  const winPrize = battle.prize || calculatePrize(battle.amount);
-
-  return (
-    <div
-      className={`mb-3 overflow-hidden rounded-2xl border shadow-sm ${
-        dark
-          ? "border-violet-200 bg-[#342b72] text-white"
-          : "border-cyan-100 bg-white text-black"
-      }`}
-    >
-      <div
-        className={`border-b px-4 py-2 text-sm font-black ${
-          dark ? "border-white/15" : "border-slate-100 bg-cyan-50 text-slate-700"
-        }`}
-      >
-        {battle.createdBy?.name || "Player"} vs{" "}
-        {battle.opponent?.name || "Waiting..."}
-      </div>
-
-      <div className="grid grid-cols-3 items-center gap-2 px-4 py-3">
-        <div>
-          <p className={`text-xs font-black ${dark ? "text-white/70" : "text-slate-500"}`}>
-            Entry Fee
-          </p>
-          <p className="mt-1 text-2xl font-black">₹{battle.amount}</p>
-        </div>
-
-        <div className="text-center">{action}</div>
-
-        <div className="text-right">
-          <p className={`text-xs font-black ${dark ? "text-white/70" : "text-slate-500"}`}>
-            Winning
-          </p>
-          <p className={`mt-1 text-2xl font-black ${dark ? "" : "text-emerald-700"}`}>
-            ₹{winPrize}
-          </p>
-        </div>
-      </div>
-    </div>
-  );
-}
+export default Battle;
