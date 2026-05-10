@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
 import API from "../../api";
-import "./Kyc.css";
+import "./kyc.css"
 
 const Kyc = () => {
   const [users, setUsers] = useState([]);
