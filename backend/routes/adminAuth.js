@@ -25,7 +25,7 @@ router.get("/create-admin", async (req, res) => {
       name: "Main Admin",
       email: "admin@addaludo.com",
       password: hashedPassword,
-      phone: "9999999999",
+      phone: "8888888888",
       role: "admin",
       status: "active",
     });
