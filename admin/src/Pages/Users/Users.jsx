@@ -8,7 +8,6 @@ const Users = () => {
   const [selectedUser, setSelectedUser] = useState(null);
   const [users, setUsers] = useState([]);
 
-  // ================= FETCH USERS =================
   const fetchUsers = async () => {
     try {
       const res = await API.get("/admin/users");
@@ -22,7 +21,6 @@ const Users = () => {
     fetchUsers();
   }, []);
 
-  // ================= FILTER =================
   const filteredUsers = users.filter((user) => {
     const status = user.status || "active";
     const phone = user.phone || user.mobile || "";
@@ -33,7 +31,6 @@ const Users = () => {
     return matchFilter && matchSearch;
   });
 
-  // ================= BAN / UNBAN =================
   const toggleBan = async (id) => {
     try {
       await API.patch(`/admin/block/${id}`);
@@ -43,7 +40,6 @@ const Users = () => {
     }
   };
 
-  // ================= DELETE =================
   const deleteUser = async (id) => {
     const confirmDelete = window.confirm("Are you sure you want to delete this user?");
     if (!confirmDelete) return;
@@ -69,75 +65,79 @@ const Users = () => {
       />
 
       <div className="filters">
-        <button onClick={() => setFilter("all")}>All Users</button>
-        <button onClick={() => setFilter("active")}>Active</button>
-        <button onClick={() => setFilter("blocked")}>Blocked</button>
-        <button onClick={() => setFilter("mismatch")}>Mismatch</button>
+        <button className={filter === "all" ? "active-filter" : ""} onClick={() => setFilter("all")}>
+          All Users
+        </button>
+        <button className={filter === "active" ? "active-filter" : ""} onClick={() => setFilter("active")}>
+          Active
+        </button>
+        <button className={filter === "blocked" ? "active-filter" : ""} onClick={() => setFilter("blocked")}>
+          Blocked
+        </button>
+        <button className={filter === "mismatch" ? "active-filter" : ""} onClick={() => setFilter("mismatch")}>
+          Mismatch
+        </button>
       </div>
 
-      <table className="user-table">
-        <thead>
-          <tr>
-            <th>ID</th>
-            <th>Name</th>
-            <th>Mobile</th>
-            <th>Referral</th>
-            <th>Balance</th>
-            <th>Status</th>
-            <th>Action</th>
-          </tr>
-        </thead>
-
-        <tbody>
-          {filteredUsers.length > 0 ? (
-            filteredUsers.map((user) => {
-              const status = user.status || "active";
-              const phone = user.phone || user.mobile || "-";
-
-              return (
-                <tr key={user._id}>
-                  <td>{user._id}</td>
-                  <td>{user.name || "Player"}</td>
-                  <td>{phone}</td>
-                  <td>{user.referralCode || "-"}</td>
-                  <td>₹{user.balance || user.wallet?.balance || 0}</td>
-
-                  <td className={status}>{status}</td>
-
-                  <td>
-                    <button
-                      className="view"
-                      onClick={() => setSelectedUser(user)}
-                    >
-                      View
-                    </button>
-
-                    <button
-                      className={status === "blocked" ? "unban" : "ban"}
-                      onClick={() => toggleBan(user._id)}
-                    >
-                      {status === "blocked" ? "Unban" : "Ban"}
-                    </button>
-
-                    <button
-                      className="delete"
-                      onClick={() => deleteUser(user._id)}
-                    >
-                      Delete
-                    </button>
-                  </td>
-                </tr>
-              );
-            })
-          ) : (
+      <div className="table-scroll">
+        <table className="user-table">
+          <thead>
             <tr>
-              <td colSpan="7" style={{ textAlign: "center" }}>
-                No users found
-              </td>
+              <th>ID</th>
+              <th>Name</th>
+              <th>Mobile</th>
+              <th>Referral</th>
+              <th>Balance</th>
+              <th>Status</th>
+              <th>Action</th>
             </tr>
-          )}
-        </tbody>
-      </table>
+          </thead>
+
+          <tbody>
+            {filteredUsers.length > 0 ? (
+              filteredUsers.map((user) => {
+                const status = user.status || "active";
+                const phone = user.phone || user.mobile || "-";
+
+                return (
+                  <tr key={user._id}>
+                    <td className="user-id">{user._id}</td>
+                    <td>{user.name || "Player"}</td>
+                    <td>{phone}</td>
+                    <td>{user.referralCode || "-"}</td>
+                    <td>₹{user.balance || user.wallet?.balance || 0}</td>
+                    <td className={status}>{status}</td>
+                    <td>
+                      <div className="action-buttons">
+                        <button className="view" onClick={() => setSelectedUser(user)}>
+                          View
+                        </button>
+
+                        <button
+                          className={status === "blocked" ? "unban" : "ban"}
+                          onClick={() => toggleBan(user._id)}
+                        >
+                          {status === "blocked" ? "Unban" : "Ban"}
+                        </button>
+
+                        <button className="delete" onClick={() => deleteUser(user._id)}>
+                          Delete
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                );
+              })
+            ) : (
+              <tr>
+                <td colSpan="7" className="no-data">
+                  No users found
+                </td>
+              </tr>
+            )}
+          </tbody>
+        </table>
+      </div>
 
       {selectedUser && (
         <div className="modal">
