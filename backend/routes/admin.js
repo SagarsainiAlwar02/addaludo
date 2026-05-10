@@ -104,6 +104,7 @@ router.get("/users", auth, async (req, res) => {
           balance: wallet.balance || 0,
           bonus: wallet.bonus || 0,
           winnings: wallet.winnings || 0,
+          referralBalance: wallet.referralBalance || 0,
           locked: wallet.locked || 0,
         },
       };
@@ -220,11 +221,11 @@ router.post("/add-bonus", auth, async (req, res) => {
         balance: 0,
         bonus: 0,
         winnings: 0,
+        referralBalance: 0,
         locked: 0,
       });
     }
 
-   
     wallet.balance = Number(wallet.balance || 0) + bonusAmount;
 
     await wallet.save();
@@ -288,6 +289,7 @@ router.post("/add-penalty", auth, async (req, res) => {
         balance: 0,
         bonus: 0,
         winnings: 0,
+        referralBalance: 0,
         locked: 0,
       });
     }
@@ -711,33 +713,72 @@ router.patch("/transaction/reject/:id", auth, async (req, res) => {
   }
 });
 
-// ================= DEPOSITS =================
+// ================= DEPOSITS + BONUS HISTORY =================
 router.get("/deposits", auth, async (req, res) => {
   try {
-    const deposits = await Transaction.find({ type: "deposit" })
+    const deposits = await Transaction.find({
+      type: { $in: ["deposit", "bonus"] },
+    })
       .populate("userId", "name phone email")
       .populate("approvedBy", "name phone email role")
-      .sort({ createdAt: -1 });
+      .sort({ createdAt: -1 })
+      .lean();
 
     res.json(deposits);
   } catch (err) {
+    console.log("❌ DEPOSITS ERROR:", err);
     res.status(500).json({ msg: err.message });
   }
 });
 
-// ================= WITHDRAWS =================
+// ================= WITHDRAWS + PENALTY PENDING =================
 router.get("/withdraws", auth, async (req, res) => {
   try {
     const withdraws = await Withdraw.find()
       .populate("userId", "name phone email")
-      .sort({ createdAt: -1 });
+      .populate("actionBy", "name phone email role")
+      .sort({ createdAt: -1 })
+      .lean();
 
-    res.json(withdraws);
+    const penalties = await Transaction.find({ type: "penalty" })
+      .populate("userId", "name phone email")
+      .populate("approvedBy", "name phone email role")
+      .sort({ createdAt: -1 })
+      .lean();
+
+    const normalWithdrawRows = withdraws.map((w) => ({
+      ...w,
+      type: "withdraw",
+    }));
+
+    const penaltyRows = penalties.map((p) => ({
+      _id: p._id,
+      userId: p.userId,
+      amount: p.amount,
+      method: "penalty",
+      details: {
+        reason: p.note || "Admin penalty deducted",
+      },
+      status: "pending",
+      type: "penalty",
+      actionBy: p.approvedBy,
+      actionAt: p.approvedAt || p.createdAt,
+      createdAt: p.createdAt,
+      updatedAt: p.updatedAt,
+    }));
+
+    const finalList = [...normalWithdrawRows, ...penaltyRows].sort(
+      (a, b) => new Date(b.createdAt) - new Date(a.createdAt)
+    );
+
+    res.json(finalList);
   } catch (err) {
+    console.log("❌ WITHDRAWS ERROR:", err);
     res.status(500).json({ msg: err.message });
   }
 });
 
+// ================= APPROVE WITHDRAW =================
 router.patch("/withdraw/approve/:id", auth, async (req, res) => {
   try {
     const adminId = getAdminId(req);
@@ -760,10 +801,12 @@ router.patch("/withdraw/approve/:id", auth, async (req, res) => {
       return res.status(400).json({ msg: "Invalid locked balance" });
     }
 
-    wallet.locked -= amount;
+    wallet.locked = Math.max(0, Number(wallet.locked || 0) - amount);
     await wallet.save();
 
     withdraw.status = "approved";
+    withdraw.actionBy = adminId;
+    withdraw.actionAt = new Date();
     await withdraw.save();
 
     const transaction = await Transaction.create({
@@ -788,6 +831,7 @@ router.patch("/withdraw/approve/:id", auth, async (req, res) => {
   }
 });
 
+// ================= REJECT WITHDRAW =================
 router.patch("/withdraw/reject/:id", auth, async (req, res) => {
   try {
     const adminId = getAdminId(req);
@@ -810,11 +854,13 @@ router.patch("/withdraw/reject/:id", auth, async (req, res) => {
       return res.status(400).json({ msg: "Invalid locked balance" });
     }
 
-    wallet.balance += amount;
-    wallet.locked -= amount;
+    wallet.balance = Number(wallet.balance || 0) + amount;
+    wallet.locked = Math.max(0, Number(wallet.locked || 0) - amount);
     await wallet.save();
 
     withdraw.status = "rejected";
+    withdraw.actionBy = adminId;
+    withdraw.actionAt = new Date();
     await withdraw.save();
 
     const transaction = await Transaction.create({
