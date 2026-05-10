@@ -143,7 +143,7 @@ export default function Kyc() {
         return;
       }
 
-      const res = await axios.post(`${API_URL}/user/kyc`, form, {
+     const res = await axios.post(`${API_URL}/kyc/submit`, form, {
         headers: {
           Authorization: `Bearer ${token}`,
         },

@@ -17,6 +17,7 @@ const Sidebar = ({ open, setOpen }) => {
   const links = [
     ["Dashboard", "/dashboard"],
     ["Users", "/users"],
+    ["KYC", "/kyc"],
     ["Deposit", "/deposit"],
     ["Withdraw", "/withdraw"],
     ["Matches", "/matches"],

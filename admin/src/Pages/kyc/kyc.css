@@ -1,0 +1,123 @@
+.kyc-admin-container {
+  padding: 25px;
+  background: #0f172a;
+  min-height: 100vh;
+  color: white;
+}
+
+.kyc-admin-container h1 {
+  margin-bottom: 18px;
+}
+
+.kyc-search {
+  width: 100%;
+  max-width: 520px;
+  padding: 12px 14px;
+  border-radius: 10px;
+  border: 1px solid #334155;
+  background: #1e293b;
+  color: white;
+  outline: none;
+  margin-bottom: 18px;
+}
+
+.kyc-table {
+  width: 100%;
+  border-collapse: collapse;
+  background: #1e293b;
+  border-radius: 12px;
+  overflow: hidden;
+}
+
+.kyc-table th,
+.kyc-table td {
+  padding: 12px;
+  border-bottom: 1px solid #334155;
+  text-align: left;
+}
+
+.kyc-table th {
+  background: #020617;
+  color: #cbd5e1;
+}
+
+.kyc-table td {
+  color: #e5e7eb;
+}
+
+.pending {
+  color: #facc15 !important;
+  font-weight: 700;
+}
+
+.approved {
+  color: #22c55e !important;
+  font-weight: 700;
+}
+
+.rejected {
+  color: #ef4444 !important;
+  font-weight: 700;
+}
+
+.view,
+.approve,
+.reject {
+  border: none;
+  padding: 8px 12px;
+  border-radius: 8px;
+  cursor: pointer;
+  margin-right: 6px;
+  font-weight: 700;
+}
+
+.view {
+  background: #2563eb;
+  color: white;
+}
+
+.approve {
+  background: #16a34a;
+  color: white;
+}
+
+.reject {
+  background: #dc2626;
+  color: white;
+}
+
+.kyc-modal {
+  position: fixed;
+  inset: 0;
+  background: rgba(2, 6, 23, 0.75);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 999;
+  padding: 15px;
+}
+
+.kyc-modal-content {
+  background: #1e293b;
+  width: 100%;
+  max-width: 520px;
+  padding: 22px;
+  border-radius: 16px;
+  color: white;
+}
+
+.kyc-modal-content p {
+  margin: 10px 0;
+}
+
+.kyc-modal-content button {
+  margin-top: 14px;
+  width: 100%;
+  padding: 12px;
+  border: none;
+  border-radius: 10px;
+  background: #334155;
+  color: white;
+  font-weight: 700;
+  cursor: pointer;
+}

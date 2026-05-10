@@ -10,6 +10,7 @@ import Settings from "./Pages/Settings/Settings";
 import PaymentControl from "./Pages/PaymentControl/PaymentControl";
 import AdminControl from "./Pages/AdminControl/AdminControl";
 import Layout from "./components/Layout/Layout";
+import Kyc from "./Pages/Kyc/Kyc";
 
 // 🔐 Protected route
 const ProtectedRoute = ({ children }) => {
@@ -118,6 +119,18 @@ function App() {
           </ProtectedRoute>
         }
       />
+
+
+      <Route
+  path="/kyc"
+  element={
+    <ProtectedRoute>
+      <Layout>
+        <Kyc />
+      </Layout>
+    </ProtectedRoute>
+  }
+/>
 
       {/* DEFAULT REDIRECT */}
       <Route path="*" element={<Navigate to="/dashboard" />} />

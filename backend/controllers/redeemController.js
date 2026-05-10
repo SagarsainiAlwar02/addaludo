@@ -1,20 +1,15 @@
+const User = require("../models/user");
 const Wallet = require("../models/wallet");
 const Withdraw = require("../models/withdraw");
 const Transaction = require("../models/transaction");
-const User = require("../models/user");
-
-const getUserId = (req) => {
-  return req.user?.id || req.user?._id || req.user || req.userData?._id || req.userData?.id;
-};
 
 // ================= GET REDEEM DATA =================
 exports.getRedeemData = async (req, res) => {
   try {
-    const userId = getUserId(req);
+    const userId = req.user?.id || req.user?._id || req.user;
 
-    if (!userId) {
-      return res.status(401).json({ success: false, msg: "User not found from token" });
-    }
+    const user = await User.findById(userId).lean();
+    if (!user) return res.status(404).json({ msg: "User not found" });
 
     let wallet = await Wallet.findOne({ userId });
 
@@ -29,38 +24,49 @@ exports.getRedeemData = async (req, res) => {
       });
     }
 
-    const user = await User.findById(userId);
-
-    return res.json({
+    res.json({
       success: true,
       winningBalance: Number(wallet.winnings || 0),
       referralBalance: Number(wallet.referralBalance || 0),
-      totalReferralEarning: Number(user?.totalReferralEarning || 0),
+      totalReferralEarning: Number(user.totalReferralEarning || 0),
+      kycStatus: user.kycStatus || "not_submitted",
+      wallet,
     });
   } catch (err) {
-    console.log("❌ Redeem data error:", err.message);
-    return res.status(500).json({
-      success: false,
-      msg: "Failed to load redeem data",
-      error: err.message,
-    });
+    console.log("❌ GET REDEEM DATA ERROR:", err);
+    res.status(500).json({ msg: err.message });
   }
 };
 
-// ================= WITHDRAW / REFERRAL REDEEM =================
+// ================= REQUEST WITHDRAW =================
 exports.requestWithdraw = async (req, res) => {
   try {
-    const userId = getUserId(req);
-    const { amount, method, details, type } = req.body;
+    const userId = req.user?.id || req.user?._id || req.user;
 
-    if (!userId) {
-      return res.status(401).json({ success: false, msg: "User not found from token" });
+    // ✅ KYC CHECK
+    const user = await User.findById(userId);
+
+    if (!user) {
+      return res.status(404).json({ msg: "User not found" });
     }
 
-    const redeemAmount = Number(amount);
+    if (user.kycStatus !== "approved") {
+      return res.status(403).json({
+        msg: "Withdraw ke liye KYC complete karna jaruri hai",
+        kycRequired: true,
+        kycStatus: user.kycStatus || "not_submitted",
+      });
+    }
 
-    if (!redeemAmount || redeemAmount < 200) {
-      return res.status(400).json({ success: false, msg: "Minimum redeem/withdraw ₹200 hai" });
+    const { amount, method, details } = req.body;
+    const withdrawAmount = Number(amount);
+
+    if (!withdrawAmount || withdrawAmount < 200) {
+      return res.status(400).json({ msg: "Minimum withdraw ₹200 hai" });
+    }
+
+    if (!["upi", "bank"].includes(method)) {
+      return res.status(400).json({ msg: "Invalid withdraw method" });
     }
 
     let wallet = await Wallet.findOne({ userId });
@@ -76,49 +82,19 @@ exports.requestWithdraw = async (req, res) => {
       });
     }
 
-    // Referral earning ko main wallet me add karna
-    if (type === "refer_redeem") {
-      if (Number(wallet.referralBalance || 0) < redeemAmount) {
-        return res.status(400).json({ success: false, msg: "Insufficient referral balance" });
-      }
-
-      wallet.referralBalance = Number(wallet.referralBalance || 0) - redeemAmount;
-      wallet.balance = Number(wallet.balance || 0) + redeemAmount;
-
-      await wallet.save();
-
-      await Transaction.create({
-        userId,
-        amount: redeemAmount,
-        type: "referral_redeem",
-        status: "success",
-        note: "Referral earning redeemed to main wallet",
-        balanceAfter: wallet.balance,
-      });
-
-      return res.json({
-        success: true,
-        msg: "Referral earning wallet me add ho gayi",
-        balance: wallet.balance,
-        referralBalance: wallet.referralBalance,
-      });
+    if (Number(wallet.winnings || 0) < withdrawAmount) {
+      return res.status(400).json({ msg: "Insufficient winning balance" });
     }
 
-    if (!method || !["bank", "upi", "qr"].includes(method)) {
-      return res.status(400).json({ success: false, msg: "Withdraw method required" });
-    }
+    // ✅ winnings se amount hold/lock
+    wallet.winnings = Number(wallet.winnings || 0) - withdrawAmount;
+    wallet.locked = Number(wallet.locked || 0) + withdrawAmount;
 
-    if (Number(wallet.winnings || 0) < redeemAmount) {
-      return res.status(400).json({ success: false, msg: "Insufficient winning balance" });
-    }
-
-    wallet.winnings = Number(wallet.winnings || 0) - redeemAmount;
-    wallet.locked = Number(wallet.locked || 0) + redeemAmount;
     await wallet.save();
 
     const withdraw = await Withdraw.create({
       userId,
-      amount: redeemAmount,
+      amount: withdrawAmount,
       method,
       details: details || {},
       status: "pending",
@@ -126,54 +102,40 @@ exports.requestWithdraw = async (req, res) => {
 
     await Transaction.create({
       userId,
-      amount: redeemAmount,
+      amount: withdrawAmount,
       type: "withdraw",
       status: "pending",
-      note: "Withdraw request submitted",
-      balanceAfter: wallet.winnings,
+      note: "Withdraw request created",
+      balanceAfter: wallet.balance,
     });
 
-    return res.json({
+    res.json({
       success: true,
       msg: "Withdraw request submitted successfully",
-      winnings: wallet.winnings,
-      locked: wallet.locked,
       withdraw,
+      wallet,
     });
   } catch (err) {
-    console.log("❌ Withdraw/Redeem error:", err.message);
-    return res.status(500).json({
-      success: false,
-      msg: "Withdraw failed",
-      error: err.message,
-    });
+    console.log("❌ REQUEST WITHDRAW ERROR:", err);
+    res.status(500).json({ msg: err.message });
   }
 };
 
-// ================= WITHDRAW HISTORY =================
+// ================= GET WITHDRAW HISTORY =================
 exports.getWithdrawHistory = async (req, res) => {
   try {
-    const userId = getUserId(req);
-
-    if (!userId) {
-      return res.status(401).json({ success: false, msg: "User not found from token" });
-    }
+    const userId = req.user?.id || req.user?._id || req.user;
 
     const withdraws = await Withdraw.find({ userId })
       .sort({ createdAt: -1 })
-      .limit(50)
       .lean();
 
-    return res.json({
+    res.json({
       success: true,
       withdraws,
     });
   } catch (err) {
-    console.log("❌ Withdraw history error:", err.message);
-    return res.status(500).json({
-      success: false,
-      msg: "Withdraw history failed",
-      error: err.message,
-    });
+    console.log("❌ WITHDRAW HISTORY ERROR:", err);
+    res.status(500).json({ msg: err.message });
   }
 };

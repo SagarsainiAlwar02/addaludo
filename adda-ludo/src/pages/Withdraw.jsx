@@ -47,7 +47,9 @@ export default function Withdraw() {
       navigate("/login");
       return;
     }
+
     loadData();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const bankRequired = Number(amount) > 2000;
@@ -55,26 +57,62 @@ export default function Withdraw() {
   const submitWithdraw = async () => {
     const withdrawAmount = Number(amount);
 
+    // ✅ KYC CHECK START
+    try {
+      const profileRes = await axios.get(`${API_BASE}/user/profile`, authHeader);
+
+      const kycStatus = profileRes.data?.kycStatus || "not_submitted";
+
+      if (kycStatus !== "approved") {
+        alert("Withdraw ke liye KYC complete karna jaruri hai.");
+        navigate("/kyc");
+        return;
+      }
+    } catch (err) {
+      alert("KYC status check nahi hua. Please login again.");
+      return;
+    }
+    // ✅ KYC CHECK END
+
     if (!withdrawAmount) return setMessage("Amount enter karo");
-    if (withdrawAmount < MIN_WITHDRAW) return setMessage("Minimum withdraw ₹200 hai");
-    if (withdrawAmount > winningBalance) return setMessage("Insufficient winning balance");
+
+    if (withdrawAmount < MIN_WITHDRAW) {
+      return setMessage("Minimum withdraw ₹200 hai");
+    }
+
+    if (withdrawAmount > winningBalance) {
+      return setMessage("Insufficient winning balance");
+    }
 
     let finalMethod = bankRequired ? "bank" : method;
     let withdrawDetails = {};
 
     if (finalMethod === "upi") {
-      if (!details.upiId || !details.confirmUpiId) return setMessage("UPI ID fill karo");
-      if (details.upiId !== details.confirmUpiId) return setMessage("UPI ID match nahi hui");
+      if (!details.upiId || !details.confirmUpiId) {
+        return setMessage("UPI ID fill karo");
+      }
+
+      if (details.upiId !== details.confirmUpiId) {
+        return setMessage("UPI ID match nahi hui");
+      }
+
       withdrawDetails = { upiId: details.upiId };
     }
 
     if (finalMethod === "bank") {
-      if (!details.holderName || !details.accountNumber || !details.confirmAccountNumber || !details.ifsc) {
+      if (
+        !details.holderName ||
+        !details.accountNumber ||
+        !details.confirmAccountNumber ||
+        !details.ifsc
+      ) {
         return setMessage("Bank details complete fill karo");
       }
+
       if (details.accountNumber !== details.confirmAccountNumber) {
         return setMessage("Account number match nahi hua");
       }
+
       withdrawDetails = {
         holderName: details.holderName,
         accountNumber: details.accountNumber,
@@ -88,7 +126,11 @@ export default function Withdraw() {
 
       const res = await axios.post(
         `${API_BASE}/redeem/withdraw`,
-        { amount: withdrawAmount, method: finalMethod, details: withdrawDetails },
+        {
+          amount: withdrawAmount,
+          method: finalMethod,
+          details: withdrawDetails,
+        },
         authHeader
       );
 
@@ -107,6 +149,12 @@ export default function Withdraw() {
 
       await loadData();
     } catch (err) {
+      if (err.response?.data?.kycRequired) {
+        alert(err.response?.data?.msg || "Withdraw ke liye KYC jaruri hai.");
+        navigate("/kyc");
+        return;
+      }
+
       setMessage(err.response?.data?.msg || "Withdraw failed");
     } finally {
       setLoading(false);
@@ -138,7 +186,9 @@ export default function Withdraw() {
         </div>
 
         <div className="mt-4 rounded-2xl bg-green-50 p-4 border border-green-200">
-          <p className="text-sm font-bold text-gray-600">Available Winning Coin</p>
+          <p className="text-sm font-bold text-gray-600">
+            Available Winning Coin
+          </p>
           <h2 className="mt-1 text-3xl font-black text-green-700">
             ₹ {winningBalance.toFixed(2)}
           </h2>
@@ -164,7 +214,10 @@ export default function Withdraw() {
               const val = e.target.value;
               setAmount(val);
               setMessage("");
-              if (Number(val) > 2000) setMethod("bank");
+
+              if (Number(val) > 2000) {
+                setMethod("bank");
+              }
             }}
             className="mt-3 h-[50px] w-full rounded-xl border border-gray-300 bg-white px-4 text-base font-bold outline-none"
           />
@@ -179,7 +232,9 @@ export default function Withdraw() {
             onClick={() => !bankRequired && setMethod("upi")}
             disabled={bankRequired}
             className={`rounded-xl py-3 text-sm font-black ${
-              method === "upi" ? "bg-blue-600 text-white" : "bg-gray-100 text-gray-600"
+              method === "upi"
+                ? "bg-blue-600 text-white"
+                : "bg-gray-100 text-gray-600"
             } disabled:opacity-40`}
           >
             UPI
@@ -188,7 +243,9 @@ export default function Withdraw() {
           <button
             onClick={() => setMethod("bank")}
             className={`rounded-xl py-3 text-sm font-black ${
-              method === "bank" ? "bg-blue-600 text-white" : "bg-gray-100 text-gray-600"
+              method === "bank"
+                ? "bg-blue-600 text-white"
+                : "bg-gray-100 text-gray-600"
             }`}
           >
             Bank
@@ -203,7 +260,9 @@ export default function Withdraw() {
               <input
                 value={details.upiId}
                 placeholder="Enter UPI ID"
-                onChange={(e) => setDetails({ ...details, upiId: e.target.value })}
+                onChange={(e) =>
+                  setDetails({ ...details, upiId: e.target.value })
+                }
                 className="mt-3 h-[48px] w-full rounded-xl border px-4 text-sm font-bold outline-none"
               />
 
@@ -256,7 +315,10 @@ export default function Withdraw() {
                 value={details.ifsc}
                 placeholder="IFSC Code"
                 onChange={(e) =>
-                  setDetails({ ...details, ifsc: e.target.value.toUpperCase() })
+                  setDetails({
+                    ...details,
+                    ifsc: e.target.value.toUpperCase(),
+                  })
                 }
                 className="mt-3 h-[48px] w-full rounded-xl border px-4 text-sm font-bold outline-none"
               />

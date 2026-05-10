@@ -88,6 +88,15 @@ app.use("/api/battle", require("./routes/battleRoutes"));
 app.use("/api/admin/battles", require("./routes/adminBattleRoutes"));
 app.use("/api/match-proof", require("./routes/matchProofRoutes"));
 
+app.use("/api/kyc", require("./routes/kyc"));
+
+
+app.post(
+  "/api/user/kyc",
+  require("./middleware/auth"),
+  require("./controllers/kycController").submitKyc
+);
+
 const otpStore = {};
 
 app.post("/api/send-otp", async (req, res) => {
