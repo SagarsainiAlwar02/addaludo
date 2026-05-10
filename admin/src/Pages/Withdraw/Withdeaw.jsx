@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useEffect, useState } from "react";
 import "./Withdraw.css";
 import API from "../../api";
 
@@ -56,25 +56,21 @@ const Withdrawal = () => {
     }
   };
 
-  const requests = withdraws.filter((item) => item.status === "pending");
-  const history = withdraws.filter((item) => item.status !== "pending");
-  const currentList = tab === "request" ? requests : history;
-
-  const list = useMemo(() => {
-    const mobile = searchMobile.replace(/\D/g, "");
-    if (!mobile) return currentList;
-
-    return currentList.filter((item) =>
-      String(item.userId?.phone || "").includes(mobile)
-    );
-  }, [currentList, searchMobile]);
-
   const getDetailValue = (details, keys) => {
     for (const key of keys) {
       if (details?.[key]) return details[key];
     }
     return "-";
   };
+
+  const requests = withdraws.filter((item) => item.status === "pending");
+  const history = withdraws.filter((item) => item.status !== "pending");
+
+  const currentList = tab === "request" ? requests : history;
+
+  const list = currentList.filter((item) =>
+    String(item.userId?.phone || "").includes(searchMobile)
+  );
 
   if (loading) return <p>Loading...</p>;
 
@@ -101,13 +97,14 @@ const Withdrawal = () => {
       <div className="search-box">
         <input
           type="text"
+          placeholder="Mobile number se search karo"
           value={searchMobile}
           maxLength={10}
-          placeholder="Mobile number se search karo"
           onChange={(e) =>
             setSearchMobile(e.target.value.replace(/\D/g, "").slice(0, 10))
           }
         />
+
         {searchMobile && (
           <button onClick={() => setSearchMobile("")}>Clear</button>
         )}
@@ -120,7 +117,7 @@ const Withdrawal = () => {
             <th>User</th>
             <th>Mobile</th>
             <th>Amount</th>
-            <th>Type</th>
+            <th>Method</th>
             <th>Status</th>
             <th>Approved / Rejected By</th>
             <th>Action Date</th>
@@ -146,9 +143,7 @@ const Withdrawal = () => {
                   <td className={item.status}>{item.status}</td>
 
                   <td>
-                    {admin.name
-                      ? `${admin.name} (${admin.role || "admin"})`
-                      : "-"}
+                    {admin.name ? `${admin.name} (${admin.role || "admin"})` : "-"}
                   </td>
 
                   <td>
@@ -216,12 +211,7 @@ const Withdrawal = () => {
 
             <p>
               <b>UPI ID:</b>{" "}
-              {getDetailValue(selectedUser.details, [
-                "upi",
-                "upiId",
-                "upi_id",
-                "vpa",
-              ])}
+              {getDetailValue(selectedUser.details, ["upi", "upiId", "upi_id", "vpa"])}
             </p>
 
             <p>

@@ -1,6 +1,10 @@
-import React, { useEffect, useMemo, useState } from "react";
+
+
+
+
+import React, { useEffect, useState } from "react";
 import API from "../../api";
-import "./Deposit.css";
+import "./Deposite.css";
 
 const IMAGE_BASE = "https://api.addaludo.com";
 
@@ -62,14 +66,9 @@ const Deposit = () => {
 
   const currentList = tab === "request" ? requests : history;
 
-  const list = useMemo(() => {
-    const mobile = searchMobile.replace(/\D/g, "");
-    if (!mobile) return currentList;
-
-    return currentList.filter((item) =>
-      String(item.userId?.phone || "").includes(mobile)
-    );
-  }, [currentList, searchMobile]);
+  const list = currentList.filter((item) =>
+    String(item.userId?.phone || "").includes(searchMobile)
+  );
 
   if (loading) return <p>Loading...</p>;
 
@@ -96,13 +95,14 @@ const Deposit = () => {
       <div className="search-box">
         <input
           type="text"
+          placeholder="Mobile number se search karo"
           value={searchMobile}
           maxLength={10}
-          placeholder="Mobile number se search karo"
           onChange={(e) =>
             setSearchMobile(e.target.value.replace(/\D/g, "").slice(0, 10))
           }
         />
+
         {searchMobile && (
           <button onClick={() => setSearchMobile("")}>Clear</button>
         )}
@@ -148,11 +148,7 @@ const Deposit = () => {
                   <td>
                     {screenshotUrl ? (
                       <a href={screenshotUrl} target="_blank" rel="noreferrer">
-                        <img
-                          src={screenshotUrl}
-                          alt="proof"
-                          className="proof-img"
-                        />
+                        <img src={screenshotUrl} alt="proof" className="proof-img" />
                       </a>
                     ) : (
                       "-"
@@ -162,9 +158,7 @@ const Deposit = () => {
                   <td className={item.status}>{item.status}</td>
 
                   <td>
-                    {admin.name
-                      ? `${admin.name} (${admin.role || "admin"})`
-                      : "-"}
+                    {admin.name ? `${admin.name} (${admin.role || "admin"})` : "-"}
                   </td>
 
                   <td>
