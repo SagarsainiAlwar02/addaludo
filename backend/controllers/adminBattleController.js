@@ -31,11 +31,21 @@ exports.approveBattle = async (req, res) => {
       return res.status(400).json({ msg: "Battle already settled" });
     }
 
-    const winnerId = battle.winner || battle.resultSubmittedBy;
+    const winnerId = req.body?.winnerId || battle.winner || battle.resultSubmittedBy;
 
     if (!winnerId) {
       return res.status(400).json({ msg: "Winner not found" });
     }
+
+    const isCreator = String(winnerId) === String(battle.createdBy);
+    const isOpponent = String(winnerId) === String(battle.opponent);
+
+    if (!isCreator && !isOpponent) {
+      return res.status(400).json({ msg: "Winner is not in this battle" });
+    }
+
+    const amount = Number(battle.amount || 0);
+    const prize = Number(battle.prize || amount * 2);
 
     const creatorWallet = await Wallet.findOne({ userId: battle.createdBy });
     const opponentWallet = await Wallet.findOne({ userId: battle.opponent });
@@ -44,9 +54,6 @@ exports.approveBattle = async (req, res) => {
     if (!winnerWallet) {
       return res.status(404).json({ msg: "Winner wallet not found" });
     }
-
-    const amount = Number(battle.amount || 0);
-    const prize = Number(battle.prize || amount * 2);
 
     if (creatorWallet) {
       creatorWallet.locked = Math.max(0, Number(creatorWallet.locked || 0) - amount);
@@ -62,9 +69,10 @@ exports.approveBattle = async (req, res) => {
     winnerWallet.winnings = Number(winnerWallet.winnings || 0) + prize;
     await winnerWallet.save();
 
+    battle.winner = winnerId;
     battle.status = "approved";
     battle.resultSettled = true;
-    battle.adminNote = req.body?.adminNote || "Approved by admin";
+    battle.adminNote = req.body?.adminNote || "Winner approved by admin";
     await battle.save();
 
     await Transaction.create({
@@ -109,7 +117,7 @@ exports.rejectBattle = async (req, res) => {
         amount,
         type: "refund",
         status: "success",
-        note: `Battle ${battle.battleId} rejected refund`,
+        note: `Battle ${battle.battleId} cancelled refund`,
         roomId: battle.battleId,
         balanceAfter: creatorWallet.balance,
       });
@@ -125,18 +133,18 @@ exports.rejectBattle = async (req, res) => {
         amount,
         type: "refund",
         status: "success",
-        note: `Battle ${battle.battleId} rejected refund`,
+        note: `Battle ${battle.battleId} cancelled refund`,
         roomId: battle.battleId,
         balanceAfter: opponentWallet.balance,
       });
     }
 
-    battle.status = "rejected";
+    battle.status = "cancelled";
     battle.resultSettled = true;
-    battle.adminNote = req.body?.adminNote || "Rejected by admin";
+    battle.adminNote = req.body?.adminNote || "Cancelled by admin";
     await battle.save();
 
-    res.json({ msg: "Battle rejected and refunded", battle });
+    res.json({ msg: "Battle cancelled and refunded", battle });
   } catch (err) {
     console.log("❌ REJECT BATTLE ERROR:", err);
     res.status(500).json({ msg: err.message });
