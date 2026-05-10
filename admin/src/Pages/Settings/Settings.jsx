@@ -34,6 +34,7 @@ const Settings = () => {
 
   useEffect(() => {
     fetchReports();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const formatDate = (date) => {
@@ -49,10 +50,12 @@ const Settings = () => {
         headers,
       });
 
-      setBonusReport(res.data.bonus || []);
-      setPenaltyReport(res.data.penalty || []);
+      setBonusReport(Array.isArray(res.data?.bonus) ? res.data.bonus : []);
+      setPenaltyReport(
+        Array.isArray(res.data?.penalty) ? res.data.penalty : []
+      );
     } catch (err) {
-      console.log("Report Error:", err);
+      console.log("Report Error:", err.response?.data || err.message);
       alert(err.response?.data?.msg || "Report fetch failed");
     } finally {
       setReportLoading(false);
@@ -62,7 +65,7 @@ const Settings = () => {
   const validateForm = (data) => {
     const mobile = String(data.mobile || "").replace(/\D/g, "");
 
-    if (!data.mobile || mobile.length !== 10) {
+    if (!mobile || mobile.length !== 10) {
       alert("Valid 10 digit mobile number required");
       return false;
     }
@@ -91,7 +94,7 @@ const Settings = () => {
         headers,
       });
 
-      alert(res.data.msg || "Bonus added successfully");
+      alert(res.data?.msg || "Bonus added successfully");
 
       setBonusData({
         name: "",
@@ -100,10 +103,10 @@ const Settings = () => {
         reason: "",
       });
 
-      fetchReports();
+      await fetchReports();
       setTab("bonusReport");
     } catch (err) {
-      console.log("Bonus Error:", err);
+      console.log("Bonus Error:", err.response?.data || err.message);
       alert(err.response?.data?.msg || "Error adding bonus");
     } finally {
       setLoading(false);
@@ -126,7 +129,7 @@ const Settings = () => {
         headers,
       });
 
-      alert(res.data.msg || "Penalty deducted successfully");
+      alert(res.data?.msg || "Penalty deducted successfully");
 
       setPenaltyData({
         name: "",
@@ -135,10 +138,10 @@ const Settings = () => {
         reason: "",
       });
 
-      fetchReports();
+      await fetchReports();
       setTab("penaltyReport");
     } catch (err) {
-      console.log("Penalty Error:", err);
+      console.log("Penalty Error:", err.response?.data || err.message);
       alert(err.response?.data?.msg || "Error adding penalty");
     } finally {
       setLoading(false);
@@ -204,7 +207,10 @@ const Settings = () => {
             maxLength="10"
             value={bonusData.mobile}
             onChange={(e) =>
-              setBonusData({ ...bonusData, mobile: e.target.value })
+              setBonusData({
+                ...bonusData,
+                mobile: e.target.value.replace(/\D/g, ""),
+              })
             }
           />
 
@@ -255,7 +261,10 @@ const Settings = () => {
             maxLength="10"
             value={penaltyData.mobile}
             onChange={(e) =>
-              setPenaltyData({ ...penaltyData, mobile: e.target.value })
+              setPenaltyData({
+                ...penaltyData,
+                mobile: e.target.value.replace(/\D/g, ""),
+              })
             }
           />
 
@@ -288,89 +297,93 @@ const Settings = () => {
       )}
 
       {tab === "bonusReport" && (
-        <div>
+        <div className="report-box">
           <h3 className="report-title">Bonus Report</h3>
 
           {reportLoading ? (
             <p className="empty-text">Loading...</p>
           ) : (
-            <table className="settings-table">
-              <thead>
-                <tr>
-                  <th>User</th>
-                  <th>Mobile</th>
-                  <th>Amount</th>
-                  <th>Reason</th>
-                  <th>Balance After</th>
-                  <th>Admin</th>
-                  <th>Date</th>
-                </tr>
-              </thead>
-
-              <tbody>
-                {bonusReport.length === 0 ? (
+            <div className="table-scroll">
+              <table className="settings-table">
+                <thead>
                   <tr>
-                    <td colSpan="7">No bonus report found</td>
+                    <th>User</th>
+                    <th>Mobile</th>
+                    <th>Amount</th>
+                    <th>Reason</th>
+                    <th>Balance After</th>
+                    <th>Admin</th>
+                    <th>Date</th>
                   </tr>
-                ) : (
-                  bonusReport.map((item) => (
-                    <tr key={item._id}>
-                      <td>{item.name}</td>
-                      <td>{item.mobile}</td>
-                      <td>₹{item.amount}</td>
-                      <td>{item.reason || "-"}</td>
-                      <td>₹{item.balanceAfter}</td>
-                      <td>{item.adminName || "-"}</td>
-                      <td>{formatDate(item.createdAt)}</td>
+                </thead>
+
+                <tbody>
+                  {bonusReport.length === 0 ? (
+                    <tr>
+                      <td colSpan="7">No bonus report found</td>
                     </tr>
-                  ))
-                )}
-              </tbody>
-            </table>
+                  ) : (
+                    bonusReport.map((item) => (
+                      <tr key={item._id}>
+                        <td>{item.name || "-"}</td>
+                        <td>{item.mobile || "-"}</td>
+                        <td>₹{item.amount || 0}</td>
+                        <td>{item.reason || "-"}</td>
+                        <td>₹{item.balanceAfter || 0}</td>
+                        <td>{item.adminName || "-"}</td>
+                        <td>{formatDate(item.createdAt)}</td>
+                      </tr>
+                    ))
+                  )}
+                </tbody>
+              </table>
+            </div>
           )}
         </div>
       )}
 
       {tab === "penaltyReport" && (
-        <div>
+        <div className="report-box">
           <h3 className="report-title">Penalty Report</h3>
 
           {reportLoading ? (
             <p className="empty-text">Loading...</p>
           ) : (
-            <table className="settings-table">
-              <thead>
-                <tr>
-                  <th>User</th>
-                  <th>Mobile</th>
-                  <th>Amount</th>
-                  <th>Reason</th>
-                  <th>Balance After</th>
-                  <th>Admin</th>
-                  <th>Date</th>
-                </tr>
-              </thead>
-
-              <tbody>
-                {penaltyReport.length === 0 ? (
+            <div className="table-scroll">
+              <table className="settings-table">
+                <thead>
                   <tr>
-                    <td colSpan="7">No penalty report found</td>
+                    <th>User</th>
+                    <th>Mobile</th>
+                    <th>Amount</th>
+                    <th>Reason</th>
+                    <th>Balance After</th>
+                    <th>Admin</th>
+                    <th>Date</th>
                   </tr>
-                ) : (
-                  penaltyReport.map((item) => (
-                    <tr key={item._id}>
-                      <td>{item.name}</td>
-                      <td>{item.mobile}</td>
-                      <td>₹{item.amount}</td>
-                      <td>{item.reason || "-"}</td>
-                      <td>₹{item.balanceAfter}</td>
-                      <td>{item.adminName || "-"}</td>
-                      <td>{formatDate(item.createdAt)}</td>
+                </thead>
+
+                <tbody>
+                  {penaltyReport.length === 0 ? (
+                    <tr>
+                      <td colSpan="7">No penalty report found</td>
                     </tr>
-                  ))
-                )}
-              </tbody>
-            </table>
+                  ) : (
+                    penaltyReport.map((item) => (
+                      <tr key={item._id}>
+                        <td>{item.name || "-"}</td>
+                        <td>{item.mobile || "-"}</td>
+                        <td>₹{item.amount || 0}</td>
+                        <td>{item.reason || "-"}</td>
+                        <td>₹{item.balanceAfter || 0}</td>
+                        <td>{item.adminName || "-"}</td>
+                        <td>{formatDate(item.createdAt)}</td>
+                      </tr>
+                    ))
+                  )}
+                </tbody>
+              </table>
+            </div>
           )}
         </div>
       )}
