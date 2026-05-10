@@ -5,53 +5,42 @@ const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
 
 // ================= ADMIN / AGENT LOGIN =================
-router.post("/login", async (req, res) => {
+// ================= CREATE DEFAULT ADMIN =================
+router.get("/create-admin", async (req, res) => {
   try {
-    const email = String(req.body.email || "").trim().toLowerCase();
-    const password = String(req.body.password || "");
-
-    if (!email || !password) {
-      return res.status(400).json({ msg: "Email and password required" });
-    }
-
-    const admin = await User.findOne({
-      email,
-      role: { $in: ["admin", "agent"] },
+    const existing = await User.findOne({
+      email: "admin@addaludo.com",
     });
 
-    if (!admin) {
-      return res.status(400).json({ msg: "Admin / Agent not found" });
+    if (existing) {
+      return res.json({
+        success: true,
+        msg: "Admin already exists",
+      });
     }
 
-    if (admin.status === "blocked") {
-      return res.status(403).json({ msg: "Account blocked" });
-    }
+    const hashedPassword = await bcrypt.hash("admin123", 10);
 
-    const match = await bcrypt.compare(password, admin.password);
-
-    if (!match) {
-      return res.status(400).json({ msg: "Wrong password" });
-    }
-
-    const token = jwt.sign(
-      { id: admin._id, role: admin.role },
-      process.env.JWT_SECRET || "secret",
-      { expiresIn: "7d" }
-    );
+    const admin = await User.create({
+      name: "Main Admin",
+      email: "admin@addaludo.com",
+      password: hashedPassword,
+      phone: "9999999999",
+      role: "admin",
+      status: "active",
+    });
 
     res.json({
-      token,
-      admin: {
-        id: admin._id,
-        _id: admin._id,
-        name: admin.name,
-        email: admin.email,
-        role: admin.role,
-      },
+      success: true,
+      msg: "Admin created",
+      admin,
     });
   } catch (err) {
-    console.log("❌ ADMIN LOGIN ERROR:", err);
-    res.status(500).json({ msg: err.message });
+    console.log(err);
+    res.status(500).json({
+      success: false,
+      msg: err.message,
+    });
   }
 });
 
