@@ -1,5 +1,6 @@
 const User = require("../models/user");
 const Wallet = require("../models/wallet");
+const Battle = require("../models/battle");
 const generateToken = require("../utils/generateToken");
 const axios = require("axios");
 
@@ -33,13 +34,13 @@ async function sendFast2SMS(phone, otp) {
     {
       route: "otp",
       variables_values: otp,
-      numbers: phone
+      numbers: phone,
     },
     {
       headers: {
         authorization: apiKey,
-        "Content-Type": "application/json"
-      }
+        "Content-Type": "application/json",
+      },
     }
   );
 
@@ -50,9 +51,7 @@ exports.sendOtp = async (req, res) => {
   try {
     let { phone } = req.body;
 
-    if (!phone) {
-      return res.status(400).json({ msg: "Phone number required" });
-    }
+    if (!phone) return res.status(400).json({ msg: "Phone number required" });
 
     phone = String(phone).trim();
 
@@ -69,21 +68,20 @@ exports.sendOtp = async (req, res) => {
 
     otpStore[phone] = {
       otp,
-      createdAt: Date.now()
+      createdAt: Date.now(),
     };
 
     return res.json({
       success: true,
-      msg: "OTP sent successfully"
+      msg: "OTP sent successfully",
     });
-
   } catch (err) {
     console.log("❌ SEND OTP ERROR:", err.response?.data || err.message);
 
     return res.status(500).json({
       success: false,
       msg: "Failed to send OTP",
-      error: err.response?.data || err.message
+      error: err.response?.data || err.message,
     });
   }
 };
@@ -143,7 +141,7 @@ exports.verifyOtp = async (req, res) => {
         phone,
         name: "Player" + Math.floor(Math.random() * 1000),
         referralCode: await generateUniqueReferralCode(),
-        referredBy
+        referredBy,
       });
 
       await Wallet.create({
@@ -152,7 +150,7 @@ exports.verifyOtp = async (req, res) => {
         bonus: 0,
         winnings: 0,
         referralBalance: 0,
-        locked: 0
+        locked: 0,
       });
 
       isNewUser = true;
@@ -179,10 +177,9 @@ exports.verifyOtp = async (req, res) => {
         name: user.name,
         phone: user.phone,
         referralCode: user.referralCode,
-        referredBy: user.referredBy
-      }
+        referredBy: user.referredBy,
+      },
     });
-
   } catch (err) {
     console.log("❌ VERIFY OTP ERROR:", err);
     res.status(500).json({ msg: err.message });
@@ -224,13 +221,16 @@ exports.register = async (req, res) => {
       phone,
       name: name || "Player" + Math.floor(Math.random() * 1000),
       referralCode: await generateUniqueReferralCode(),
-      referredBy
+      referredBy,
     });
 
     await Wallet.create({
       userId: user._id,
       balance: 0,
-      referralBalance: 0
+      bonus: 0,
+      winnings: 0,
+      referralBalance: 0,
+      locked: 0,
     });
 
     const token = generateToken(user);
@@ -242,10 +242,9 @@ exports.register = async (req, res) => {
         id: user._id,
         name: user.name,
         phone: user.phone,
-        referralCode: user.referralCode
-      }
+        referralCode: user.referralCode,
+      },
     });
-
   } catch (err) {
     console.log("❌ REGISTER ERROR:", err);
     res.status(500).json({ msg: err.message });
@@ -270,13 +269,16 @@ exports.login = async (req, res) => {
       user = await User.create({
         phone,
         name: "Player" + Math.floor(Math.random() * 1000),
-        referralCode: await generateUniqueReferralCode()
+        referralCode: await generateUniqueReferralCode(),
       });
 
       await Wallet.create({
         userId: user._id,
         balance: 0,
-        referralBalance: 0
+        bonus: 0,
+        winnings: 0,
+        referralBalance: 0,
+        locked: 0,
       });
     }
 
@@ -298,10 +300,9 @@ exports.login = async (req, res) => {
         id: user._id,
         name: user.name,
         phone: user.phone,
-        referralCode: user.referralCode
-      }
+        referralCode: user.referralCode,
+      },
     });
-
   } catch (err) {
     console.log("❌ LOGIN ERROR:", err);
     res.status(500).json({ msg: err.message });
@@ -326,18 +327,26 @@ exports.profile = async (req, res) => {
     const wallet = await Wallet.findOne({ userId: user._id });
 
     const referralCount = await User.countDocuments({
-      referredBy: user._id
+      referredBy: user._id,
+    });
+
+    const matches = await Battle.countDocuments({
+      $or: [{ createdBy: user._id }, { opponent: user._id }],
+      status: { $in: ["pending", "running", "completed", "cancelled"] },
     });
 
     res.json({
       ...user.toObject(),
+
+      totalWon: Number(wallet?.winnings || 0),
+      matches: Number(matches || 0),
+
       referralStats: {
         referrals: referralCount,
         earned: Number(user.totalReferralEarning || 0),
-        referralBalance: Number(wallet?.referralBalance || 0)
-      }
+        referralBalance: Number(wallet?.referralBalance || 0),
+      },
     });
-
   } catch (err) {
     console.log("❌ PROFILE ERROR:", err);
     res.status(500).json({ msg: err.message });

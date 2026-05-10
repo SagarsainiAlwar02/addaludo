@@ -1,5 +1,8 @@
 import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
+import axios from "axios";
+
+const API_URL = import.meta.env.VITE_API_URL || "http://localhost:5000/api";
 
 export default function Profile({ onLogout }) {
   const navigate = useNavigate();
@@ -15,20 +18,79 @@ export default function Profile({ onLogout }) {
 
   const [tempName, setTempName] = useState("");
 
+  const formatAmount = (amount) => {
+    return Number(amount || 0).toLocaleString("en-IN");
+  };
+
   useEffect(() => {
-    const storedUser = JSON.parse(localStorage.getItem("user"));
+    const fetchProfile = async () => {
+      try {
+        const token = localStorage.getItem("token");
+        const storedUser = JSON.parse(localStorage.getItem("user")) || {};
 
-    if (storedUser) {
-      setProfile({
-        userName: storedUser.name || "Player",
-        phone: storedUser.phone || "",
-        totalWon: storedUser.totalWon || 0,
-        matches: storedUser.matches || 0,
-        kycStatus: storedUser.kycStatus || "Pending",
-      });
+        if (!token) {
+          if (storedUser) {
+            setProfile({
+              userName: storedUser.name || "Player",
+              phone: storedUser.phone || "",
+              totalWon: storedUser.totalWon || 0,
+              matches: storedUser.matches || 0,
+              kycStatus: storedUser.kycStatus || "Pending",
+            });
+            setTempName(storedUser.name || "Player");
+          }
+          return;
+        }
 
-      setTempName(storedUser.name || "Player");
-    }
+        const res = await axios.get(`${API_URL}/user/profile`, {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        });
+
+        const user = res.data || {};
+
+        const updatedProfile = {
+          userName: user.name || storedUser.name || "Player",
+          phone: user.phone || storedUser.phone || "",
+          totalWon: user.totalWon || 0,
+          matches: user.matches || 0,
+          kycStatus: user.kycStatus || "Pending",
+        };
+
+        setProfile(updatedProfile);
+        setTempName(updatedProfile.userName);
+
+        localStorage.setItem(
+          "user",
+          JSON.stringify({
+            ...storedUser,
+            ...user,
+            name: updatedProfile.userName,
+            phone: updatedProfile.phone,
+            totalWon: updatedProfile.totalWon,
+            matches: updatedProfile.matches,
+            kycStatus: updatedProfile.kycStatus,
+          })
+        );
+      } catch (err) {
+        console.log("Profile fetch error:", err);
+
+        const storedUser = JSON.parse(localStorage.getItem("user")) || {};
+
+        setProfile({
+          userName: storedUser.name || "Player",
+          phone: storedUser.phone || "",
+          totalWon: storedUser.totalWon || 0,
+          matches: storedUser.matches || 0,
+          kycStatus: storedUser.kycStatus || "Pending",
+        });
+
+        setTempName(storedUser.name || "Player");
+      }
+    };
+
+    fetchProfile();
   }, []);
 
   const saveProfile = () => {
@@ -67,8 +129,6 @@ export default function Profile({ onLogout }) {
   return (
     <div className="min-h-screen bg-gradient-to-b from-[#f3f4f6] via-[#e5e7eb] to-[#d1d5db] px-4 pb-28 pt-4">
       <div className="mx-auto max-w-[780px]">
-        
-        {/* Profile Header */}
         <div className="flex items-center gap-5 rounded-2xl bg-white shadow-md p-7 border border-gray-200">
           <img
             src={`https://api.dicebear.com/7.x/avataaars/svg?seed=${profile.userName}`}
@@ -114,12 +174,11 @@ export default function Profile({ onLogout }) {
           </div>
         </div>
 
-        {/* Stats */}
         <div className="mt-6 grid grid-cols-2 gap-5">
           <div className="rounded-2xl bg-white shadow-md p-6 text-center">
             <h4 className="text-lg text-gray-500">Total Won</h4>
             <h2 className="mt-2 text-3xl font-bold text-green-600">
-              ₹ {profile.totalWon}
+              ₹ {formatAmount(profile.totalWon)}
             </h2>
           </div>
 
@@ -131,7 +190,6 @@ export default function Profile({ onLogout }) {
           </div>
         </div>
 
-        {/* KYC */}
         <div className="mt-6 flex items-center justify-between rounded-2xl bg-white shadow-md p-6">
           <div>
             <h4 className="text-xl font-semibold text-gray-700">
@@ -156,7 +214,6 @@ export default function Profile({ onLogout }) {
           </button>
         </div>
 
-        {/* Menu */}
         <div className="mt-6 rounded-2xl bg-white shadow-md px-6 py-3">
           {menuItems.map((item) => (
             <div
@@ -176,7 +233,6 @@ export default function Profile({ onLogout }) {
             </div>
           ))}
 
-          {/* Logout */}
           <div
             onClick={handleLogout}
             className="flex cursor-pointer items-center gap-5 py-5"
