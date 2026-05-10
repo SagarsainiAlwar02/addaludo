@@ -13,13 +13,41 @@ export default function Profile({ onLogout }) {
     phone: "",
     totalWon: 0,
     matches: 0,
-    kycStatus: "Pending",
+    kycStatus: "not_submitted",
   });
 
   const [tempName, setTempName] = useState("");
 
   const formatAmount = (amount) => {
     return Number(amount || 0).toLocaleString("en-IN");
+  };
+
+  const getKycLabel = (status) => {
+    if (status === "approved") return "Approved";
+    if (status === "pending") return "Under Review";
+    if (status === "rejected") return "Rejected";
+    return "Not Submitted";
+  };
+
+  const getKycTextColor = (status) => {
+    if (status === "approved") return "text-green-500";
+    if (status === "pending") return "text-orange-500";
+    if (status === "rejected") return "text-red-500";
+    return "text-gray-500";
+  };
+
+  const getKycButtonText = (status) => {
+    if (status === "approved") return "Approved";
+    if (status === "pending") return "Under Review";
+    if (status === "rejected") return "Submit Again";
+    return "Complete KYC";
+  };
+
+  const getKycButtonClass = (status) => {
+    if (status === "approved") return "bg-green-600";
+    if (status === "pending") return "bg-orange-500";
+    if (status === "rejected") return "bg-red-600";
+    return "bg-black";
   };
 
   useEffect(() => {
@@ -29,16 +57,14 @@ export default function Profile({ onLogout }) {
         const storedUser = JSON.parse(localStorage.getItem("user")) || {};
 
         if (!token) {
-          if (storedUser) {
-            setProfile({
-              userName: storedUser.name || "Player",
-              phone: storedUser.phone || "",
-              totalWon: storedUser.totalWon || 0,
-              matches: storedUser.matches || 0,
-              kycStatus: storedUser.kycStatus || "Pending",
-            });
-            setTempName(storedUser.name || "Player");
-          }
+          setProfile({
+            userName: storedUser.name || "Player",
+            phone: storedUser.phone || "",
+            totalWon: storedUser.totalWon || 0,
+            matches: storedUser.matches || 0,
+            kycStatus: storedUser.kycStatus || "not_submitted",
+          });
+          setTempName(storedUser.name || "Player");
           return;
         }
 
@@ -55,7 +81,7 @@ export default function Profile({ onLogout }) {
           phone: user.phone || storedUser.phone || "",
           totalWon: user.totalWon || 0,
           matches: user.matches || 0,
-          kycStatus: user.kycStatus || "Pending",
+          kycStatus: user.kycStatus || "not_submitted",
         };
 
         setProfile(updatedProfile);
@@ -83,7 +109,7 @@ export default function Profile({ onLogout }) {
           phone: storedUser.phone || "",
           totalWon: storedUser.totalWon || 0,
           matches: storedUser.matches || 0,
-          kycStatus: storedUser.kycStatus || "Pending",
+          kycStatus: storedUser.kycStatus || "not_submitted",
         });
 
         setTempName(storedUser.name || "Player");
@@ -117,6 +143,20 @@ export default function Profile({ onLogout }) {
     localStorage.removeItem("token");
     localStorage.removeItem("user");
     navigate("/login");
+  };
+
+  const handleKycClick = () => {
+    if (profile.kycStatus === "approved") {
+      alert("Your KYC is already approved");
+      return;
+    }
+
+    if (profile.kycStatus === "pending") {
+      alert("Your KYC is already under review");
+      return;
+    }
+
+    navigate("/kyc");
   };
 
   const menuItems = [
@@ -158,9 +198,7 @@ export default function Profile({ onLogout }) {
                   <h2 className="text-2xl font-bold text-gray-800">
                     {profile.userName}
                   </h2>
-                  <p className="mt-1 text-lg text-gray-500">
-                    {profile.phone}
-                  </p>
+                  <p className="mt-1 text-lg text-gray-500">{profile.phone}</p>
                 </div>
 
                 <button
@@ -192,25 +230,23 @@ export default function Profile({ onLogout }) {
 
         <div className="mt-6 flex items-center justify-between rounded-2xl bg-white shadow-md p-6">
           <div>
-            <h4 className="text-xl font-semibold text-gray-700">
-              KYC Status
-            </h4>
+            <h4 className="text-xl font-semibold text-gray-700">KYC Status</h4>
             <p
-              className={`mt-2 text-lg font-medium ${
-                profile.kycStatus === "Verified"
-                  ? "text-green-500"
-                  : "text-orange-500"
-              }`}
+              className={`mt-2 text-lg font-medium ${getKycTextColor(
+                profile.kycStatus
+              )}`}
             >
-              {profile.kycStatus}
+              {getKycLabel(profile.kycStatus)}
             </p>
           </div>
 
           <button
-            onClick={() => navigate("/kyc")}
-            className="rounded-lg bg-black px-5 py-2 text-white"
+            onClick={handleKycClick}
+            className={`rounded-lg px-5 py-2 text-white ${getKycButtonClass(
+              profile.kycStatus
+            )}`}
           >
-            View
+            {getKycButtonText(profile.kycStatus)}
           </button>
         </div>
 
@@ -233,10 +269,7 @@ export default function Profile({ onLogout }) {
             </div>
           ))}
 
-          <div
-            onClick={handleLogout}
-            className="flex cursor-pointer items-center gap-5 py-5"
-          >
+          <div onClick={handleLogout} className="flex cursor-pointer items-center gap-5 py-5">
             <div className="flex h-14 w-14 items-center justify-center rounded-full bg-red-100 text-2xl text-red-500">
               ⇱
             </div>

@@ -1,28 +1,15 @@
 const express = require("express");
 const router = express.Router();
 
-const {
-  login,
-  profile,
-  register,
-  submitKyc,
-} = require("../controllers/userController");
+const userController = require("../controllers/usercontroller");
 
 const auth = require("../middleware/auth");
 
-// ✅ REGISTER
-router.post("/register", register);
+router.post("/register", userController.register);
+router.post("/login", userController.login);
+router.get("/profile", auth, userController.profile);
+router.post("/kyc", auth, userController.submitKyc);
 
-// 👉 Login
-router.post("/login", login);
-
-// 👉 Profile
-router.get("/profile", auth, profile);
-
-// ✅ Submit KYC
-router.post("/kyc", auth, submitKyc);
-
-// 👉 Test
 router.get("/test", (req, res) => {
   res.send("User route working ✅");
 });
