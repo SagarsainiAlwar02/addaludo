@@ -1,6 +1,6 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import API from "../../api";
-import "./Deposite.css";
+import "./Deposit.css";
 
 const IMAGE_BASE = "https://api.addaludo.com";
 
@@ -8,17 +8,13 @@ const Deposit = () => {
   const [tab, setTab] = useState("request");
   const [deposits, setDeposits] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [searchMobile, setSearchMobile] = useState("");
 
   const fetchDeposits = async () => {
     try {
       setLoading(true);
-
       const res = await API.get("/admin/deposits");
-
-      const list = Array.isArray(res.data)
-        ? res.data
-        : res.data.deposits || [];
-
+      const list = Array.isArray(res.data) ? res.data : res.data.deposits || [];
       setDeposits(list);
     } catch (err) {
       console.log("Deposit fetch error:", err.response?.data || err.message);
@@ -37,7 +33,6 @@ const Deposit = () => {
       await API.patch(`/deposit/admin/approve/${id}`, {
         adminNote: "Approved from admin panel",
       });
-
       alert("Deposit approved");
       fetchDeposits();
     } catch (err) {
@@ -50,7 +45,6 @@ const Deposit = () => {
       await API.patch(`/deposit/admin/reject/${id}`, {
         adminNote: "Rejected from admin panel",
       });
-
       alert("Deposit rejected");
       fetchDeposits();
     } catch (err) {
@@ -66,7 +60,16 @@ const Deposit = () => {
     (item) => item.status !== "pending" || item.type === "bonus"
   );
 
-  const list = tab === "request" ? requests : history;
+  const currentList = tab === "request" ? requests : history;
+
+  const list = useMemo(() => {
+    const mobile = searchMobile.replace(/\D/g, "");
+    if (!mobile) return currentList;
+
+    return currentList.filter((item) =>
+      String(item.userId?.phone || "").includes(mobile)
+    );
+  }, [currentList, searchMobile]);
 
   if (loading) return <p>Loading...</p>;
 
@@ -88,6 +91,21 @@ const Deposit = () => {
         >
           Deposit History ({history.length})
         </button>
+      </div>
+
+      <div className="search-box">
+        <input
+          type="text"
+          value={searchMobile}
+          maxLength={10}
+          placeholder="Mobile number se search karo"
+          onChange={(e) =>
+            setSearchMobile(e.target.value.replace(/\D/g, "").slice(0, 10))
+          }
+        />
+        {searchMobile && (
+          <button onClick={() => setSearchMobile("")}>Clear</button>
+        )}
       </div>
 
       <table className="deposit-table">
@@ -133,13 +151,7 @@ const Deposit = () => {
                         <img
                           src={screenshotUrl}
                           alt="proof"
-                          style={{
-                            width: "70px",
-                            height: "70px",
-                            objectFit: "cover",
-                            borderRadius: "8px",
-                            border: "1px solid #ddd",
-                          }}
+                          className="proof-img"
                         />
                       </a>
                     ) : (
@@ -185,10 +197,7 @@ const Deposit = () => {
             })
           ) : (
             <tr>
-              <td
-                colSpan={tab === "request" ? "11" : "10"}
-                style={{ textAlign: "center" }}
-              >
+              <td colSpan={tab === "request" ? "11" : "10"}>
                 No deposits found
               </td>
             </tr>

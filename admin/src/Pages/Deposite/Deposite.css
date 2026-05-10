@@ -120,3 +120,49 @@
   outline: none;
   width: 120px;
 }
+
+
+
+
+.search-box {
+  display: flex;
+  gap: 10px;
+  margin: 0 0 18px;
+  max-width: 420px;
+}
+
+.search-box input {
+  flex: 1;
+  padding: 12px 14px;
+  border: 1px solid #334155;
+  border-radius: 12px;
+  background: #020617;
+  color: #fff;
+  outline: none;
+}
+
+.search-box input:focus {
+  border-color: #3b82f6;
+}
+
+.search-box button {
+  padding: 12px 14px;
+  border: none;
+  border-radius: 12px;
+  background: #ef4444;
+  color: white;
+  cursor: pointer;
+  font-weight: 700;
+}
+
+.proof-img {
+  width: 70px;
+  height: 70px;
+  object-fit: cover;
+  border-radius: 8px;
+  border: 1px solid #334155;
+}
+
+.deposit-container {
+  overflow-x: auto;
+}

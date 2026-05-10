@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import "./Withdraw.css";
 import API from "../../api";
 
@@ -7,6 +7,7 @@ const Withdrawal = () => {
   const [selectedUser, setSelectedUser] = useState(null);
   const [withdraws, setWithdraws] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [searchMobile, setSearchMobile] = useState("");
 
   const fetchWithdraws = async () => {
     try {
@@ -57,7 +58,23 @@ const Withdrawal = () => {
 
   const requests = withdraws.filter((item) => item.status === "pending");
   const history = withdraws.filter((item) => item.status !== "pending");
-  const list = tab === "request" ? requests : history;
+  const currentList = tab === "request" ? requests : history;
+
+  const list = useMemo(() => {
+    const mobile = searchMobile.replace(/\D/g, "");
+    if (!mobile) return currentList;
+
+    return currentList.filter((item) =>
+      String(item.userId?.phone || "").includes(mobile)
+    );
+  }, [currentList, searchMobile]);
+
+  const getDetailValue = (details, keys) => {
+    for (const key of keys) {
+      if (details?.[key]) return details[key];
+    }
+    return "-";
+  };
 
   if (loading) return <p>Loading...</p>;
 
@@ -79,6 +96,21 @@ const Withdrawal = () => {
         >
           Withdraw History ({history.length})
         </button>
+      </div>
+
+      <div className="search-box">
+        <input
+          type="text"
+          value={searchMobile}
+          maxLength={10}
+          placeholder="Mobile number se search karo"
+          onChange={(e) =>
+            setSearchMobile(e.target.value.replace(/\D/g, "").slice(0, 10))
+          }
+        />
+        {searchMobile && (
+          <button onClick={() => setSearchMobile("")}>Clear</button>
+        )}
       </div>
 
       <table className="withdraw-table">
@@ -110,7 +142,7 @@ const Withdrawal = () => {
                   <td>{user.name || "User"}</td>
                   <td>{user.phone || "-"}</td>
                   <td>₹{item.amount || 0}</td>
-                  <td>{isPenalty ? "Penalty" : "Withdraw"}</td>
+                  <td>{isPenalty ? "Penalty" : item.method || "Withdraw"}</td>
                   <td className={item.status}>{item.status}</td>
 
                   <td>
@@ -128,10 +160,7 @@ const Withdrawal = () => {
                   </td>
 
                   <td>
-                    <button
-                      className="view"
-                      onClick={() => setSelectedUser(item)}
-                    >
+                    <button className="view" onClick={() => setSelectedUser(item)}>
                       View
                     </button>
                   </td>
@@ -139,22 +168,14 @@ const Withdrawal = () => {
                   {tab === "request" && (
                     <td>
                       {isPenalty ? (
-                        <span style={{ fontWeight: "600", color: "#f59e0b" }}>
-                          Penalty Pending
-                        </span>
+                        <span className="penalty-text">Penalty Pending</span>
                       ) : (
                         <>
-                          <button
-                            className="approve"
-                            onClick={() => approve(item)}
-                          >
+                          <button className="approve" onClick={() => approve(item)}>
                             Approve
                           </button>
 
-                          <button
-                            className="reject"
-                            onClick={() => reject(item)}
-                          >
+                          <button className="reject" onClick={() => reject(item)}>
                             Reject
                           </button>
                         </>
@@ -166,10 +187,7 @@ const Withdrawal = () => {
             })
           ) : (
             <tr>
-              <td
-                colSpan={tab === "request" ? "10" : "9"}
-                style={{ textAlign: "center" }}
-              >
+              <td colSpan={tab === "request" ? "10" : "9"}>
                 No withdrawal found
               </td>
             </tr>
@@ -186,21 +204,54 @@ const Withdrawal = () => {
                 : "Withdrawal Details"}
             </h2>
 
+            <p><b>User:</b> {selectedUser.userId?.name || "User"}</p>
+            <p><b>Mobile:</b> {selectedUser.userId?.phone || "-"}</p>
+            <p><b>Amount:</b> ₹{selectedUser.amount || 0}</p>
+            <p><b>Method:</b> {selectedUser.method || selectedUser.type || "-"}</p>
+            <p><b>Status:</b> {selectedUser.status}</p>
+
+            <hr />
+
+            <h3>Payment Details</h3>
+
             <p>
-              <b>User:</b> {selectedUser.userId?.name || "User"}
+              <b>UPI ID:</b>{" "}
+              {getDetailValue(selectedUser.details, [
+                "upi",
+                "upiId",
+                "upi_id",
+                "vpa",
+              ])}
             </p>
+
             <p>
-              <b>Mobile:</b> {selectedUser.userId?.phone || "-"}
+              <b>Account Holder:</b>{" "}
+              {getDetailValue(selectedUser.details, [
+                "accountHolder",
+                "accountHolderName",
+                "holderName",
+                "name",
+              ])}
             </p>
+
             <p>
-              <b>Amount:</b> ₹{selectedUser.amount || 0}
+              <b>Account Number:</b>{" "}
+              {getDetailValue(selectedUser.details, [
+                "accountNumber",
+                "accountNo",
+                "account",
+                "bankAccount",
+              ])}
             </p>
+
             <p>
-              <b>Type:</b>{" "}
-              {selectedUser.type === "penalty" ? "Penalty" : "Withdraw"}
+              <b>IFSC:</b>{" "}
+              {getDetailValue(selectedUser.details, ["ifsc", "ifscCode"])}
             </p>
+
             <p>
-              <b>Status:</b> {selectedUser.status}
+              <b>Bank Name:</b>{" "}
+              {getDetailValue(selectedUser.details, ["bankName", "bank"])}
             </p>
 
             <p>
@@ -210,6 +261,8 @@ const Withdrawal = () => {
                 selectedUser.reason ||
                 "-"}
             </p>
+
+            <hr />
 
             <p>
               <b>Approved / Rejected By:</b>{" "}
