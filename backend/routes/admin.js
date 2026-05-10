@@ -4,6 +4,7 @@ const router = express.Router();
 const multer = require("multer");
 const path = require("path");
 const fs = require("fs");
+const bcrypt = require("bcryptjs");
 
 const auth = require("../middleware/auth");
 
@@ -147,24 +148,120 @@ router.delete("/user/:id", auth, async (req, res) => {
   }
 });
 
+// ================= ADMIN / AGENT LIST =================
+router.get("/admin-list", auth, async (req, res) => {
+  try {
+    const admins = await User.find({
+      role: { $in: ["admin", "agent"] },
+    })
+      .select("-password")
+      .sort({ createdAt: -1 })
+      .lean();
 
+    res.json(admins);
+  } catch (err) {
+    console.log("❌ ADMIN LIST ERROR:", err);
+    res.status(500).json({ msg: err.message });
+  }
+});
+
+// ================= CREATE ADMIN / AGENT =================
+router.post("/create-admin", auth, async (req, res) => {
+  try {
+    const name = String(req.body.name || "").trim();
+    const email = String(req.body.email || "").trim().toLowerCase();
+    const password = String(req.body.password || "");
+    const role = String(req.body.role || "admin").trim();
+
+    if (!name || !email || !password) {
+      return res.status(400).json({
+        msg: "Name, Email aur Password required hai",
+      });
+    }
+
+    if (!["admin", "agent"].includes(role)) {
+      return res.status(400).json({ msg: "Invalid role" });
+    }
+
+    if (password.length < 6) {
+      return res.status(400).json({
+        msg: "Password minimum 6 characters hona chahiye",
+      });
+    }
+
+    const exists = await User.findOne({ email });
+
+    if (exists) {
+      return res.status(400).json({ msg: "Email already exists" });
+    }
+
+    const hashedPassword = await bcrypt.hash(password, 10);
+
+    const admin = await User.create({
+      name,
+      email,
+      password: hashedPassword,
+      phone: "ADM" + Date.now(),
+      role,
+      status: "active",
+    });
+
+    res.json({
+      success: true,
+      msg: `${role} created successfully`,
+      admin: {
+        _id: admin._id,
+        name: admin.name,
+        email: admin.email,
+        role: admin.role,
+        status: admin.status,
+      },
+    });
+  } catch (err) {
+    console.log("❌ CREATE ADMIN ERROR:", err);
+    res.status(500).json({ msg: err.message });
+  }
+});
+
+// ================= DELETE ADMIN / AGENT =================
+router.delete("/delete/:id", auth, async (req, res) => {
+  try {
+    const admin = await User.findById(req.params.id);
+
+    if (!admin) {
+      return res.status(404).json({ msg: "Admin / Agent not found" });
+    }
+
+    if (!["admin", "agent"].includes(admin.role)) {
+      return res.status(400).json({
+        msg: "Only admin/agent delete ho sakta hai",
+      });
+    }
+
+    await User.findByIdAndDelete(req.params.id);
+
+    res.json({
+      success: true,
+      msg: "Admin / Agent deleted successfully",
+    });
+  } catch (err) {
+    console.log("❌ DELETE ADMIN ERROR:", err);
+    res.status(500).json({ msg: err.message });
+  }
+});
 
 // ================= DASHBOARD =================
 router.get("/dashboard", auth, async (req, res) => {
   try {
-    const totalUsers = await User.countDocuments({ role: { $ne: "admin" } });
+    const totalUsers = await User.countDocuments({ role: "user" });
 
     const totalBlockedUsers = await User.countDocuments({
-      role: { $ne: "admin" },
+      role: "user",
       status: "blocked",
     });
 
     const txAgg = await Transaction.aggregate([
-      {
-        $match: {
-          status: "success",
-        },
-      },
+      { $match: { status: "success" } },
       {
         $group: {
           _id: "$type",
@@ -185,7 +282,6 @@ router.get("/dashboard", auth, async (req, res) => {
           walletBalance: { $sum: "$balance" },
           holdBalance: { $sum: "$locked" },
           totalReferral: { $sum: "$referralBalance" },
-          totalBonusWallet: { $sum: "$bonus" },
           totalWinnings: { $sum: "$winnings" },
         },
       },
@@ -220,20 +316,16 @@ router.get("/dashboard", auth, async (req, res) => {
     res.json({
       totalUsers,
       totalBlockedUsers,
-
       totalDeposit,
       totalWithdraw,
       totalEarnings: Math.max(0, totalEarnings),
       totalCommission,
-
       totalReferral:
         Number(walletData.totalReferral || 0) +
         Number(userReferralData.totalReferralEarning || 0) +
         Number(totalReferralRedeem || 0),
-
       totalBonus,
       totalPenalty,
-
       holdBalance: walletData.holdBalance || 0,
       walletBalance: walletData.walletBalance || 0,
       totalWinnings: walletData.totalWinnings || 0,
@@ -281,7 +373,6 @@ router.post("/add-bonus", auth, async (req, res) => {
     }
 
     wallet.balance = Number(wallet.balance || 0) + bonusAmount;
-
     await wallet.save();
 
     const transaction = await Transaction.create({
@@ -355,7 +446,6 @@ router.post("/add-penalty", auth, async (req, res) => {
     }
 
     wallet.balance = Number(wallet.balance || 0) - penaltyAmount;
-
     await wallet.save();
 
     const transaction = await Transaction.create({
@@ -428,6 +518,19 @@ router.get("/settings-report", auth, async (req, res) => {
     });
   } catch (err) {
     console.log("❌ SETTINGS REPORT ERROR:", err);
+    res.status(500).json({ msg: err.message });
+  }
+});
+
+// ================= WEBSITE SETTINGS SAVE =================
+router.post("/settings", auth, async (req, res) => {
+  try {
+    res.json({
+      success: true,
+      msg: "Settings saved successfully",
+      settings: req.body,
+    });
+  } catch (err) {
     res.status(500).json({ msg: err.message });
   }
 });
@@ -563,19 +666,12 @@ router.get("/agent-report", auth, async (req, res) => {
       {
         $group: {
           _id: "$approvedBy",
-
           totalDeposit: {
-            $sum: {
-              $cond: [{ $eq: ["$type", "deposit"] }, "$amount", 0],
-            },
+            $sum: { $cond: [{ $eq: ["$type", "deposit"] }, "$amount", 0] },
           },
-
           totalWithdraw: {
-            $sum: {
-              $cond: [{ $eq: ["$type", "withdraw"] }, "$amount", 0],
-            },
+            $sum: { $cond: [{ $eq: ["$type", "withdraw"] }, "$amount", 0] },
           },
-
           todayDeposit: {
             $sum: {
               $cond: [
@@ -591,7 +687,6 @@ router.get("/agent-report", auth, async (req, res) => {
               ],
             },
           },
-
           todayWithdraw: {
             $sum: {
               $cond: [
@@ -607,19 +702,12 @@ router.get("/agent-report", auth, async (req, res) => {
               ],
             },
           },
-
           totalBonus: {
-            $sum: {
-              $cond: [{ $eq: ["$type", "bonus"] }, "$amount", 0],
-            },
+            $sum: { $cond: [{ $eq: ["$type", "bonus"] }, "$amount", 0] },
           },
-
           totalPenalty: {
-            $sum: {
-              $cond: [{ $eq: ["$type", "penalty"] }, "$amount", 0],
-            },
+            $sum: { $cond: [{ $eq: ["$type", "penalty"] }, "$amount", 0] },
           },
-
           totalApprovedCount: { $sum: 1 },
         },
       },
@@ -631,12 +719,7 @@ router.get("/agent-report", auth, async (req, res) => {
           as: "admin",
         },
       },
-      {
-        $unwind: {
-          path: "$admin",
-          preserveNullAndEmptyArrays: true,
-        },
-      },
+      { $unwind: { path: "$admin", preserveNullAndEmptyArrays: true } },
       {
         $project: {
           adminId: "$_id",

@@ -47,11 +47,11 @@ const userSchema = new mongoose.Schema(
       default: 0,
     },
 
-    role: {
-      type: String,
-      enum: ["user", "admin"],
-      default: "user",
-    },
+ role: {
+  type: String,
+  enum: ["user", "admin", "agent"],
+  default: "user",
+},
 
     status: {
       type: String,

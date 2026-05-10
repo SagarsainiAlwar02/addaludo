@@ -4,15 +4,27 @@ const User = require("../models/user");
 const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
 
-// ================= ADMIN LOGIN =================
+// ================= ADMIN / AGENT LOGIN =================
 router.post("/login", async (req, res) => {
   try {
-    const { email, password } = req.body;
+    const email = String(req.body.email || "").trim().toLowerCase();
+    const password = String(req.body.password || "");
 
-    const admin = await User.findOne({ email, role: "admin" });
+    if (!email || !password) {
+      return res.status(400).json({ msg: "Email and password required" });
+    }
+
+    const admin = await User.findOne({
+      email,
+      role: { $in: ["admin", "agent"] },
+    });
 
     if (!admin) {
-      return res.status(400).json({ msg: "Admin not found" });
+      return res.status(400).json({ msg: "Admin / Agent not found" });
+    }
+
+    if (admin.status === "blocked") {
+      return res.status(403).json({ msg: "Account blocked" });
     }
 
     const match = await bcrypt.compare(password, admin.password);
@@ -23,7 +35,7 @@ router.post("/login", async (req, res) => {
 
     const token = jwt.sign(
       { id: admin._id, role: admin.role },
-      process.env.JWT_SECRET,
+      process.env.JWT_SECRET || "secret",
       { expiresIn: "7d" }
     );
 
@@ -31,12 +43,14 @@ router.post("/login", async (req, res) => {
       token,
       admin: {
         id: admin._id,
+        _id: admin._id,
+        name: admin.name,
         email: admin.email,
-        role: admin.role
-      }
+        role: admin.role,
+      },
     });
-
   } catch (err) {
+    console.log("❌ ADMIN LOGIN ERROR:", err);
     res.status(500).json({ msg: err.message });
   }
 });
