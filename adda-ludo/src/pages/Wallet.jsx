@@ -65,7 +65,10 @@ export default function Wallet() {
 
   const loadWithdraws = async () => {
     try {
-      const res = await axios.get(`${API_BASE}/redeem/withdraw-history`, authHeader);
+      const res = await axios.get(
+        `${API_BASE}/redeem/withdraw-history`,
+        authHeader
+      );
       setWithdraws(res.data.withdraws || []);
     } catch (err) {
       console.log("Withdraw load error:", err.response?.data || err.message);
@@ -172,7 +175,8 @@ export default function Wallet() {
 
     if (!addAmount) return setError("Please enter amount");
     if (addAmount < MIN_AMOUNT) return setError("Minimum add cash amount is ₹100");
-    if (addAmount > MAX_AMOUNT) return setError("Maximum add cash amount is ₹1,00,000");
+    if (addAmount > MAX_AMOUNT)
+      return setError("Maximum add cash amount is ₹1,00,000");
 
     setError("");
     setShowAddCash(false);
@@ -296,12 +300,17 @@ export default function Wallet() {
           </div>
 
           <div style={styles.btnRow}>
-            <button style={styles.withdrawBtn} onClick={() => navigate("/withdraw")}>
+            <button
+              style={styles.withdrawBtn}
+              onClick={() => navigate("/withdraw")}
+            >
               Withdraw 🏦
             </button>
           </div>
 
-          <p style={styles.desc}>Withdrawable to UPI or Bank. Also usable for play.</p>
+          <p style={styles.desc}>
+            Withdrawable to UPI or Bank. Also usable for play.
+          </p>
         </div>
 
         <HistoryBox
@@ -341,16 +350,19 @@ export default function Wallet() {
               style={styles.input}
             />
 
-            <div style={styles.quickRow}>
-              {[100, 500, 1000, 2000, 5000, 10000].map((amt) => (
-                <button
-                  key={amt}
-                  style={styles.quickBtn}
-                  onClick={() => setAmount(String(amt))}
-                >
-                  ₹{amt}
-                </button>
-              ))}
+            <div style={styles.depositNoteBox}>
+              <p style={styles.depositNoteLine}>
+                <b>NOTE :-</b> कृपया UTR No.
+              </p>
+
+              <p style={styles.depositNoteLine}>
+                सही से भरे, गलत UTR No. भरने पर Payment Add नहीं होगा, उसकी
+                जिम्मेदारी खुद की होगी।
+              </p>
+
+              <p style={styles.depositNoteLine}>
+                अगर UPI और Scanner पर Payment न हो तो Support से Contact करें।
+              </p>
             </div>
 
             <button style={styles.payBtn} onClick={goToPayment}>
@@ -406,7 +418,11 @@ export default function Wallet() {
               )}
 
               {bank?.accountNumber && (
-                <CopyRow label="A/C No." value={bank.accountNumber} onCopy={copyText} />
+                <CopyRow
+                  label="A/C No."
+                  value={bank.accountNumber}
+                  onCopy={copyText}
+                />
               )}
 
               {bank?.ifsc && (
@@ -437,7 +453,11 @@ export default function Wallet() {
 
               {error && <div style={{ ...styles.error, marginTop: 14 }}>{error}</div>}
 
-              <button style={styles.submitBtn} onClick={submitDeposit} disabled={loading}>
+              <button
+                style={styles.submitBtn}
+                onClick={submitDeposit}
+                disabled={loading}
+              >
                 {loading ? "Submitting..." : "Submit Payment Proof"}
               </button>
 
@@ -487,7 +507,9 @@ function HistoryBox({ title, empty, items, getStatusStyle, type }) {
               </p>
 
               <p style={styles.small}>
-                {item.createdAt ? new Date(item.createdAt).toLocaleString("en-IN") : "-"}
+                {item.createdAt
+                  ? new Date(item.createdAt).toLocaleString("en-IN")
+                  : "-"}
               </p>
             </div>
 
@@ -732,21 +754,20 @@ const styles = {
     background: "#fff",
   },
 
-  quickRow: {
-    display: "grid",
-    gridTemplateColumns: "1fr 1fr",
-    gap: 9,
-    marginTop: 13,
+  depositNoteBox: {
+    marginTop: 14,
+    background: "#fff7ed",
+    border: "1px solid #fed7aa",
+    borderRadius: 14,
+    padding: "11px 12px",
+    color: "#111827",
+    fontSize: 12,
+    fontWeight: 800,
+    lineHeight: 1.55,
   },
 
-  quickBtn: {
-    border: "1px solid #bfdbfe",
-    background: "#eff6ff",
-    color: "#1d4ed8",
-    borderRadius: 13,
-    padding: 10,
-    fontSize: 15,
-    fontWeight: 900,
+  depositNoteLine: {
+    margin: "0 0 7px",
   },
 
   payBtn: {
