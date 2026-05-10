@@ -25,9 +25,14 @@ const Withdrawal = () => {
     fetchWithdraws();
   }, []);
 
-  const approve = async (id) => {
+  const approve = async (item) => {
+    if (item.type === "penalty") {
+      alert("Penalty already deducted. Ye sirf pending history me show hogi.");
+      return;
+    }
+
     try {
-      await API.patch(`/admin/withdraw/approve/${id}`);
+      await API.patch(`/admin/withdraw/approve/${item._id}`);
       alert("Withdraw approved");
       fetchWithdraws();
     } catch (err) {
@@ -35,9 +40,14 @@ const Withdrawal = () => {
     }
   };
 
-  const reject = async (id) => {
+  const reject = async (item) => {
+    if (item.type === "penalty") {
+      alert("Penalty already deducted. Isko reject nahi karna.");
+      return;
+    }
+
     try {
-      await API.patch(`/admin/withdraw/reject/${id}`);
+      await API.patch(`/admin/withdraw/reject/${item._id}`);
       alert("Withdraw rejected");
       fetchWithdraws();
     } catch (err) {
@@ -60,14 +70,14 @@ const Withdrawal = () => {
           className={tab === "request" ? "active-tab" : ""}
           onClick={() => setTab("request")}
         >
-          Pending Withdraw
+          Pending Withdraw ({requests.length})
         </button>
 
         <button
           className={tab === "history" ? "active-tab" : ""}
           onClick={() => setTab("history")}
         >
-          Withdraw History
+          Withdraw History ({history.length})
         </button>
       </div>
 
@@ -78,6 +88,7 @@ const Withdrawal = () => {
             <th>User</th>
             <th>Mobile</th>
             <th>Amount</th>
+            <th>Type</th>
             <th>Status</th>
             <th>Approved / Rejected By</th>
             <th>Action Date</th>
@@ -91,13 +102,15 @@ const Withdrawal = () => {
             list.map((item) => {
               const user = item.userId || {};
               const admin = item.actionBy || item.approvedBy || {};
+              const isPenalty = item.type === "penalty";
 
               return (
                 <tr key={item._id}>
                   <td>{item._id?.slice(-6)}</td>
                   <td>{user.name || "User"}</td>
                   <td>{user.phone || "-"}</td>
-                  <td>₹{item.amount}</td>
+                  <td>₹{item.amount || 0}</td>
+                  <td>{isPenalty ? "Penalty" : "Withdraw"}</td>
                   <td className={item.status}>{item.status}</td>
 
                   <td>
@@ -109,24 +122,43 @@ const Withdrawal = () => {
                   <td>
                     {item.actionAt
                       ? new Date(item.actionAt).toLocaleString()
+                      : item.createdAt
+                      ? new Date(item.createdAt).toLocaleString()
                       : "-"}
                   </td>
 
                   <td>
-                    <button className="view" onClick={() => setSelectedUser(item)}>
+                    <button
+                      className="view"
+                      onClick={() => setSelectedUser(item)}
+                    >
                       View
                     </button>
                   </td>
 
                   {tab === "request" && (
                     <td>
-                      <button className="approve" onClick={() => approve(item._id)}>
-                        Approve
-                      </button>
+                      {isPenalty ? (
+                        <span style={{ fontWeight: "600", color: "#f59e0b" }}>
+                          Penalty Pending
+                        </span>
+                      ) : (
+                        <>
+                          <button
+                            className="approve"
+                            onClick={() => approve(item)}
+                          >
+                            Approve
+                          </button>
 
-                      <button className="reject" onClick={() => reject(item._id)}>
-                        Reject
-                      </button>
+                          <button
+                            className="reject"
+                            onClick={() => reject(item)}
+                          >
+                            Reject
+                          </button>
+                        </>
+                      )}
                     </td>
                   )}
                 </tr>
@@ -134,7 +166,10 @@ const Withdrawal = () => {
             })
           ) : (
             <tr>
-              <td colSpan={tab === "request" ? "9" : "8"} style={{ textAlign: "center" }}>
+              <td
+                colSpan={tab === "request" ? "10" : "9"}
+                style={{ textAlign: "center" }}
+              >
                 No withdrawal found
               </td>
             </tr>
@@ -145,12 +180,36 @@ const Withdrawal = () => {
       {selectedUser && (
         <div className="modal">
           <div className="modal-content">
-            <h2>Withdrawal Details</h2>
+            <h2>
+              {selectedUser.type === "penalty"
+                ? "Penalty Details"
+                : "Withdrawal Details"}
+            </h2>
 
-            <p><b>User:</b> {selectedUser.userId?.name || "User"}</p>
-            <p><b>Mobile:</b> {selectedUser.userId?.phone || "-"}</p>
-            <p><b>Amount:</b> ₹{selectedUser.amount}</p>
-            <p><b>Status:</b> {selectedUser.status}</p>
+            <p>
+              <b>User:</b> {selectedUser.userId?.name || "User"}
+            </p>
+            <p>
+              <b>Mobile:</b> {selectedUser.userId?.phone || "-"}
+            </p>
+            <p>
+              <b>Amount:</b> ₹{selectedUser.amount || 0}
+            </p>
+            <p>
+              <b>Type:</b>{" "}
+              {selectedUser.type === "penalty" ? "Penalty" : "Withdraw"}
+            </p>
+            <p>
+              <b>Status:</b> {selectedUser.status}
+            </p>
+
+            <p>
+              <b>Reason:</b>{" "}
+              {selectedUser.details?.reason ||
+                selectedUser.note ||
+                selectedUser.reason ||
+                "-"}
+            </p>
 
             <p>
               <b>Approved / Rejected By:</b>{" "}

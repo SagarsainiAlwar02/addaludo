@@ -13,7 +13,7 @@ const Deposit = () => {
     try {
       setLoading(true);
 
-      const res = await API.get("/deposit/admin/all");
+      const res = await API.get("/admin/deposits");
 
       const list = Array.isArray(res.data)
         ? res.data
@@ -58,8 +58,14 @@ const Deposit = () => {
     }
   };
 
-  const requests = deposits.filter((item) => item.status === "pending");
-  const history = deposits.filter((item) => item.status !== "pending");
+  const requests = deposits.filter(
+    (item) => item.status === "pending" && item.type !== "bonus"
+  );
+
+  const history = deposits.filter(
+    (item) => item.status !== "pending" || item.type === "bonus"
+  );
+
   const list = tab === "request" ? requests : history;
 
   if (loading) return <p>Loading...</p>;
@@ -91,6 +97,7 @@ const Deposit = () => {
             <th>Name</th>
             <th>Mobile</th>
             <th>Amount</th>
+            <th>Type</th>
             <th>UTR</th>
             <th>Screenshot</th>
             <th>Status</th>
@@ -109,12 +116,15 @@ const Deposit = () => {
                 ? `${IMAGE_BASE}${item.screenshot}`
                 : "";
 
+              const isBonus = item.type === "bonus";
+
               return (
                 <tr key={item._id}>
                   <td>{item._id?.slice(-6)}</td>
                   <td>{user.name || "-"}</td>
                   <td>{user.phone || "-"}</td>
                   <td>₹{item.amount || 0}</td>
+                  <td>{isBonus ? "Bonus" : "Deposit"}</td>
                   <td>{item.utr || "-"}</td>
 
                   <td>
@@ -148,6 +158,8 @@ const Deposit = () => {
                   <td>
                     {item.approvedAt
                       ? new Date(item.approvedAt).toLocaleString()
+                      : item.createdAt
+                      ? new Date(item.createdAt).toLocaleString()
                       : "-"}
                   </td>
 
@@ -174,7 +186,7 @@ const Deposit = () => {
           ) : (
             <tr>
               <td
-                colSpan={tab === "request" ? "10" : "9"}
+                colSpan={tab === "request" ? "11" : "10"}
                 style={{ textAlign: "center" }}
               >
                 No deposits found
