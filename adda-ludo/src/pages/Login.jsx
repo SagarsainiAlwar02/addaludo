@@ -112,7 +112,7 @@ export default function Login({ onLogin }) {
       <div className="relative w-full max-w-[650px] min-h-screen overflow-hidden bg-gradient-to-b from-[#14061f] via-[#2a0c45] to-[#09040d] px-5 py-8">
         <div className="relative z-10 flex flex-col items-center">
           <img
-            src="/logo.jpeg"
+            src="/logo.png"
             alt="AddaLudo"
             className="mt-4 w-full max-w-[250px] object-contain mx-auto"
           />

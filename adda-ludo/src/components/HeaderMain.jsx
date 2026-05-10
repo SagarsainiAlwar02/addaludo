@@ -54,7 +54,7 @@ export default function HeaderMain() {
           className="flex shrink-0 cursor-pointer items-center"
         >
           <img
-            src="/logo.jpeg"
+            src="/logo.png"
             alt="AddaLudo"
             className="h-[44px] w-[82px] object-contain sm:h-[58px] sm:w-[120px]"
           />
