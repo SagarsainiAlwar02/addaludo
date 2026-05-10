@@ -30,6 +30,9 @@ const Dashboard = () => {
 
   useEffect(() => {
     fetchStats();
+
+    const interval = setInterval(fetchStats, 10000);
+    return () => clearInterval(interval);
   }, []);
 
   return (
@@ -43,7 +46,7 @@ const Dashboard = () => {
           {stats.map((item, index) => (
             <div className="card" key={index}>
               <h3>{item.title}</h3>
-              <p>₹{Number(item.value || 0).toLocaleString()}</p>
+              <p>₹{Number(item.value || 0).toLocaleString("en-IN")}</p>
             </div>
           ))}
         </div>

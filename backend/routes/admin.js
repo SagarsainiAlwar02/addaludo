@@ -147,6 +147,8 @@ router.delete("/user/:id", auth, async (req, res) => {
   }
 });
 
+
+
 // ================= DASHBOARD =================
 router.get("/dashboard", auth, async (req, res) => {
   try {
@@ -157,35 +159,87 @@ router.get("/dashboard", auth, async (req, res) => {
       status: "blocked",
     });
 
-    const totalDepositAgg = await Transaction.aggregate([
-      { $match: { type: "deposit", status: "success" } },
-      { $group: { _id: null, total: { $sum: "$amount" } } },
+    const txAgg = await Transaction.aggregate([
+      {
+        $match: {
+          status: "success",
+        },
+      },
+      {
+        $group: {
+          _id: "$type",
+          total: { $sum: "$amount" },
+        },
+      },
     ]);
 
-    const totalWithdrawAgg = await Transaction.aggregate([
-      { $match: { type: "withdraw", status: "success" } },
-      { $group: { _id: null, total: { $sum: "$amount" } } },
+    const txMap = {};
+    txAgg.forEach((item) => {
+      txMap[item._id] = item.total || 0;
+    });
+
+    const walletAgg = await Wallet.aggregate([
+      {
+        $group: {
+          _id: null,
+          walletBalance: { $sum: "$balance" },
+          holdBalance: { $sum: "$locked" },
+          totalReferral: { $sum: "$referralBalance" },
+          totalBonusWallet: { $sum: "$bonus" },
+          totalWinnings: { $sum: "$winnings" },
+        },
+      },
     ]);
 
-    const totalBonusAgg = await Transaction.aggregate([
-      { $match: { type: "bonus", status: "success" } },
-      { $group: { _id: null, total: { $sum: "$amount" } } },
+    const userReferralAgg = await User.aggregate([
+      {
+        $group: {
+          _id: null,
+          totalReferralEarning: { $sum: "$totalReferralEarning" },
+        },
+      },
     ]);
 
-    const totalPenaltyAgg = await Transaction.aggregate([
-      { $match: { type: "penalty", status: "success" } },
-      { $group: { _id: null, total: { $sum: "$amount" } } },
-    ]);
+    const walletData = walletAgg[0] || {};
+    const userReferralData = userReferralAgg[0] || {};
+
+    const totalDeposit = txMap.deposit || 0;
+    const totalWithdraw = txMap.withdraw || 0;
+    const totalBonus = txMap.bonus || 0;
+    const totalPenalty = txMap.penalty || 0;
+    const totalCommission = txMap.referral_commission || 0;
+    const totalReferralRedeem = txMap.referral_redeem || 0;
+
+    const totalGameEntry = txMap.game_entry || 0;
+    const totalGameWin = txMap.game_win || 0;
+    const totalRefund = txMap.refund || 0;
+
+    const totalEarnings =
+      totalGameEntry + totalPenalty - totalGameWin - totalRefund;
 
     res.json({
       totalUsers,
       totalBlockedUsers,
-      totalDeposit: totalDepositAgg[0]?.total || 0,
-      totalWithdraw: totalWithdrawAgg[0]?.total || 0,
-      totalBonus: totalBonusAgg[0]?.total || 0,
-      totalPenalty: totalPenaltyAgg[0]?.total || 0,
+
+      totalDeposit,
+      totalWithdraw,
+      totalEarnings: Math.max(0, totalEarnings),
+      totalCommission,
+
+      totalReferral:
+        Number(walletData.totalReferral || 0) +
+        Number(userReferralData.totalReferralEarning || 0) +
+        Number(totalReferralRedeem || 0),
+
+      totalBonus,
+      totalPenalty,
+
+      holdBalance: walletData.holdBalance || 0,
+      walletBalance: walletData.walletBalance || 0,
+      totalWinnings: walletData.totalWinnings || 0,
     });
   } catch (err) {
+    console.log("❌ DASHBOARD ERROR:", err);
     res.status(500).json({ msg: err.message });
   }
 });
