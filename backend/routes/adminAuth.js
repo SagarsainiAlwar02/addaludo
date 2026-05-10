@@ -4,26 +4,31 @@ const User = require("../models/user");
 const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
 
-// ================= ADMIN / AGENT LOGIN =================
-// ================= CREATE DEFAULT ADMIN =================
+// CREATE ADMIN TEMP
 router.get("/create-admin", async (req, res) => {
   try {
-    const existing = await User.findOne({
-      email: "admin@addaludo.com",
-    });
+    const email = "admin@addaludo.com";
+    const password = "admin123";
 
-    if (existing) {
+    let admin = await User.findOne({ email });
+
+    if (admin) {
+      admin.role = "admin";
+      admin.status = "active";
+      admin.password = await bcrypt.hash(password, 10);
+      await admin.save();
+
       return res.json({
         success: true,
-        msg: "Admin already exists",
+        msg: "Admin updated",
       });
     }
 
-    const hashedPassword = await bcrypt.hash("admin123", 10);
+    const hashedPassword = await bcrypt.hash(password, 10);
 
-    const admin = await User.create({
+    admin = await User.create({
       name: "Main Admin",
-      email: "admin@addaludo.com",
+      email,
       password: hashedPassword,
       phone: "8888888888",
       role: "admin",
@@ -36,11 +41,61 @@ router.get("/create-admin", async (req, res) => {
       admin,
     });
   } catch (err) {
-    console.log(err);
     res.status(500).json({
       success: false,
       msg: err.message,
     });
+  }
+});
+
+// ADMIN LOGIN
+router.post("/login", async (req, res) => {
+  try {
+    const email = String(req.body.email || "").trim().toLowerCase();
+    const password = String(req.body.password || "");
+
+    if (!email || !password) {
+      return res.status(400).json({ msg: "Email and password required" });
+    }
+
+    const admin = await User.findOne({
+      email,
+      role: { $in: ["admin", "agent"] },
+    });
+
+    if (!admin) {
+      return res.status(400).json({ msg: "Admin / Agent not found" });
+    }
+
+    if (admin.status === "blocked") {
+      return res.status(403).json({ msg: "Account blocked" });
+    }
+
+    const match = await bcrypt.compare(password, admin.password);
+
+    if (!match) {
+      return res.status(400).json({ msg: "Wrong password" });
+    }
+
+    const token = jwt.sign(
+      { id: admin._id, role: admin.role },
+      process.env.JWT_SECRET || "secret",
+      { expiresIn: "7d" }
+    );
+
+    res.json({
+      success: true,
+      token,
+      admin: {
+        id: admin._id,
+        _id: admin._id,
+        name: admin.name,
+        email: admin.email,
+        role: admin.role,
+      },
+    });
+  } catch (err) {
+    res.status(500).json({ msg: err.message });
   }
 });
 
