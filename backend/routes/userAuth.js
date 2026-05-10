@@ -4,7 +4,8 @@ const router = express.Router();
 const {
   login,
   profile,
-  register
+  register,
+  submitKyc,
 } = require("../controllers/userController");
 
 const auth = require("../middleware/auth");
@@ -17,6 +18,9 @@ router.post("/login", login);
 
 // 👉 Profile
 router.get("/profile", auth, profile);
+
+// ✅ Submit KYC
+router.post("/kyc", auth, submitKyc);
 
 // 👉 Test
 router.get("/test", (req, res) => {

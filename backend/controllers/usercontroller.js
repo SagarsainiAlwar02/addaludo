@@ -178,6 +178,7 @@ exports.verifyOtp = async (req, res) => {
         phone: user.phone,
         referralCode: user.referralCode,
         referredBy: user.referredBy,
+        kycStatus: user.kycStatus || "not_submitted",
       },
     });
   } catch (err) {
@@ -243,6 +244,7 @@ exports.register = async (req, res) => {
         name: user.name,
         phone: user.phone,
         referralCode: user.referralCode,
+        kycStatus: user.kycStatus || "not_submitted",
       },
     });
   } catch (err) {
@@ -301,6 +303,7 @@ exports.login = async (req, res) => {
         name: user.name,
         phone: user.phone,
         referralCode: user.referralCode,
+        kycStatus: user.kycStatus || "not_submitted",
       },
     });
   } catch (err) {
@@ -337,6 +340,7 @@ exports.profile = async (req, res) => {
 
     res.json({
       ...user.toObject(),
+      kycStatus: user.kycStatus || "not_submitted",
 
       totalWon: Number(wallet?.winnings || 0),
       matches: Number(matches || 0),
@@ -350,5 +354,71 @@ exports.profile = async (req, res) => {
   } catch (err) {
     console.log("❌ PROFILE ERROR:", err);
     res.status(500).json({ msg: err.message });
+  }
+};
+
+exports.submitKyc = async (req, res) => {
+  try {
+    const userId = req.user?.id || req.user;
+    const { name, dob, docType, docNumber } = req.body;
+
+    if (!name || !dob || !docType || !docNumber) {
+      return res.status(400).json({
+        success: false,
+        msg: "All KYC fields are required",
+      });
+    }
+
+    const user = await User.findById(userId);
+
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        msg: "User not found",
+      });
+    }
+
+    if (user.kycStatus === "approved") {
+      return res.status(400).json({
+        success: false,
+        msg: "KYC already approved",
+        kycStatus: "approved",
+      });
+    }
+
+    if (user.kycStatus === "pending") {
+      return res.status(400).json({
+        success: false,
+        msg: "KYC already submitted and under review",
+        kycStatus: "pending",
+      });
+    }
+
+    user.kycStatus = "pending";
+    user.kyc = {
+      name: String(name).trim(),
+      dob: String(dob).trim(),
+      docType: String(docType).trim(),
+      docNumber: String(docNumber).trim(),
+      submittedAt: new Date(),
+      approvedAt: null,
+      rejectedAt: null,
+      rejectReason: "",
+    };
+
+    await user.save();
+
+    return res.json({
+      success: true,
+      msg: "KYC submitted successfully",
+      kycStatus: user.kycStatus,
+      kyc: user.kyc,
+    });
+  } catch (err) {
+    console.log("❌ SUBMIT KYC ERROR:", err);
+    return res.status(500).json({
+      success: false,
+      msg: err.message,
+    });
   }
 };
