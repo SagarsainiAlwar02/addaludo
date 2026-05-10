@@ -10,7 +10,7 @@ import Settings from "./Pages/Settings/Settings";
 import PaymentControl from "./Pages/PaymentControl/PaymentControl";
 import AdminControl from "./Pages/AdminControl/AdminControl";
 import Layout from "./components/Layout/Layout";
-import Kyc from "./Pages/Kyc/Kyc";
+import Kyc from "./Pages/kyc/kyc";
 
 // 🔐 Protected route
 const ProtectedRoute = ({ children }) => {
