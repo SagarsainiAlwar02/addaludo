@@ -12,6 +12,8 @@
   background: #0f172a;
   min-height: 100vh;
   padding: 24px;
+
+  /* ✅ page scroll block nahi karega */
   overflow-x: visible;
 }
 
@@ -24,7 +26,9 @@
     display: block;
     width: 100%;
     max-width: 100%;
-    overflow-x: hidden;
+
+    /* ✅ hidden hata diya */
+    overflow-x: visible;
   }
 
   .main-content {

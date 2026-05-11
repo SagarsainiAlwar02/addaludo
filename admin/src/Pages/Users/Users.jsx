@@ -1,5 +1,3 @@
-/* admin/src/Pages/Users/Users.jsx */
-
 import React, { useState, useEffect } from "react";
 import "./Users.css";
 import API from "../../api";
@@ -25,10 +23,18 @@ const Users = () => {
 
   const filteredUsers = users.filter((user) => {
     const status = user.status || "active";
-    const phone = user.phone || user.mobile || "";
+    const phone = String(user.phone || user.mobile || "");
+    const name = String(user.name || "");
+    const referral = String(user.referralCode || "");
+    const searchValue = search.trim().toLowerCase();
 
     const matchFilter = filter === "all" || status === filter;
-    const matchSearch = phone.includes(search);
+
+    const matchSearch =
+      !searchValue ||
+      phone.toLowerCase().includes(searchValue) ||
+      name.toLowerCase().includes(searchValue) ||
+      referral.toLowerCase().includes(searchValue);
 
     return matchFilter && matchSearch;
   });
@@ -46,7 +52,6 @@ const Users = () => {
     const confirmDelete = window.confirm(
       "Are you sure you want to delete this user?"
     );
-
     if (!confirmDelete) return;
 
     try {
@@ -99,10 +104,7 @@ const Users = () => {
         </button>
       </div>
 
-      {/* ✅ NEW */}
-      <p className="scroll-hint">
-        ← Slide left/right to view full table →
-      </p>
+      <p className="scroll-hint">← Swipe left/right to see full table →</p>
 
       <div className="table-scroll">
         <table className="user-table">
@@ -127,18 +129,13 @@ const Users = () => {
                 return (
                   <tr key={user._id}>
                     <td className="user-id">{user._id}</td>
-
                     <td>{user.name || "Player"}</td>
-
                     <td>{phone}</td>
-
                     <td>{user.referralCode || "-"}</td>
-
+                    <td>₹{user.balance || user.wallet?.balance || 0}</td>
                     <td>
-                      ₹{user.balance || user.wallet?.balance || 0}
+                      <span className={`status-badge ${status}`}>{status}</span>
                     </td>
-
-                    <td className={status}>{status}</td>
 
                     <td>
                       <div className="action-buttons">
@@ -150,14 +147,10 @@ const Users = () => {
                         </button>
 
                         <button
-                          className={
-                            status === "blocked" ? "unban" : "ban"
-                          }
+                          className={status === "blocked" ? "unban" : "ban"}
                           onClick={() => toggleBan(user._id)}
                         >
-                          {status === "blocked"
-                            ? "Unban"
-                            : "Ban"}
+                          {status === "blocked" ? "Unban" : "Ban"}
                         </button>
 
                         <button
@@ -183,42 +176,31 @@ const Users = () => {
       </div>
 
       {selectedUser && (
-        <div className="modal">
-          <div className="modal-content">
+        <div className="modal" onClick={() => setSelectedUser(null)}>
+          <div className="modal-content" onClick={(e) => e.stopPropagation()}>
             <h2>User Details</h2>
 
             <p>
-              <b>Name:</b>{" "}
-              {selectedUser.name || "Player"}
+              <b>ID:</b> {selectedUser._id}
             </p>
-
             <p>
-              <b>Mobile:</b>{" "}
-              {selectedUser.phone ||
-                selectedUser.mobile ||
-                "-"}
+              <b>Name:</b> {selectedUser.name || "Player"}
             </p>
-
             <p>
-              <b>Referral:</b>{" "}
-              {selectedUser.referralCode || "-"}
+              <b>Mobile:</b> {selectedUser.phone || selectedUser.mobile || "-"}
             </p>
-
+            <p>
+              <b>Referral:</b> {selectedUser.referralCode || "-"}
+            </p>
             <p>
               <b>Balance:</b> ₹
-              {selectedUser.balance ||
-                selectedUser.wallet?.balance ||
-                0}
+              {selectedUser.balance || selectedUser.wallet?.balance || 0}
             </p>
-
             <p>
-              <b>Status:</b>{" "}
-              {selectedUser.status || "active"}
+              <b>Status:</b> {selectedUser.status || "active"}
             </p>
 
-            <button onClick={() => setSelectedUser(null)}>
-              Close
-            </button>
+            <button onClick={() => setSelectedUser(null)}>Close</button>
           </div>
         </div>
       )}

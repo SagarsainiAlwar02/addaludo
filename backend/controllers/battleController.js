@@ -3,7 +3,7 @@ const Wallet = require("../models/wallet");
 const Transaction = require("../models/transaction");
 const User = require("../models/user");
 
-const OPEN_BATTLE_EXPIRE_MS = 60 * 1000;
+const OPEN_BATTLE_EXPIRE_MS = 2 * 60 * 1000;
 const MAX_SEARCHING_BATTLES = 2;
 
 const PUBLIC_BATTLE_STATUSES = [
@@ -250,7 +250,7 @@ async function expireOldOpenBattles() {
 
   for (const battle of oldBattles) {
     battle.status = "cancelled";
-    battle.adminNote = "Auto cancelled after 60 seconds";
+   battle.adminNote = "Auto cancelled after 2 minutes";
     await battle.save();
   }
 }

@@ -1,4 +1,6 @@
-/* admin/src/Pages/Users/Users.css */
+* {
+  box-sizing: border-box;
+}
 
 .users-container {
   padding: 25px;
@@ -6,12 +8,9 @@
   background: #0f172a;
   min-height: 100vh;
   font-family: "Segoe UI", sans-serif;
-
-  /* ✅ FIX */
-  overflow-x: auto;
-
   width: 100%;
   max-width: 100%;
+  overflow: hidden;
 }
 
 .users-container h1 {
@@ -55,47 +54,44 @@
   color: white;
 }
 
-/* ✅ NEW */
 .scroll-hint {
   display: none;
-  color: #94a3b8;
+  color: #93c5fd;
   font-size: 13px;
-  margin-bottom: 10px;
+  font-weight: 700;
+  margin: 0 0 10px;
 }
 
 .table-scroll {
   width: 100%;
   max-width: 100%;
-
-  /* ✅ FIX */
-  overflow-x: scroll;
+  overflow-x: auto;
   overflow-y: hidden;
-
   border-radius: 14px;
   background: #1e293b;
+  border: 1px solid #334155;
   box-shadow: 0 10px 25px rgba(0, 0, 0, 0.35);
-
   -webkit-overflow-scrolling: touch;
+  touch-action: pan-x;
 }
 
 .table-scroll::-webkit-scrollbar {
-  height: 8px;
+  height: 10px;
 }
 
 .table-scroll::-webkit-scrollbar-track {
   background: #0f172a;
+  border-radius: 20px;
 }
 
 .table-scroll::-webkit-scrollbar-thumb {
-  background: #475569;
+  background: #60a5fa;
   border-radius: 20px;
 }
 
 .user-table {
-  /* ✅ FIX */
-  width: max-content;
-  min-width: 980px;
-
+  width: 1180px;
+  min-width: 1180px;
   border-collapse: collapse;
   background: #1e293b;
 }
@@ -108,9 +104,10 @@
   padding: 16px;
   font-size: 14px;
   text-transform: uppercase;
-  color: #94a3b8;
+  color: #93c5fd;
   letter-spacing: 1px;
   white-space: nowrap;
+  text-align: center;
 }
 
 .user-table td {
@@ -130,24 +127,26 @@
 }
 
 .user-id {
-  max-width: 230px;
+  max-width: 260px;
   overflow: hidden;
   text-overflow: ellipsis;
 }
 
-.active {
+.status-badge {
+  font-weight: 800;
+  text-transform: lowercase;
+}
+
+.status-badge.active {
   color: #22c55e;
-  font-weight: 700;
 }
 
-.blocked {
+.status-badge.blocked {
   color: #ef4444;
-  font-weight: 700;
 }
 
-.mismatch {
+.status-badge.mismatch {
   color: #facc15;
-  font-weight: 700;
 }
 
 .action-buttons {
@@ -155,6 +154,7 @@
   justify-content: center;
   align-items: center;
   gap: 8px;
+  min-width: 250px;
 }
 
 .action-buttons button,
@@ -170,12 +170,12 @@
 }
 
 .view {
-  background: #3b82f6;
+  background: #2563eb;
   color: white;
 }
 
 .view:hover {
-  background: #2563eb;
+  background: #1d4ed8;
 }
 
 .ban {
@@ -230,7 +230,7 @@
   padding: 22px;
   border-radius: 14px;
   width: 100%;
-  max-width: 340px;
+  max-width: 360px;
   color: white;
   text-align: left;
 }
@@ -254,9 +254,7 @@
 @media (max-width: 768px) {
   .users-container {
     padding: 22px 14px;
-
-    /* ✅ FIX */
-    overflow-x: auto;
+    overflow: hidden;
   }
 
   .users-container h1 {
@@ -278,7 +276,6 @@
     font-size: 15px;
   }
 
-  /* ✅ SHOW HINT */
   .scroll-hint {
     display: block;
   }
@@ -286,10 +283,23 @@
   .table-scroll {
     width: 100%;
     max-width: 100%;
-    overflow-x: scroll;
+    overflow-x: auto;
+    overflow-y: hidden;
+    display: block;
   }
 
   .user-table {
-    min-width: 980px;
+    width: 1180px;
+    min-width: 1180px;
+  }
+
+  .user-table th,
+  .user-table td {
+    padding: 15px 18px;
+    font-size: 14px;
+  }
+
+  .action-buttons {
+    min-width: 250px;
   }
 }
