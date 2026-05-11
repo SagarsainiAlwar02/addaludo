@@ -1,9 +1,9 @@
 import { useState } from "react";
-import API from "../../api";
+import axios from "axios";
 import "./Login.css";
 
 const Login = () => {
-  const [email, setEmail] = useState("Adda48931@gmail.com");
+  const [email, setEmail] = useState("admin@addaludo.com");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
 
@@ -18,27 +18,41 @@ const Login = () => {
     try {
       setLoading(true);
 
-      const res = await API.post("/admin-auth/login", {
-        email: email.trim(),
-        password: password.trim(),
-      });
+      // ✅ DIRECT BACKEND API
+      const res = await axios.post(
+        "https://api.addaludo.com/api/admin-auth/login",
+        {
+          email: email.trim().toLowerCase(),
+          password: password.trim(),
+        }
+      );
+
+      console.log("LOGIN RESPONSE:", res.data);
 
       if (!res.data?.token) {
-        alert("Token nahi mila. Backend response check karo.");
+        alert("Token nahi mila");
         return;
       }
 
+      // ✅ SAVE LOGIN
       localStorage.setItem("adminToken", res.data.token);
-      localStorage.setItem("adminUser", JSON.stringify(res.data.admin));
+      localStorage.setItem(
+        "adminUser",
+        JSON.stringify(res.data.admin)
+      );
 
+      // ✅ REDIRECT
       window.location.href = "/dashboard";
     } catch (err) {
-      console.log("LOGIN ERROR:", err.response?.data || err.message);
+      console.log(
+        "LOGIN ERROR:",
+        err.response?.data || err.message
+      );
 
       alert(
         err.response?.data?.msg ||
           err.response?.data?.message ||
-          "Login failed - backend/API URL check karo"
+          "Route not found / Backend issue"
       );
     } finally {
       setLoading(false);

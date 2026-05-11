@@ -121,3 +121,42 @@
   font-weight: 700;
   cursor: pointer;
 }
+
+
+
+
+
+.kyc-table-scroll {
+  width: 100%;
+  max-width: 100%;
+  overflow-x: auto;
+  overflow-y: hidden;
+  -webkit-overflow-scrolling: touch;
+  border-radius: 12px;
+}
+
+.kyc-table {
+  min-width: 950px;
+}
+
+@media (max-width: 1024px) {
+  .kyc-admin-container {
+    padding: 14px;
+    overflow-x: hidden;
+  }
+
+  .kyc-table-scroll {
+    max-width: calc(100vw - 28px);
+    border: 1px solid #334155;
+  }
+
+  .kyc-table {
+    width: 950px;
+    min-width: 950px;
+  }
+
+  .kyc-table th,
+  .kyc-table td {
+    white-space: nowrap;
+  }
+}

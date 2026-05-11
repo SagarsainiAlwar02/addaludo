@@ -51,9 +51,7 @@ const Settings = () => {
       });
 
       setBonusReport(Array.isArray(res.data?.bonus) ? res.data.bonus : []);
-      setPenaltyReport(
-        Array.isArray(res.data?.penalty) ? res.data.penalty : []
-      );
+      setPenaltyReport(Array.isArray(res.data?.penalty) ? res.data.penalty : []);
     } catch (err) {
       console.log("Report Error:", err.response?.data || err.message);
       alert(err.response?.data?.msg || "Report fetch failed");
@@ -232,11 +230,7 @@ const Settings = () => {
             }
           />
 
-          <button
-            className="btn bonus-btn"
-            onClick={addBonus}
-            disabled={loading}
-          >
+          <button className="btn bonus-btn" onClick={addBonus} disabled={loading}>
             {loading ? "Please wait..." : "Add Bonus"}
           </button>
         </div>
@@ -320,18 +314,22 @@ const Settings = () => {
                 <tbody>
                   {bonusReport.length === 0 ? (
                     <tr>
-                      <td colSpan="7">No bonus report found</td>
+                      <td data-label="Info" colSpan="7">
+                        No bonus report found
+                      </td>
                     </tr>
                   ) : (
                     bonusReport.map((item) => (
                       <tr key={item._id}>
-                        <td>{item.name || "-"}</td>
-                        <td>{item.mobile || "-"}</td>
-                        <td>₹{item.amount || 0}</td>
-                        <td>{item.reason || "-"}</td>
-                        <td>₹{item.balanceAfter || 0}</td>
-                        <td>{item.adminName || "-"}</td>
-                        <td>{formatDate(item.createdAt)}</td>
+                        <td data-label="User">{item.name || "-"}</td>
+                        <td data-label="Mobile">{item.mobile || "-"}</td>
+                        <td data-label="Amount">₹{item.amount || 0}</td>
+                        <td data-label="Reason">{item.reason || "-"}</td>
+                        <td data-label="Balance After">
+                          ₹{item.balanceAfter || 0}
+                        </td>
+                        <td data-label="Admin">{item.adminName || "-"}</td>
+                        <td data-label="Date">{formatDate(item.createdAt)}</td>
                       </tr>
                     ))
                   )}
@@ -366,18 +364,22 @@ const Settings = () => {
                 <tbody>
                   {penaltyReport.length === 0 ? (
                     <tr>
-                      <td colSpan="7">No penalty report found</td>
+                      <td data-label="Info" colSpan="7">
+                        No penalty report found
+                      </td>
                     </tr>
                   ) : (
                     penaltyReport.map((item) => (
                       <tr key={item._id}>
-                        <td>{item.name || "-"}</td>
-                        <td>{item.mobile || "-"}</td>
-                        <td>₹{item.amount || 0}</td>
-                        <td>{item.reason || "-"}</td>
-                        <td>₹{item.balanceAfter || 0}</td>
-                        <td>{item.adminName || "-"}</td>
-                        <td>{formatDate(item.createdAt)}</td>
+                        <td data-label="User">{item.name || "-"}</td>
+                        <td data-label="Mobile">{item.mobile || "-"}</td>
+                        <td data-label="Amount">₹{item.amount || 0}</td>
+                        <td data-label="Reason">{item.reason || "-"}</td>
+                        <td data-label="Balance After">
+                          ₹{item.balanceAfter || 0}
+                        </td>
+                        <td data-label="Admin">{item.adminName || "-"}</td>
+                        <td data-label="Date">{formatDate(item.createdAt)}</td>
                       </tr>
                     ))
                   )}

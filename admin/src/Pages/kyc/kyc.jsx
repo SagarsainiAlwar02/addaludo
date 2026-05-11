@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
 import API from "../../api";
-import "./kyc.css"
+import "./kyc.css";
 
 const Kyc = () => {
   const [users, setUsers] = useState([]);
@@ -71,64 +71,66 @@ const Kyc = () => {
         onChange={(e) => setSearch(e.target.value)}
       />
 
-      <table className="kyc-table">
-        <thead>
-          <tr>
-            <th>User</th>
-            <th>Mobile</th>
-            <th>Doc Type</th>
-            <th>Doc Number</th>
-            <th>Status</th>
-            <th>Submitted</th>
-            <th>View</th>
-            <th>Action</th>
-          </tr>
-        </thead>
+      <div className="kyc-table-scroll">
+        <table className="kyc-table">
+          <thead>
+            <tr>
+              <th>User</th>
+              <th>Mobile</th>
+              <th>Doc Type</th>
+              <th>Doc Number</th>
+              <th>Status</th>
+              <th>Submitted</th>
+              <th>View</th>
+              <th>Action</th>
+            </tr>
+          </thead>
 
-        <tbody>
-          {filtered.length > 0 ? (
-            filtered.map((u) => (
-              <tr key={u._id}>
-                <td>{u.kyc?.name || u.name || "User"}</td>
-                <td>{u.phone || "-"}</td>
-                <td>{u.kyc?.docType || "-"}</td>
-                <td>{u.kyc?.docNumber || "-"}</td>
-                <td className={u.kycStatus}>{u.kycStatus}</td>
-                <td>
-                  {u.kyc?.submittedAt
-                    ? new Date(u.kyc.submittedAt).toLocaleString()
-                    : "-"}
-                </td>
-                <td>
-                  <button className="view" onClick={() => setSelected(u)}>
-                    View
-                  </button>
-                </td>
-                <td>
-                  {u.kycStatus === "pending" ? (
-                    <>
-                      <button className="approve" onClick={() => approve(u._id)}>
-                        Approve
-                      </button>
-                      <button className="reject" onClick={() => reject(u._id)}>
-                        Reject
-                      </button>
-                    </>
-                  ) : (
-                    "-"
-                  )}
+          <tbody>
+            {filtered.length > 0 ? (
+              filtered.map((u) => (
+                <tr key={u._id}>
+                  <td>{u.kyc?.name || u.name || "User"}</td>
+                  <td>{u.phone || "-"}</td>
+                  <td>{u.kyc?.docType || "-"}</td>
+                  <td>{u.kyc?.docNumber || "-"}</td>
+                  <td className={u.kycStatus}>{u.kycStatus}</td>
+                  <td>
+                    {u.kyc?.submittedAt
+                      ? new Date(u.kyc.submittedAt).toLocaleString()
+                      : "-"}
+                  </td>
+                  <td>
+                    <button className="view" onClick={() => setSelected(u)}>
+                      View
+                    </button>
+                  </td>
+                  <td>
+                    {u.kycStatus === "pending" ? (
+                      <>
+                        <button className="approve" onClick={() => approve(u._id)}>
+                          Approve
+                        </button>
+                        <button className="reject" onClick={() => reject(u._id)}>
+                          Reject
+                        </button>
+                      </>
+                    ) : (
+                      "-"
+                    )}
+                  </td>
+                </tr>
+              ))
+            ) : (
+              <tr>
+                <td colSpan="8" style={{ textAlign: "center" }}>
+                  No KYC found
                 </td>
               </tr>
-            ))
-          ) : (
-            <tr>
-              <td colSpan="8" style={{ textAlign: "center" }}>
-                No KYC found
-              </td>
-            </tr>
-          )}
-        </tbody>
-      </table>
+            )}
+          </tbody>
+        </table>
+      </div>
 
       {selected && (
         <div className="kyc-modal">

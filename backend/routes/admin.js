@@ -1,5 +1,9 @@
+const Battle = require("../models/battle");
+
 const express = require("express");
+
 const router = express.Router();
+const Deposit = require("../models/deposit");
 
 const multer = require("multer");
 const path = require("path");
@@ -853,15 +857,37 @@ router.patch("/transaction/reject/:id", auth, async (req, res) => {
 // ================= DEPOSITS + BONUS HISTORY =================
 router.get("/deposits", auth, async (req, res) => {
   try {
-    const deposits = await Transaction.find({
-      type: { $in: ["deposit", "bonus"] },
+    // ✅ Real Deposit Requests
+    const deposits = await Deposit.find()
+      .populate("userId", "name phone email")
+      .populate("approvedBy", "name phone email role")
+      .sort({ createdAt: -1 })
+      .lean();
+
+    // ✅ Bonus Transactions
+    const bonus = await Transaction.find({
+      type: "bonus",
     })
       .populate("userId", "name phone email")
       .populate("approvedBy", "name phone email role")
       .sort({ createdAt: -1 })
       .lean();
 
-    res.json(deposits);
+    // ✅ Format bonus like deposit rows
+    const bonusRows = bonus.map((item) => ({
+      ...item,
+      utr: "-",
+      screenshot: "",
+      paymentMethod: "bonus",
+    }));
+
+    // ✅ Merge both
+    const finalList = [...deposits, ...bonusRows].sort(
+      (a, b) => new Date(b.createdAt) - new Date(a.createdAt)
+    );
+
+    res.json(finalList);
+
   } catch (err) {
     console.log("❌ DEPOSITS ERROR:", err);
     res.status(500).json({ msg: err.message });
@@ -1021,5 +1047,180 @@ router.patch("/withdraw/reject/:id", auth, async (req, res) => {
     res.status(500).json({ msg: err.message });
   }
 });
+
+
+// ================= ADMIN BATTLES / MATCHES =================
+router.get("/battles", auth, async (req, res) => {
+  try {
+    const battles = await Battle.find()
+      .populate("createdBy", "name phone mobile username")
+      .populate("opponent", "name phone mobile username")
+      .populate("winner", "name phone mobile username")
+      .populate("roomCodeSetBy", "name phone mobile username")
+      .populate("resultSubmittedBy", "name phone mobile username")
+      .populate("results.user", "name phone mobile username")
+      .sort({ createdAt: -1 })
+      .lean();
+
+    res.json({ success: true, battles });
+  } catch (err) {
+    console.log("❌ ADMIN BATTLES ERROR:", err);
+    res.status(500).json({ msg: err.message });
+  }
+});
+
+router.get("/battles/:id", auth, async (req, res) => {
+  try {
+    const battle = await Battle.findById(req.params.id)
+      .populate("createdBy", "name phone mobile username")
+      .populate("opponent", "name phone mobile username")
+      .populate("winner", "name phone mobile username")
+      .populate("roomCodeSetBy", "name phone mobile username")
+      .populate("resultSubmittedBy", "name phone mobile username")
+      .populate("results.user", "name phone mobile username")
+      .lean();
+
+    if (!battle) return res.status(404).json({ msg: "Battle not found" });
+
+    res.json({ success: true, battle });
+  } catch (err) {
+    console.log("❌ ADMIN BATTLE DETAIL ERROR:", err);
+    res.status(500).json({ msg: err.message });
+  }
+});
+
+router.patch("/battles/approve/:id", auth, async (req, res) => {
+  try {
+    const adminId = getAdminId(req);
+    const { winnerId, adminNote } = req.body;
+
+    if (!winnerId) {
+      return res.status(400).json({ msg: "Winner required hai" });
+    }
+
+    const battle = await Battle.findById(req.params.id);
+
+    if (!battle) return res.status(404).json({ msg: "Battle not found" });
+
+    if (["approved", "completed", "cancelled", "rejected"].includes(battle.status)) {
+      return res.status(400).json({ msg: "Battle already processed hai" });
+    }
+
+    const creatorId = String(battle.createdBy);
+    const opponentId = battle.opponent ? String(battle.opponent) : null;
+
+    if (![creatorId, opponentId].filter(Boolean).includes(String(winnerId))) {
+      return res.status(400).json({ msg: "Winner is match ka player nahi hai" });
+    }
+
+    const amount = Number(battle.amount || 0);
+    const prize = Number(battle.prize || amount * 2 || 0);
+
+    const playerIds = [battle.createdBy, battle.opponent].filter(Boolean);
+
+    for (const playerId of playerIds) {
+      const wallet = await Wallet.findOne({ userId: playerId });
+      if (!wallet) continue;
+
+      wallet.locked = Math.max(0, Number(wallet.locked || 0) - amount);
+
+      if (String(playerId) === String(winnerId)) {
+        wallet.balance = Number(wallet.balance || 0) + prize;
+        wallet.winnings = Number(wallet.winnings || 0) + prize;
+
+        await Transaction.create({
+          userId: playerId,
+          amount: prize,
+          type: "game_win",
+          status: "success",
+          note: adminNote || "Admin declared match winner",
+          roomId: battle._id,
+          balanceAfter: wallet.balance,
+          approvedBy: adminId,
+          approvedAt: new Date(),
+        });
+      }
+
+      await wallet.save();
+    }
+
+    battle.status = "approved";
+    battle.winner = winnerId;
+    battle.adminNote = adminNote || "Winner declared by admin";
+    battle.actionBy = adminId;
+    battle.actionAt = new Date();
+
+    await battle.save();
+
+    res.json({
+      success: true,
+      msg: "Winner declared successfully",
+      battle,
+    });
+  } catch (err) {
+    console.log("❌ ADMIN BATTLE APPROVE ERROR:", err);
+    res.status(500).json({ msg: err.message });
+  }
+});
+
+router.patch("/battles/reject/:id", auth, async (req, res) => {
+  try {
+    const adminId = getAdminId(req);
+    const { adminNote } = req.body;
+
+    const battle = await Battle.findById(req.params.id);
+
+    if (!battle) return res.status(404).json({ msg: "Battle not found" });
+
+    if (["approved", "completed", "cancelled", "rejected"].includes(battle.status)) {
+      return res.status(400).json({ msg: "Battle already processed hai" });
+    }
+
+    const amount = Number(battle.amount || 0);
+    const playerIds = [battle.createdBy, battle.opponent].filter(Boolean);
+
+    for (const playerId of playerIds) {
+      const wallet = await Wallet.findOne({ userId: playerId });
+      if (!wallet) continue;
+
+      wallet.locked = Math.max(0, Number(wallet.locked || 0) - amount);
+      wallet.balance = Number(wallet.balance || 0) + amount;
+
+      await wallet.save();
+
+      await Transaction.create({
+        userId: playerId,
+        amount,
+        type: "refund",
+        status: "success",
+        note: adminNote || "Match cancelled by admin refund",
+        roomId: battle._id,
+        balanceAfter: wallet.balance,
+        approvedBy: adminId,
+        approvedAt: new Date(),
+      });
+    }
+
+    battle.status = "cancelled";
+    battle.adminNote = adminNote || "Battle cancelled/refunded by admin";
+    battle.actionBy = adminId;
+    battle.actionAt = new Date();
+
+    await battle.save();
+
+    res.json({
+      success: true,
+      msg: "Battle cancelled and refund processed",
+      battle,
+    });
+  } catch (err) {
+    console.log("❌ ADMIN BATTLE REJECT ERROR:", err);
+    res.status(500).json({ msg: err.message });
+  }
+});
+
+
+
+
 
 module.exports = router;
