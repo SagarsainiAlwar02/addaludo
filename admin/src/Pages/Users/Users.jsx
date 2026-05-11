@@ -1,3 +1,5 @@
+/* admin/src/Pages/Users/Users.jsx */
+
 import React, { useState, useEffect } from "react";
 import "./Users.css";
 import API from "../../api";
@@ -41,7 +43,10 @@ const Users = () => {
   };
 
   const deleteUser = async (id) => {
-    const confirmDelete = window.confirm("Are you sure you want to delete this user?");
+    const confirmDelete = window.confirm(
+      "Are you sure you want to delete this user?"
+    );
+
     if (!confirmDelete) return;
 
     try {
@@ -65,19 +70,39 @@ const Users = () => {
       />
 
       <div className="filters">
-        <button className={filter === "all" ? "active-filter" : ""} onClick={() => setFilter("all")}>
+        <button
+          className={filter === "all" ? "active-filter" : ""}
+          onClick={() => setFilter("all")}
+        >
           All Users
         </button>
-        <button className={filter === "active" ? "active-filter" : ""} onClick={() => setFilter("active")}>
+
+        <button
+          className={filter === "active" ? "active-filter" : ""}
+          onClick={() => setFilter("active")}
+        >
           Active
         </button>
-        <button className={filter === "blocked" ? "active-filter" : ""} onClick={() => setFilter("blocked")}>
+
+        <button
+          className={filter === "blocked" ? "active-filter" : ""}
+          onClick={() => setFilter("blocked")}
+        >
           Blocked
         </button>
-        <button className={filter === "mismatch" ? "active-filter" : ""} onClick={() => setFilter("mismatch")}>
+
+        <button
+          className={filter === "mismatch" ? "active-filter" : ""}
+          onClick={() => setFilter("mismatch")}
+        >
           Mismatch
         </button>
       </div>
+
+      {/* ✅ NEW */}
+      <p className="scroll-hint">
+        ← Slide left/right to view full table →
+      </p>
 
       <div className="table-scroll">
         <table className="user-table">
@@ -102,25 +127,43 @@ const Users = () => {
                 return (
                   <tr key={user._id}>
                     <td className="user-id">{user._id}</td>
+
                     <td>{user.name || "Player"}</td>
+
                     <td>{phone}</td>
+
                     <td>{user.referralCode || "-"}</td>
-                    <td>₹{user.balance || user.wallet?.balance || 0}</td>
+
+                    <td>
+                      ₹{user.balance || user.wallet?.balance || 0}
+                    </td>
+
                     <td className={status}>{status}</td>
+
                     <td>
                       <div className="action-buttons">
-                        <button className="view" onClick={() => setSelectedUser(user)}>
+                        <button
+                          className="view"
+                          onClick={() => setSelectedUser(user)}
+                        >
                           View
                         </button>
 
                         <button
-                          className={status === "blocked" ? "unban" : "ban"}
+                          className={
+                            status === "blocked" ? "unban" : "ban"
+                          }
                           onClick={() => toggleBan(user._id)}
                         >
-                          {status === "blocked" ? "Unban" : "Ban"}
+                          {status === "blocked"
+                            ? "Unban"
+                            : "Ban"}
                         </button>
 
-                        <button className="delete" onClick={() => deleteUser(user._id)}>
+                        <button
+                          className="delete"
+                          onClick={() => deleteUser(user._id)}
+                        >
                           Delete
                         </button>
                       </div>
@@ -144,13 +187,38 @@ const Users = () => {
           <div className="modal-content">
             <h2>User Details</h2>
 
-            <p><b>Name:</b> {selectedUser.name || "Player"}</p>
-            <p><b>Mobile:</b> {selectedUser.phone || selectedUser.mobile || "-"}</p>
-            <p><b>Referral:</b> {selectedUser.referralCode || "-"}</p>
-            <p><b>Balance:</b> ₹{selectedUser.balance || selectedUser.wallet?.balance || 0}</p>
-            <p><b>Status:</b> {selectedUser.status || "active"}</p>
+            <p>
+              <b>Name:</b>{" "}
+              {selectedUser.name || "Player"}
+            </p>
 
-            <button onClick={() => setSelectedUser(null)}>Close</button>
+            <p>
+              <b>Mobile:</b>{" "}
+              {selectedUser.phone ||
+                selectedUser.mobile ||
+                "-"}
+            </p>
+
+            <p>
+              <b>Referral:</b>{" "}
+              {selectedUser.referralCode || "-"}
+            </p>
+
+            <p>
+              <b>Balance:</b> ₹
+              {selectedUser.balance ||
+                selectedUser.wallet?.balance ||
+                0}
+            </p>
+
+            <p>
+              <b>Status:</b>{" "}
+              {selectedUser.status || "active"}
+            </p>
+
+            <button onClick={() => setSelectedUser(null)}>
+              Close
+            </button>
           </div>
         </div>
       )}

@@ -70,13 +70,13 @@ const Withdrawal = () => {
     return "-";
   };
 
-  const requests = withdraws.filter(
-    (item) => item.status === "pending"
-  );
+ const requests = withdraws.filter(
+  (item) => item.type === "withdraw" && item.status === "pending"
+);
 
-  const history = withdraws.filter(
-    (item) => item.status !== "pending"
-  );
+ const history = withdraws.filter(
+  (item) => item.type === "withdraw" && item.status !== "pending"
+);
 
   const currentList = tab === "request" ? requests : history;
 

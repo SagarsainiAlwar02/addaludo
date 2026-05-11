@@ -29,6 +29,10 @@ function getUserId(req) {
   return String(req.user?._id || req.userData?._id || req.user?.id || req.user);
 }
 
+function getPlayableBalance(wallet) {
+  return Number(wallet.balance || 0) + Number(wallet.winnings || 0);
+}
+
 function validateBattleAmount(amount) {
   amount = Number(amount);
 
@@ -97,13 +101,23 @@ async function getWallet(userId) {
 
 async function lockAmount(userId, amount, roomId) {
   const wallet = await getWallet(userId);
+  amount = Number(amount || 0);
 
-  if (Number(wallet.balance || 0) < Number(amount || 0)) {
+  if (getPlayableBalance(wallet) < amount) {
     throw new Error("Insufficient wallet balance");
   }
 
-  wallet.balance = Number(wallet.balance || 0) - Number(amount || 0);
-  wallet.locked = Number(wallet.locked || 0) + Number(amount || 0);
+  let remaining = amount;
+
+  const useBalance = Math.min(Number(wallet.balance || 0), remaining);
+  wallet.balance = Number(wallet.balance || 0) - useBalance;
+  remaining -= useBalance;
+
+  const useWinnings = Math.min(Number(wallet.winnings || 0), remaining);
+  wallet.winnings = Number(wallet.winnings || 0) - useWinnings;
+  remaining -= useWinnings;
+
+  wallet.locked = Number(wallet.locked || 0) + amount;
   await wallet.save();
 
   await Transaction.create({
@@ -112,8 +126,8 @@ async function lockAmount(userId, amount, roomId) {
     type: "game_entry",
     status: "success",
     roomId,
-    note: "Battle entry amount locked",
-    balanceAfter: wallet.balance,
+    note: `Battle entry amount locked. Used wallet ₹${useBalance}, winnings ₹${useWinnings}`,
+    balanceAfter: getPlayableBalance(wallet),
   });
 
   return wallet;
@@ -121,9 +135,10 @@ async function lockAmount(userId, amount, roomId) {
 
 async function refundAmount(userId, amount, roomId, note = "Battle amount refunded") {
   const wallet = await getWallet(userId);
+  amount = Number(amount || 0);
 
-  wallet.locked = Math.max(0, Number(wallet.locked || 0) - Number(amount || 0));
-  wallet.balance = Number(wallet.balance || 0) + Number(amount || 0);
+  wallet.locked = Math.max(0, Number(wallet.locked || 0) - amount);
+  wallet.balance = Number(wallet.balance || 0) + amount;
   await wallet.save();
 
   await Transaction.create({
@@ -133,7 +148,7 @@ async function refundAmount(userId, amount, roomId, note = "Battle amount refund
     status: "success",
     roomId,
     note,
-    balanceAfter: wallet.balance,
+    balanceAfter: getPlayableBalance(wallet),
   });
 
   return wallet;
@@ -195,13 +210,17 @@ async function settleWinner(battle, winnerId) {
     0,
     Number(winnerWallet.locked || 0) - Number(battle.amount || 0)
   );
-  winnerWallet.winnings = Number(winnerWallet.winnings || 0) + Number(finalPrize || 0);
+
+  winnerWallet.winnings =
+    Number(winnerWallet.winnings || 0) + Number(finalPrize || 0);
+
   await winnerWallet.save();
 
   loserWallet.locked = Math.max(
     0,
     Number(loserWallet.locked || 0) - Number(battle.amount || 0)
   );
+
   await loserWallet.save();
 
   await Transaction.create({
@@ -211,7 +230,7 @@ async function settleWinner(battle, winnerId) {
     status: "success",
     roomId: battle.battleId,
     note: "Battle winning prize",
-    balanceAfter: winnerWallet.balance,
+    balanceAfter: getPlayableBalance(winnerWallet),
   });
 
   await giveReferralCommission(winnerId, battle.amount, battle.battleId);
@@ -295,7 +314,8 @@ exports.createBattle = async (req, res) => {
     }
 
     const wallet = await getWallet(userId);
-    if (Number(wallet.balance || 0) < amount) {
+
+    if (getPlayableBalance(wallet) < amount) {
       return res.status(400).json({
         success: false,
         msg: "Insufficient wallet balance",
@@ -430,7 +450,8 @@ exports.joinBattle = async (req, res) => {
     }
 
     const wallet = await getWallet(userId);
-    if (Number(wallet.balance || 0) < Number(battle.amount || 0)) {
+
+    if (getPlayableBalance(wallet) < Number(battle.amount || 0)) {
       return res.status(400).json({
         success: false,
         msg: "Insufficient wallet balance",
@@ -487,14 +508,14 @@ exports.startBattle = async (req, res) => {
       const creatorWallet = await getWallet(battle.createdBy);
       const opponentWallet = await getWallet(battle.opponent);
 
-      if (Number(creatorWallet.balance || 0) < Number(battle.amount || 0)) {
+      if (getPlayableBalance(creatorWallet) < Number(battle.amount || 0)) {
         return res.status(400).json({
           success: false,
           msg: "Creator wallet me insufficient balance hai",
         });
       }
 
-      if (Number(opponentWallet.balance || 0) < Number(battle.amount || 0)) {
+      if (getPlayableBalance(opponentWallet) < Number(battle.amount || 0)) {
         return res.status(400).json({
           success: false,
           msg: "Opponent wallet me insufficient balance hai",
@@ -632,7 +653,11 @@ exports.submitResult = async (req, res) => {
       });
     }
 
-    if (!["running", "room_submitted", "cancel_requested", "result_submitted"].includes(battle.status)) {
+    if (
+      !["running", "room_submitted", "cancel_requested", "result_submitted"].includes(
+        battle.status
+      )
+    ) {
       return res.status(400).json({
         success: false,
         msg: "Result cannot be submitted now",
@@ -747,7 +772,8 @@ exports.submitResult = async (req, res) => {
       await settleWinner(battle, winnerId);
 
       battle.status = "approved";
-      battle.adminNote = "Auto approved because one user submitted win and other submitted loss";
+      battle.adminNote =
+        "Auto approved because one user submitted win and other submitted loss";
       await battle.save();
 
       return res.json({

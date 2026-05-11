@@ -1,10 +1,17 @@
+/* admin/src/Pages/Users/Users.css */
+
 .users-container {
   padding: 25px;
   color: #e2e8f0;
   background: #0f172a;
   min-height: 100vh;
   font-family: "Segoe UI", sans-serif;
-  overflow-x: hidden;
+
+  /* ✅ FIX */
+  overflow-x: auto;
+
+  width: 100%;
+  max-width: 100%;
 }
 
 .users-container h1 {
@@ -48,13 +55,26 @@
   color: white;
 }
 
+/* ✅ NEW */
+.scroll-hint {
+  display: none;
+  color: #94a3b8;
+  font-size: 13px;
+  margin-bottom: 10px;
+}
+
 .table-scroll {
   width: 100%;
-  overflow-x: auto;
+  max-width: 100%;
+
+  /* ✅ FIX */
+  overflow-x: scroll;
   overflow-y: hidden;
+
   border-radius: 14px;
   background: #1e293b;
   box-shadow: 0 10px 25px rgba(0, 0, 0, 0.35);
+
   -webkit-overflow-scrolling: touch;
 }
 
@@ -72,8 +92,10 @@
 }
 
 .user-table {
-  width: 100%;
+  /* ✅ FIX */
+  width: max-content;
   min-width: 980px;
+
   border-collapse: collapse;
   background: #1e293b;
 }
@@ -232,6 +254,9 @@
 @media (max-width: 768px) {
   .users-container {
     padding: 22px 14px;
+
+    /* ✅ FIX */
+    overflow-x: auto;
   }
 
   .users-container h1 {
@@ -253,9 +278,15 @@
     font-size: 15px;
   }
 
+  /* ✅ SHOW HINT */
+  .scroll-hint {
+    display: block;
+  }
+
   .table-scroll {
     width: 100%;
     max-width: 100%;
+    overflow-x: scroll;
   }
 
   .user-table {

@@ -894,7 +894,8 @@ router.get("/deposits", auth, async (req, res) => {
   }
 });
 
-// ================= WITHDRAWS + PENALTY PENDING =================
+
+        // ================= WITHDRAWS ONLY =================
 router.get("/withdraws", auth, async (req, res) => {
   try {
     const withdraws = await Withdraw.find()
@@ -903,36 +904,10 @@ router.get("/withdraws", auth, async (req, res) => {
       .sort({ createdAt: -1 })
       .lean();
 
-    const penalties = await Transaction.find({ type: "penalty" })
-      .populate("userId", "name phone email")
-      .populate("approvedBy", "name phone email role")
-      .sort({ createdAt: -1 })
-      .lean();
-
-    const normalWithdrawRows = withdraws.map((w) => ({
+    const finalList = withdraws.map((w) => ({
       ...w,
       type: "withdraw",
     }));
-
-    const penaltyRows = penalties.map((p) => ({
-      _id: p._id,
-      userId: p.userId,
-      amount: p.amount,
-      method: "penalty",
-      details: {
-        reason: p.note || "Admin penalty deducted",
-      },
-      status: "pending",
-      type: "penalty",
-      actionBy: p.approvedBy,
-      actionAt: p.approvedAt || p.createdAt,
-      createdAt: p.createdAt,
-      updatedAt: p.updatedAt,
-    }));
-
-    const finalList = [...normalWithdrawRows, ...penaltyRows].sort(
-      (a, b) => new Date(b.createdAt) - new Date(a.createdAt)
-    );
 
     res.json(finalList);
   } catch (err) {
