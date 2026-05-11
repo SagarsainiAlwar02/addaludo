@@ -12,7 +12,9 @@ const Withdrawal = () => {
   const fetchWithdraws = async () => {
     try {
       setLoading(true);
+
       const res = await API.get("/admin/withdraws");
+
       setWithdraws(Array.isArray(res.data) ? res.data : []);
     } catch (err) {
       console.log("Withdraw fetch error:", err.response?.data || err.message);
@@ -34,7 +36,9 @@ const Withdrawal = () => {
 
     try {
       await API.patch(`/admin/withdraw/approve/${item._id}`);
+
       alert("Withdraw approved");
+
       fetchWithdraws();
     } catch (err) {
       alert(err.response?.data?.msg || "Approve failed");
@@ -49,7 +53,9 @@ const Withdrawal = () => {
 
     try {
       await API.patch(`/admin/withdraw/reject/${item._id}`);
+
       alert("Withdraw rejected");
+
       fetchWithdraws();
     } catch (err) {
       alert(err.response?.data?.msg || "Reject failed");
@@ -60,11 +66,17 @@ const Withdrawal = () => {
     for (const key of keys) {
       if (details?.[key]) return details[key];
     }
+
     return "-";
   };
 
-  const requests = withdraws.filter((item) => item.status === "pending");
-  const history = withdraws.filter((item) => item.status !== "pending");
+  const requests = withdraws.filter(
+    (item) => item.status === "pending"
+  );
+
+  const history = withdraws.filter(
+    (item) => item.status !== "pending"
+  );
 
   const currentList = tab === "request" ? requests : history;
 
@@ -101,12 +113,16 @@ const Withdrawal = () => {
           value={searchMobile}
           maxLength={10}
           onChange={(e) =>
-            setSearchMobile(e.target.value.replace(/\D/g, "").slice(0, 10))
+            setSearchMobile(
+              e.target.value.replace(/\D/g, "").slice(0, 10)
+            )
           }
         />
 
         {searchMobile && (
-          <button onClick={() => setSearchMobile("")}>Clear</button>
+          <button onClick={() => setSearchMobile("")}>
+            Clear
+          </button>
         )}
       </div>
 
@@ -130,20 +146,37 @@ const Withdrawal = () => {
           {list.length > 0 ? (
             list.map((item) => {
               const user = item.userId || {};
-              const admin = item.actionBy || item.approvedBy || {};
-              const isPenalty = item.type === "penalty";
+
+              const admin =
+                item.actionBy || item.approvedBy || {};
+
+              const isPenalty =
+                item.type === "penalty";
 
               return (
                 <tr key={item._id}>
                   <td>{item._id?.slice(-6)}</td>
+
                   <td>{user.name || "User"}</td>
+
                   <td>{user.phone || "-"}</td>
+
                   <td>₹{item.amount || 0}</td>
-                  <td>{isPenalty ? "Penalty" : item.method || "Withdraw"}</td>
-                  <td className={item.status}>{item.status}</td>
 
                   <td>
-                    {admin.name ? `${admin.name} (${admin.role || "admin"})` : "-"}
+                    {isPenalty
+                      ? "Penalty"
+                      : item.method || "Withdraw"}
+                  </td>
+
+                  <td className={item.status}>
+                    {item.status}
+                  </td>
+
+                  <td>
+                    {admin.name
+                      ? `${admin.name} (${admin.role || "admin"})`
+                      : "-"}
                   </td>
 
                   <td>
@@ -155,7 +188,12 @@ const Withdrawal = () => {
                   </td>
 
                   <td>
-                    <button className="view" onClick={() => setSelectedUser(item)}>
+                    <button
+                      className="view"
+                      onClick={() =>
+                        setSelectedUser(item)
+                      }
+                    >
                       View
                     </button>
                   </td>
@@ -163,14 +201,22 @@ const Withdrawal = () => {
                   {tab === "request" && (
                     <td>
                       {isPenalty ? (
-                        <span className="penalty-text">Penalty Pending</span>
+                        <span className="penalty-text">
+                          Penalty Pending
+                        </span>
                       ) : (
                         <>
-                          <button className="approve" onClick={() => approve(item)}>
+                          <button
+                            className="approve"
+                            onClick={() => approve(item)}
+                          >
                             Approve
                           </button>
 
-                          <button className="reject" onClick={() => reject(item)}>
+                          <button
+                            className="reject"
+                            onClick={() => reject(item)}
+                          >
                             Reject
                           </button>
                         </>
@@ -182,7 +228,11 @@ const Withdrawal = () => {
             })
           ) : (
             <tr>
-              <td colSpan={tab === "request" ? "10" : "9"}>
+              <td
+                colSpan={
+                  tab === "request" ? "10" : "9"
+                }
+              >
                 No withdrawal found
               </td>
             </tr>
@@ -199,11 +249,32 @@ const Withdrawal = () => {
                 : "Withdrawal Details"}
             </h2>
 
-            <p><b>User:</b> {selectedUser.userId?.name || "User"}</p>
-            <p><b>Mobile:</b> {selectedUser.userId?.phone || "-"}</p>
-            <p><b>Amount:</b> ₹{selectedUser.amount || 0}</p>
-            <p><b>Method:</b> {selectedUser.method || selectedUser.type || "-"}</p>
-            <p><b>Status:</b> {selectedUser.status}</p>
+            <p>
+              <b>User:</b>{" "}
+              {selectedUser.userId?.name || "User"}
+            </p>
+
+            <p>
+              <b>Mobile:</b>{" "}
+              {selectedUser.userId?.phone || "-"}
+            </p>
+
+            <p>
+              <b>Amount:</b> ₹
+              {selectedUser.amount || 0}
+            </p>
+
+            <p>
+              <b>Method:</b>{" "}
+              {selectedUser.method ||
+                selectedUser.type ||
+                "-"}
+            </p>
+
+            <p>
+              <b>Status:</b>{" "}
+              {selectedUser.status}
+            </p>
 
             <hr />
 
@@ -211,7 +282,12 @@ const Withdrawal = () => {
 
             <p>
               <b>UPI ID:</b>{" "}
-              {getDetailValue(selectedUser.details, ["upi", "upiId", "upi_id", "vpa"])}
+              {getDetailValue(selectedUser.details, [
+                "upi",
+                "upiId",
+                "upi_id",
+                "vpa",
+              ])}
             </p>
 
             <p>
@@ -236,12 +312,18 @@ const Withdrawal = () => {
 
             <p>
               <b>IFSC:</b>{" "}
-              {getDetailValue(selectedUser.details, ["ifsc", "ifscCode"])}
+              {getDetailValue(selectedUser.details, [
+                "ifsc",
+                "ifscCode",
+              ])}
             </p>
 
             <p>
               <b>Bank Name:</b>{" "}
-              {getDetailValue(selectedUser.details, ["bankName", "bank"])}
+              {getDetailValue(selectedUser.details, [
+                "bankName",
+                "bank",
+              ])}
             </p>
 
             <p>
@@ -256,24 +338,35 @@ const Withdrawal = () => {
 
             <p>
               <b>Approved / Rejected By:</b>{" "}
-              {(selectedUser.actionBy || selectedUser.approvedBy)?.name || "-"}
+              {(selectedUser.actionBy ||
+                selectedUser.approvedBy)?.name || "-"}
             </p>
 
             <p>
               <b>Action Date:</b>{" "}
               {selectedUser.actionAt
-                ? new Date(selectedUser.actionAt).toLocaleString()
+                ? new Date(
+                    selectedUser.actionAt
+                  ).toLocaleString()
                 : "-"}
             </p>
 
             <p>
               <b>Requested At:</b>{" "}
               {selectedUser.createdAt
-                ? new Date(selectedUser.createdAt).toLocaleString()
+                ? new Date(
+                    selectedUser.createdAt
+                  ).toLocaleString()
                 : "-"}
             </p>
 
-            <button onClick={() => setSelectedUser(null)}>Close</button>
+            <button
+              onClick={() =>
+                setSelectedUser(null)
+              }
+            >
+              Close
+            </button>
           </div>
         </div>
       )}
