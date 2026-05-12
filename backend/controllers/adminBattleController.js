@@ -65,9 +65,8 @@ exports.approveBattle = async (req, res) => {
       await opponentWallet.save();
     }
 
-    winnerWallet.balance = Number(winnerWallet.balance || 0) + prize;
-    winnerWallet.winnings = Number(winnerWallet.winnings || 0) + prize;
-    await winnerWallet.save();
+  winnerWallet.winnings = Number(winnerWallet.winnings || 0) + prize;
+await winnerWallet.save();
 
     battle.winner = winnerId;
     battle.status = "approved";
@@ -82,7 +81,7 @@ exports.approveBattle = async (req, res) => {
       status: "success",
       note: `Battle ${battle.battleId} approved`,
       roomId: battle.battleId,
-      balanceAfter: winnerWallet.balance,
+      balanceAfter: Number(winnerWallet.balance || 0) + Number(winnerWallet.winnings || 0),
     });
 
     res.json({ msg: "Battle approved", battle });

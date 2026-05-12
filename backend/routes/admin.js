@@ -407,7 +407,8 @@ router.post("/add-bonus", auth, async (req, res) => {
   }
 });
 
-// ================= PENALTY =================
+
+ // ================= PENALTY =================
 router.post("/add-penalty", auth, async (req, res) => {
   try {
     const adminId = getAdminId(req);
@@ -427,7 +428,9 @@ router.post("/add-penalty", auth, async (req, res) => {
     const user = await User.findOne({ phone });
 
     if (!user) {
-      return res.status(404).json({ msg: "User not found with this mobile number" });
+      return res.status(404).json({
+        msg: "User not found with this mobile number",
+      });
     }
 
     let wallet = await Wallet.findOne({ userId: user._id });
@@ -443,13 +446,26 @@ router.post("/add-penalty", auth, async (req, res) => {
       });
     }
 
-    if (Number(wallet.balance || 0) < penaltyAmount) {
+    const depositBalance = Number(wallet.balance || 0);
+    const winningBalance = Number(wallet.winnings || 0);
+    const totalWallet = depositBalance + winningBalance;
+
+    if (totalWallet < penaltyAmount) {
       return res.status(400).json({
-        msg: `User balance low. Current balance ₹${wallet.balance || 0}`,
+        msg: `User wallet balance low. Current wallet ₹${totalWallet}`,
       });
     }
 
-    wallet.balance = Number(wallet.balance || 0) - penaltyAmount;
+    let remainingPenalty = penaltyAmount;
+
+    const cutFromBalance = Math.min(depositBalance, remainingPenalty);
+    wallet.balance = depositBalance - cutFromBalance;
+    remainingPenalty -= cutFromBalance;
+
+    const cutFromWinnings = Math.min(winningBalance, remainingPenalty);
+    wallet.winnings = winningBalance - cutFromWinnings;
+    remainingPenalty -= cutFromWinnings;
+
     await wallet.save();
 
     const transaction = await Transaction.create({
@@ -457,8 +473,10 @@ router.post("/add-penalty", auth, async (req, res) => {
       amount: penaltyAmount,
       type: "penalty",
       status: "success",
-      note: reason || "Admin penalty deducted",
-      balanceAfter: wallet.balance,
+      note:
+        reason ||
+        `Admin penalty deducted. Deposit ₹${cutFromBalance}, Winnings ₹${cutFromWinnings}`,
+      balanceAfter: Number(wallet.balance || 0) + Number(wallet.winnings || 0),
       approvedBy: adminId,
       approvedAt: new Date(),
     });
@@ -479,7 +497,6 @@ router.post("/add-penalty", auth, async (req, res) => {
     res.status(500).json({ msg: err.message });
   }
 });
-
 // ================= SETTINGS REPORT =================
 router.get("/settings-report", auth, async (req, res) => {
   try {

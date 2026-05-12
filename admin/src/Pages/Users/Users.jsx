@@ -132,7 +132,7 @@ const Users = () => {
                     <td>{user.name || "Player"}</td>
                     <td>{phone}</td>
                     <td>{user.referralCode || "-"}</td>
-                    <td>₹{user.balance || user.wallet?.balance || 0}</td>
+                    <td>₹{user.wallet?.totalBalance || user.balance || 0}</td>
                     <td>
                       <span className={`status-badge ${status}`}>{status}</span>
                     </td>
@@ -194,7 +194,7 @@ const Users = () => {
             </p>
             <p>
               <b>Balance:</b> ₹
-              {selectedUser.balance || selectedUser.wallet?.balance || 0}
+               {selectedUser.wallet?.totalBalance || selectedUser.balance || 0}
             </p>
             <p>
               <b>Status:</b> {selectedUser.status || "active"}

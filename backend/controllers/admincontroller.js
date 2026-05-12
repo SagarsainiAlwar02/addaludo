@@ -5,8 +5,39 @@ const Wallet = require("../models/wallet");
 // ================= GET USERS =================
 exports.getUsers = async (req, res) => {
   try {
-    const users = await User.find().select("-password");
-    res.json(users);
+    const users = await User.find().select("-password").lean();
+
+    const wallets = await Wallet.find({
+      userId: { $in: users.map((u) => u._id) },
+    }).lean();
+
+    const walletMap = {};
+    wallets.forEach((w) => {
+      walletMap[String(w.userId)] = w;
+    });
+
+    const finalUsers = users.map((user) => {
+      const wallet = walletMap[String(user._id)] || {};
+
+      const balance = Number(wallet.balance || 0);
+      const winnings = Number(wallet.winnings || 0);
+      const bonus = Number(wallet.bonus || 0);
+      const locked = Number(wallet.locked || 0);
+
+      return {
+        ...user,
+        wallet: {
+          balance,
+          winnings,
+          bonus,
+          locked,
+          totalBalance: balance + winnings,
+        },
+        balance: balance + winnings,
+      };
+    });
+
+    res.json(finalUsers);
   } catch (err) {
     res.status(500).json({ msg: err.message });
   }
