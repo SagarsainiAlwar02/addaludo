@@ -992,25 +992,26 @@ router.patch("/withdraw/reject/:id", auth, async (req, res) => {
       return res.status(400).json({ msg: "Invalid locked balance" });
     }
 
-    wallet.balance = Number(wallet.balance || 0) + amount;
-    wallet.locked = Math.max(0, Number(wallet.locked || 0) - amount);
-    await wallet.save();
+  wallet.winnings = Number(wallet.winnings || 0) + amount;
+wallet.locked = Math.max(0, Number(wallet.locked || 0) - amount);
+await wallet.save();
 
     withdraw.status = "rejected";
     withdraw.actionBy = adminId;
     withdraw.actionAt = new Date();
     await withdraw.save();
 
-    const transaction = await Transaction.create({
-      userId: withdraw.userId,
-      amount,
-      type: "refund",
-      status: "success",
-      note: "Withdraw rejected refund",
-      balanceAfter: wallet.balance,
-      approvedBy: adminId,
-      approvedAt: new Date(),
-    });
+   const transaction = await Transaction.create({
+  userId: withdraw.userId,
+  amount,
+  type: "refund",
+  status: "success",
+  note: "Withdraw rejected refund to winnings",
+  balanceAfter: wallet.winnings,
+  approvedBy: adminId,
+  approvedAt: new Date(),
+});
+
 
     res.json({
       msg: "Withdraw rejected",
@@ -1159,7 +1160,7 @@ router.patch("/battles/reject/:id", auth, async (req, res) => {
       if (!wallet) continue;
 
       wallet.locked = Math.max(0, Number(wallet.locked || 0) - amount);
-      wallet.balance = Number(wallet.balance || 0) + amount;
+   wallet.winnings = Number(wallet.winnings || 0) + amount;
 
       await wallet.save();
 
@@ -1170,7 +1171,7 @@ router.patch("/battles/reject/:id", auth, async (req, res) => {
         status: "success",
         note: adminNote || "Match cancelled by admin refund",
         roomId: battle._id,
-        balanceAfter: wallet.balance,
+      balanceAfter: wallet.winnings,
         approvedBy: adminId,
         approvedAt: new Date(),
       });

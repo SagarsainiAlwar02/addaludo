@@ -2,11 +2,19 @@ import React, { useEffect, useState } from "react";
 import API from "../../api";
 import "./kyc.css";
 
+const API_HOST = "https://api.addaludo.com";
+
 const Kyc = () => {
   const [users, setUsers] = useState([]);
   const [search, setSearch] = useState("");
   const [selected, setSelected] = useState(null);
   const [loading, setLoading] = useState(true);
+
+  const getImageUrl = (path) => {
+    if (!path) return "";
+    if (String(path).startsWith("http")) return path;
+    return `${API_HOST}${path}`;
+  };
 
   const fetchKyc = async () => {
     try {
@@ -29,6 +37,7 @@ const Kyc = () => {
     try {
       await API.patch(`/kyc/admin/approve/${id}`);
       alert("KYC approved");
+      setSelected(null);
       fetchKyc();
     } catch (err) {
       alert(err.response?.data?.msg || "Approve failed");
@@ -42,6 +51,7 @@ const Kyc = () => {
     try {
       await API.patch(`/kyc/admin/reject/${id}`, { reason });
       alert("KYC rejected");
+      setSelected(null);
       fetchKyc();
     } catch (err) {
       alert(err.response?.data?.msg || "Reject failed");
@@ -50,9 +60,13 @@ const Kyc = () => {
 
   const filtered = users.filter((u) => {
     const q = search.toLowerCase();
+
     return (
       String(u.name || "").toLowerCase().includes(q) ||
       String(u.phone || "").includes(q) ||
+      String(u.email || "").toLowerCase().includes(q) ||
+      String(u.kyc?.name || "").toLowerCase().includes(q) ||
+      String(u.kyc?.docType || "").toLowerCase().includes(q) ||
       String(u.kyc?.docNumber || "").toLowerCase().includes(q) ||
       String(u.kycStatus || "").toLowerCase().includes(q)
     );
@@ -81,6 +95,7 @@ const Kyc = () => {
               <th>Doc Number</th>
               <th>Status</th>
               <th>Submitted</th>
+              <th>Documents</th>
               <th>View</th>
               <th>Action</th>
             </tr>
@@ -94,11 +109,14 @@ const Kyc = () => {
                   <td>{u.phone || "-"}</td>
                   <td>{u.kyc?.docType || "-"}</td>
                   <td>{u.kyc?.docNumber || "-"}</td>
-                  <td className={u.kycStatus}>{u.kycStatus}</td>
+                  <td className={u.kycStatus}>{u.kycStatus || "-"}</td>
                   <td>
                     {u.kyc?.submittedAt
                       ? new Date(u.kyc.submittedAt).toLocaleString()
                       : "-"}
+                  </td>
+                  <td>
+                    {u.kyc?.frontImage || u.kyc?.backImage ? "Uploaded" : "No Image"}
                   </td>
                   <td>
                     <button className="view" onClick={() => setSelected(u)}>
@@ -123,7 +141,7 @@ const Kyc = () => {
               ))
             ) : (
               <tr>
-                <td colSpan="8" style={{ textAlign: "center" }}>
+                <td colSpan="9" style={{ textAlign: "center" }}>
                   No KYC found
                 </td>
               </tr>
@@ -137,16 +155,107 @@ const Kyc = () => {
           <div className="kyc-modal-content">
             <h2>KYC Details</h2>
 
-            <p><b>Name:</b> {selected.kyc?.name || selected.name || "-"}</p>
-            <p><b>Mobile:</b> {selected.phone || "-"}</p>
-            <p><b>Email:</b> {selected.email || "-"}</p>
-            <p><b>DOB:</b> {selected.kyc?.dob || "-"}</p>
-            <p><b>Doc Type:</b> {selected.kyc?.docType || "-"}</p>
-            <p><b>Doc Number:</b> {selected.kyc?.docNumber || "-"}</p>
-            <p><b>Status:</b> {selected.kycStatus || "-"}</p>
-            <p><b>Reject Reason:</b> {selected.kyc?.rejectReason || "-"}</p>
+            <p>
+              <b>Name:</b> {selected.kyc?.name || selected.name || "-"}
+            </p>
+            <p>
+              <b>Mobile:</b> {selected.phone || "-"}
+            </p>
+            <p>
+              <b>Email:</b> {selected.email || "-"}
+            </p>
+            <p>
+              <b>DOB:</b> {selected.kyc?.dob || "-"}
+            </p>
+            <p>
+              <b>Doc Type:</b> {selected.kyc?.docType || "-"}
+            </p>
+            <p>
+              <b>Doc Number:</b> {selected.kyc?.docNumber || "-"}
+            </p>
+            <p>
+              <b>Status:</b> {selected.kycStatus || "-"}
+            </p>
+            <p>
+              <b>Reject Reason:</b> {selected.kyc?.rejectReason || "-"}
+            </p>
 
-            <button onClick={() => setSelected(null)}>Close</button>
+            <div style={{ marginTop: "18px" }}>
+              <h3>Uploaded Documents</h3>
+
+              <div style={{ marginTop: "12px" }}>
+                <b>Front Image:</b>
+                <br />
+                {selected.kyc?.frontImage ? (
+                  <a
+                    href={getImageUrl(selected.kyc.frontImage)}
+                    target="_blank"
+                    rel="noreferrer"
+                  >
+                    <img
+                      src={getImageUrl(selected.kyc.frontImage)}
+                      alt="Front Document"
+                      style={{
+                        width: "100%",
+                        maxWidth: "420px",
+                        maxHeight: "280px",
+                        objectFit: "contain",
+                        borderRadius: "10px",
+                        marginTop: "8px",
+                        border: "1px solid #ddd",
+                        background: "#f8fafc",
+                      }}
+                    />
+                  </a>
+                ) : (
+                  <p>No front image uploaded</p>
+                )}
+              </div>
+
+              <div style={{ marginTop: "18px" }}>
+                <b>Back Image:</b>
+                <br />
+                {selected.kyc?.backImage ? (
+                  <a
+                    href={getImageUrl(selected.kyc.backImage)}
+                    target="_blank"
+                    rel="noreferrer"
+                  >
+                    <img
+                      src={getImageUrl(selected.kyc.backImage)}
+                      alt="Back Document"
+                      style={{
+                        width: "100%",
+                        maxWidth: "420px",
+                        maxHeight: "280px",
+                        objectFit: "contain",
+                        borderRadius: "10px",
+                        marginTop: "8px",
+                        border: "1px solid #ddd",
+                        background: "#f8fafc",
+                      }}
+                    />
+                  </a>
+                ) : (
+                  <p>No back image uploaded</p>
+                )}
+              </div>
+            </div>
+
+            <div style={{ marginTop: "20px" }}>
+              {selected.kycStatus === "pending" && (
+                <>
+                  <button className="approve" onClick={() => approve(selected._id)}>
+                    Approve
+                  </button>
+                  <button className="reject" onClick={() => reject(selected._id)}>
+                    Reject
+                  </button>
+                </>
+              )}
+
+              <button onClick={() => setSelected(null)}>Close</button>
+            </div>
           </div>
         </div>
       )}

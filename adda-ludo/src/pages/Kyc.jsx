@@ -16,6 +16,8 @@ export default function Kyc() {
 
   const [frontFile, setFrontFile] = useState(null);
   const [backFile, setBackFile] = useState(null);
+  const [frontPreview, setFrontPreview] = useState("");
+  const [backPreview, setBackPreview] = useState("");
 
   const [loading, setLoading] = useState(false);
   const [profileLoading, setProfileLoading] = useState(true);
@@ -33,21 +35,18 @@ export default function Kyc() {
     const fetchKycStatus = async () => {
       try {
         const token = localStorage.getItem("token");
-        const storedUser = JSON.parse(localStorage.getItem("user")) || {};
+        const storedUser = JSON.parse(localStorage.getItem("user") || "{}");
 
         if (!token) {
           setKycStatus(storedUser.kycStatus || "not_submitted");
-          setProfileLoading(false);
           return;
         }
 
         const res = await axios.get(`${API_URL}/user/profile`, {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
+          headers: { Authorization: `Bearer ${token}` },
         });
 
-        const user = res.data || {};
+        const user = res.data?.user || res.data || {};
         const status = user.kycStatus || "not_submitted";
 
         setKycStatus(status);
@@ -61,8 +60,8 @@ export default function Kyc() {
           })
         );
       } catch (err) {
-        console.log("KYC status fetch error:", err);
-        const storedUser = JSON.parse(localStorage.getItem("user")) || {};
+        console.log("KYC status fetch error:", err.response?.data || err.message);
+        const storedUser = JSON.parse(localStorage.getItem("user") || "{}");
         setKycStatus(storedUser.kycStatus || "not_submitted");
       } finally {
         setProfileLoading(false);
@@ -73,18 +72,19 @@ export default function Kyc() {
   }, []);
 
   const handleChange = (e) => {
-    setForm({
-      ...form,
-      [e.target.name]: e.target.value,
-    });
+    setForm({ ...form, [e.target.name]: e.target.value });
   };
 
   const handleFront = (e) => {
-    setFrontFile(e.target.files[0]);
+    const file = e.target.files?.[0];
+    setFrontFile(file || null);
+    setFrontPreview(file ? URL.createObjectURL(file) : "");
   };
 
   const handleBack = (e) => {
-    setBackFile(e.target.files[0]);
+    const file = e.target.files?.[0];
+    setBackFile(file || null);
+    setBackPreview(file ? URL.createObjectURL(file) : "");
   };
 
   const isAdult = (dob) => {
@@ -128,7 +128,7 @@ export default function Kyc() {
     }
 
     if (!frontFile || !backFile) {
-      alert("Please upload both documents");
+      alert("Please upload both front and back document images");
       return;
     }
 
@@ -143,9 +143,18 @@ export default function Kyc() {
         return;
       }
 
-     const res = await axios.post(`${API_URL}/kyc/submit`, form, {
+      const formData = new FormData();
+      formData.append("name", form.name);
+      formData.append("dob", form.dob);
+      formData.append("docType", form.docType);
+      formData.append("docNumber", form.docNumber);
+      formData.append("frontImage", frontFile);
+      formData.append("backImage", backFile);
+
+      const res = await axios.post(`${API_URL}/kyc/submit`, formData, {
         headers: {
           Authorization: `Bearer ${token}`,
+          "Content-Type": "multipart/form-data",
         },
       });
 
@@ -154,7 +163,7 @@ export default function Kyc() {
       setKycStatus(newStatus);
       setSuccess(true);
 
-      const storedUser = JSON.parse(localStorage.getItem("user")) || {};
+      const storedUser = JSON.parse(localStorage.getItem("user") || "{}");
       localStorage.setItem(
         "user",
         JSON.stringify({
@@ -172,8 +181,10 @@ export default function Kyc() {
 
       setFrontFile(null);
       setBackFile(null);
+      setFrontPreview("");
+      setBackPreview("");
     } catch (error) {
-      console.log("KYC submit error:", error);
+      console.log("KYC submit error:", error.response?.data || error.message);
       alert(error.response?.data?.msg || "Something went wrong!");
     } finally {
       setLoading(false);
@@ -354,10 +365,38 @@ export default function Kyc() {
         />
 
         <label>FRONT IMAGE</label>
-        <input type="file" onChange={handleFront} />
+        <input type="file" accept="image/*" onChange={handleFront} />
+        {frontPreview && (
+          <img
+            src={frontPreview}
+            alt="Front Preview"
+            style={{
+              width: "100%",
+              maxHeight: "180px",
+              objectFit: "cover",
+              borderRadius: "10px",
+              marginTop: "10px",
+              border: "1px solid #ddd",
+            }}
+          />
+        )}
 
-        <label>BACK IMAGE</label>
-        <input type="file" onChange={handleBack} />
+        <label style={{ marginTop: "15px", display: "block" }}>BACK IMAGE</label>
+        <input type="file" accept="image/*" onChange={handleBack} />
+        {backPreview && (
+          <img
+            src={backPreview}
+            alt="Back Preview"
+            style={{
+              width: "100%",
+              maxHeight: "180px",
+              objectFit: "cover",
+              borderRadius: "10px",
+              marginTop: "10px",
+              border: "1px solid #ddd",
+            }}
+          />
+        )}
 
         <button
           type="submit"

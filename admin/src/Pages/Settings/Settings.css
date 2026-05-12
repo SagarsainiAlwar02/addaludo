@@ -97,6 +97,33 @@
   color: #cbd5e1;
 }
 
+.report-search-box {
+  width: 100%;
+  max-width: 450px;
+  margin: 0 0 16px;
+}
+
+.report-search-box input {
+  width: 100%;
+  padding: 12px 14px;
+  border-radius: 10px;
+  border: 1px solid #334155;
+  background: #020617;
+  color: #ffffff;
+  outline: none;
+  box-sizing: border-box;
+  font-size: 14px;
+}
+
+.report-search-box input::placeholder {
+  color: #94a3b8;
+}
+
+.report-search-box input:focus {
+  border-color: #3b82f6;
+  box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.25);
+}
+
 .table-scroll {
   width: 100%;
   max-width: 100%;
@@ -171,7 +198,10 @@
     max-width: 100%;
   }
 
-  /* REPORT TABLE TO CARD VIEW */
+  .report-search-box {
+    max-width: 100%;
+  }
+
   .table-scroll {
     overflow: visible !important;
     border: none !important;

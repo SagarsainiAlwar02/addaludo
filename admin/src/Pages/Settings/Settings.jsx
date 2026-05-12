@@ -9,6 +9,9 @@ const Settings = () => {
   const [loading, setLoading] = useState(false);
   const [reportLoading, setReportLoading] = useState(false);
 
+  const [bonusSearch, setBonusSearch] = useState("");
+  const [penaltySearch, setPenaltySearch] = useState("");
+
   const [bonusData, setBonusData] = useState({
     name: "",
     mobile: "",
@@ -59,6 +62,27 @@ const Settings = () => {
       setReportLoading(false);
     }
   };
+
+  const filterReport = (data, search) => {
+    const q = String(search || "").toLowerCase().trim();
+
+    if (!q) return data;
+
+    return data.filter((item) => {
+      return (
+        String(item.name || "").toLowerCase().includes(q) ||
+        String(item.mobile || "").toLowerCase().includes(q) ||
+        String(item.amount || "").toLowerCase().includes(q) ||
+        String(item.reason || "").toLowerCase().includes(q) ||
+        String(item.balanceAfter || "").toLowerCase().includes(q) ||
+        String(item.adminName || "").toLowerCase().includes(q) ||
+        String(formatDate(item.createdAt) || "").toLowerCase().includes(q)
+      );
+    });
+  };
+
+  const filteredBonusReport = filterReport(bonusReport, bonusSearch);
+  const filteredPenaltyReport = filterReport(penaltyReport, penaltySearch);
 
   const validateForm = (data) => {
     const mobile = String(data.mobile || "").replace(/\D/g, "");
@@ -294,6 +318,15 @@ const Settings = () => {
         <div className="report-box">
           <h3 className="report-title">Bonus Report</h3>
 
+          <div className="report-search-box">
+            <input
+              type="text"
+              placeholder="Search by name, mobile, amount, reason, admin, date..."
+              value={bonusSearch}
+              onChange={(e) => setBonusSearch(e.target.value)}
+            />
+          </div>
+
           {reportLoading ? (
             <p className="empty-text">Loading...</p>
           ) : (
@@ -312,14 +345,14 @@ const Settings = () => {
                 </thead>
 
                 <tbody>
-                  {bonusReport.length === 0 ? (
+                  {filteredBonusReport.length === 0 ? (
                     <tr>
                       <td data-label="Info" colSpan="7">
                         No bonus report found
                       </td>
                     </tr>
                   ) : (
-                    bonusReport.map((item) => (
+                    filteredBonusReport.map((item) => (
                       <tr key={item._id}>
                         <td data-label="User">{item.name || "-"}</td>
                         <td data-label="Mobile">{item.mobile || "-"}</td>
@@ -344,6 +377,15 @@ const Settings = () => {
         <div className="report-box">
           <h3 className="report-title">Penalty Report</h3>
 
+          <div className="report-search-box">
+            <input
+              type="text"
+              placeholder="Search by name, mobile, amount, reason, admin, date..."
+              value={penaltySearch}
+              onChange={(e) => setPenaltySearch(e.target.value)}
+            />
+          </div>
+
           {reportLoading ? (
             <p className="empty-text">Loading...</p>
           ) : (
@@ -362,14 +404,14 @@ const Settings = () => {
                 </thead>
 
                 <tbody>
-                  {penaltyReport.length === 0 ? (
+                  {filteredPenaltyReport.length === 0 ? (
                     <tr>
                       <td data-label="Info" colSpan="7">
                         No penalty report found
                       </td>
                     </tr>
                   ) : (
-                    penaltyReport.map((item) => (
+                    filteredPenaltyReport.map((item) => (
                       <tr key={item._id}>
                         <td data-label="User">{item.name || "-"}</td>
                         <td data-label="Mobile">{item.mobile || "-"}</td>
