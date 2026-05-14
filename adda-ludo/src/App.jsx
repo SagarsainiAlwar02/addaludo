@@ -1,218 +1,135 @@
-// import React, { useState, useEffect } from "react";
-// import { BrowserRouter as Router, Routes, Route, Navigate } from "react-router-dom";
+import React, { useState, useEffect } from "react";
+import { BrowserRouter as Router, Routes, Route, Navigate } from "react-router-dom";
 
-// import { socket } from "./socket";
+import { socket } from "./socket";
 
-// import HeaderMain from "./components/HeaderMain";
-// import FooterNav from "./components/FooterNav";
+import HeaderMain from "./components/HeaderMain";
+import FooterNav from "./components/FooterNav";
 
-// import Home from "./pages/Home";
-// import Battle from "./pages/Battle";
-// import RoomCode from "./pages/RoomCode";
-// import Wallet from "./pages/Wallet";
-// import Withdraw from "./pages/Withdraw";
-// import Profile from "./pages/Profile";
-// import Refer from "./pages/Refer";
-// import Support from "./pages/Support";
-// import Lobby from "./pages/Lobby";
-// import Kyc from "./pages/Kyc";
-// import Login from "./pages/Login";
-// import Redeem from "./pages/Redeem";
-// import Game from "./pages/Game";
-// import History from "./pages/History";
-
-// import "./index.css";
-
-// function Layout({ children }) {
-//   return (
-//     <>
-//       <HeaderMain />
-//       {children}
-//       <FooterNav />
-//     </>
-//   );
-// }
-
-// function ProtectedRoute({ children, isAuthenticated }) {
-//   return isAuthenticated ? children : <Navigate to="/login" replace />;
-// }
-
-// function App() {
-//   const [user, setUser] = useState(() => {
-//     try {
-//       return JSON.parse(localStorage.getItem("user")) || null;
-//     } catch {
-//       return null;
-//     }
-//   });
-
-//   const isAuthenticated = !!user && !!localStorage.getItem("token");
-
-//   useEffect(() => {
-//     const handleStorageChange = () => {
-//       try {
-//         setUser(JSON.parse(localStorage.getItem("user")) || null);
-//       } catch {
-//         setUser(null);
-//       }
-//     };
-
-//     window.addEventListener("storage", handleStorageChange);
-
-//     socket.on("connect", () => {
-//       console.log("🔥 Connected:", socket.id);
-//     });
-
-//     return () => {
-//       window.removeEventListener("storage", handleStorageChange);
-//       socket.off("connect");
-//     };
-//   }, []);
-
-//   const handleLogin = (userData) => {
-//     localStorage.setItem("user", JSON.stringify(userData));
-
-//     if (userData?.token) {
-//       localStorage.setItem("token", userData.token);
-//     }
-
-//     setUser(userData);
-//   };
-
-//   const handleLogout = () => {
-//     localStorage.removeItem("user");
-//     localStorage.removeItem("token");
-//     setUser(null);
-//   };
-
-//   const protectedPage = (component) => (
-//     <ProtectedRoute isAuthenticated={isAuthenticated}>
-//       <Layout>{component}</Layout>
-//     </ProtectedRoute>
-//   );
-
-//   return (
-//     <Router>
-//       <Routes>
-//         <Route
-//           path="/login"
-//           element={
-//             !isAuthenticated ? (
-//               <Login onLogin={handleLogin} />
-//             ) : (
-//               <Navigate to="/" replace />
-//             )
-//           }
-//         />
-
-//         <Route path="/" element={protectedPage(<Home />)} />
-//         <Route path="/battle" element={protectedPage(<Battle />)} />
-//         <Route path="/room-code/:battleId" element={protectedPage(<RoomCode />)} />
-//         <Route path="/wallet" element={protectedPage(<Wallet />)} />
-
-//         {/* ✅ Winning coin withdraw page */}
-//         <Route path="/withdraw" element={protectedPage(<Withdraw />)} />
-
-//         {/* ✅ Referral earning redeem page */}
-//         <Route path="/redeem" element={protectedPage(<Redeem />)} />
-
-//         <Route path="/refer" element={protectedPage(<Refer />)} />
-//         <Route path="/support" element={protectedPage(<Support />)} />
-//         <Route path="/kyc" element={protectedPage(<Kyc />)} />
-//         <Route path="/profile" element={protectedPage(<Profile onLogout={handleLogout} />)} />
-//         <Route path="/history" element={protectedPage(<History />)} />
-//         <Route path="/lobby" element={protectedPage(<Lobby />)} />
-//         <Route path="/game/:roomId" element={protectedPage(<Game />)} />
-
-//         <Route path="*" element={<Navigate to="/" replace />} />
-//       </Routes>
-//     </Router>
-//   );
-// }
-
-// export default App;
-
-
-
-import React from "react";
-import { BrowserRouter as Router } from "react-router-dom";
+import Home from "./pages/Home";
+import Battle from "./pages/Battle";
+import RoomCode from "./pages/RoomCode";
+import Wallet from "./pages/Wallet";
+import Withdraw from "./pages/Withdraw";
+import Profile from "./pages/Profile";
+import Refer from "./pages/Refer";
+import Support from "./pages/Support";
+import Lobby from "./pages/Lobby";
+import Kyc from "./pages/Kyc";
+import Login from "./pages/Login";
+import Redeem from "./pages/Redeem";
+import Game from "./pages/Game";
+import History from "./pages/History";
 
 import "./index.css";
 
+function Layout({ children }) {
+  return (
+    <>
+      <HeaderMain />
+      {children}
+      <FooterNav />
+    </>
+  );
+}
+
+function ProtectedRoute({ children, isAuthenticated }) {
+  return isAuthenticated ? children : <Navigate to="/login" replace />;
+}
+
 function App() {
+  const [user, setUser] = useState(() => {
+    try {
+      return JSON.parse(localStorage.getItem("user")) || null;
+    } catch {
+      return null;
+    }
+  });
+
+  const isAuthenticated = !!user && !!localStorage.getItem("token");
+
+  useEffect(() => {
+    const handleStorageChange = () => {
+      try {
+        setUser(JSON.parse(localStorage.getItem("user")) || null);
+      } catch {
+        setUser(null);
+      }
+    };
+
+    window.addEventListener("storage", handleStorageChange);
+
+    socket.on("connect", () => {
+      console.log("🔥 Connected:", socket.id);
+    });
+
+    return () => {
+      window.removeEventListener("storage", handleStorageChange);
+      socket.off("connect");
+    };
+  }, []);
+
+  const handleLogin = (userData) => {
+    localStorage.setItem("user", JSON.stringify(userData));
+
+    if (userData?.token) {
+      localStorage.setItem("token", userData.token);
+    }
+
+    setUser(userData);
+  };
+
+  const handleLogout = () => {
+    localStorage.removeItem("user");
+    localStorage.removeItem("token");
+    setUser(null);
+  };
+
+  const protectedPage = (component) => (
+    <ProtectedRoute isAuthenticated={isAuthenticated}>
+      <Layout>{component}</Layout>
+    </ProtectedRoute>
+  );
+
   return (
     <Router>
-      <div className="min-h-screen flex items-center justify-center px-4 bg-gradient-to-br from-[#0f172a] via-[#111827] to-[#000000]">
-        
-        <div className="absolute inset-0 opacity-20">
-          <div className="absolute top-10 left-10 w-72 h-72 bg-blue-500 rounded-full blur-3xl"></div>
-          <div className="absolute bottom-10 right-10 w-72 h-72 bg-purple-500 rounded-full blur-3xl"></div>
-        </div>
+      <Routes>
+        <Route
+          path="/login"
+          element={
+            !isAuthenticated ? (
+              <Login onLogin={handleLogin} />
+            ) : (
+              <Navigate to="/" replace />
+            )
+          }
+        />
 
-        <div className="relative w-full max-w-md rounded-3xl border border-white/10 bg-white/5 backdrop-blur-xl p-8 text-center shadow-2xl">
-          
-          <div className="text-7xl mb-6 animate-bounce">
-            🛠️
-          </div>
+        <Route path="/" element={protectedPage(<Home />)} />
+        <Route path="/battle" element={protectedPage(<Battle />)} />
+        <Route path="/room-code/:battleId" element={protectedPage(<RoomCode />)} />
+        <Route path="/wallet" element={protectedPage(<Wallet />)} />
 
-          <h1 className="text-3xl md:text-4xl font-black text-white mb-4">
-            Website Under Maintenance
-          </h1>
+        {/* ✅ Winning coin withdraw page */}
+        <Route path="/withdraw" element={protectedPage(<Withdraw />)} />
 
-          <p className="text-gray-300 text-base leading-7">
-            KYC verification me technical problem ki wajah se website
-            temporary maintenance par hai.
-          </p>
+        {/* ✅ Referral earning redeem page */}
+        <Route path="/redeem" element={protectedPage(<Redeem />)} />
 
-          <p className="text-gray-400 text-sm mt-4">
-            Kripya thodi der baad dobara try karein.
-          </p>
+        <Route path="/refer" element={protectedPage(<Refer />)} />
+        <Route path="/support" element={protectedPage(<Support />)} />
+        <Route path="/kyc" element={protectedPage(<Kyc />)} />
+        <Route path="/profile" element={protectedPage(<Profile onLogout={handleLogout} />)} />
+        <Route path="/history" element={protectedPage(<History />)} />
+        <Route path="/lobby" element={protectedPage(<Lobby />)} />
+        <Route path="/game/:roomId" element={protectedPage(<Game />)} />
 
-          <div className="mt-6">
-            <div className="inline-flex items-center gap-2 bg-red-500/10 border border-red-500/20 text-red-400 px-4 py-2 rounded-full text-sm font-semibold">
-              ⚠ KYC Service Temporary Unavailable
-            </div>
-          </div>
-
-          <div className="mt-8 animate-pulse text-green-400 text-sm font-semibold">
-            We’ll be back soon...
-          </div>
-
-        </div>
-      </div>
+        <Route path="*" element={<Navigate to="/" replace />} />
+      </Routes>
     </Router>
   );
 }
 
 export default App;
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-// // // git add adda-ludo/src/App.jsx
-// // // git commit -m "add maintenance mode screen"
-// // // git push origin main
 
