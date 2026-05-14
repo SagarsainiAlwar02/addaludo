@@ -6,7 +6,7 @@ export default function Support() {
   const [loading, setLoading] = useState(false);
   const [ticketId, setTicketId] = useState(null);
 
-  const supportNumber = "919158054155";
+  const supportNumber = "916377185242";
   const whatsappLink = `https://api.whatsapp.com/send?phone=${supportNumber}&text=Hello%20Support`;
 
   const submitTicket = async () => {
