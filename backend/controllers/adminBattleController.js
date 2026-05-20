@@ -46,55 +46,24 @@ exports.getBattleById = async (req, res) => {
   }
 };
 
+//
+
 exports.approveBattle = async (req, res) => {
   try {
     const battleId = req.params.battleId;
+    const battle = await Battle.findById(battleId);
 
-    const battle = await Battle.findOneAndUpdate(
-      { _id: battleId, resultSettled: { $ne: true } },
-      {
-        $set: {
-          resultSettled: true,
-          status: "approved",
-          adminNote: req.body?.adminNote || "Winner approved by admin",
-        },
-      },
-      { new: true }
-    );
-
-    if (!battle) {
-      return res.status(400).json({
-        success: false,
-        msg: "Battle already settled ya battle not found. Payment dobara add nahi hoga.",
-      });
-    }
+    if (!battle) return res.status(404).json({ success: false, msg: "Battle not found" });
 
     const winnerId = req.body?.winnerId || battle.winner || battle.resultSubmittedBy;
-
-    if (!winnerId) {
-      await Battle.findByIdAndUpdate(battleId, {
-        $set: { resultSettled: false, status: "result_submitted" },
-      });
-
-      return res.status(400).json({ success: false, msg: "Winner not found" });
-    }
+    if (!winnerId) return res.status(400).json({ success: false, msg: "Winner not found" });
 
     const isCreator = String(winnerId) === String(battle.createdBy);
     const isOpponent = String(winnerId) === String(battle.opponent);
 
     if (!isCreator && !isOpponent) {
-      await Battle.findByIdAndUpdate(battleId, {
-        $set: { resultSettled: false, status: "result_submitted" },
-      });
-
-      return res.status(400).json({
-        success: false,
-        msg: "Winner is not in this battle",
-      });
+      return res.status(400).json({ success: false, msg: "Winner is not in this battle" });
     }
-
-    const amount = Number(battle.amount || 0);
-    const prize = Number(battle.prize || amount * 2);
 
     const alreadyPaid = await Transaction.findOne({
       roomId: battle.battleId,
@@ -102,48 +71,38 @@ exports.approveBattle = async (req, res) => {
       status: "success",
     });
 
-    if (alreadyPaid) {
+    if (battle.resultSettled || ["approved", "completed"].includes(battle.status) || alreadyPaid) {
       battle.winner = winnerId;
-      battle.status = "approved";
+      battle.status = battle.status === "completed" ? "completed" : "approved";
       battle.resultSettled = true;
-      battle.adminNote = "Already paid before. Admin approved without duplicate payout.";
+      battle.adminNote = "Already settled. Duplicate payout stopped.";
       await battle.save();
 
       return res.json({
         success: true,
-        msg: "Battle already paid. Duplicate payment stopped.",
+        msg: "Battle already settled. Payment dobara add nahi hua.",
         battle,
       });
     }
+
+    const amount = Number(battle.amount || 0);
+    const prize = Number(battle.prize || amount * 2);
 
     const creatorWallet = await Wallet.findOne({ userId: battle.createdBy });
     const opponentWallet = await Wallet.findOne({ userId: battle.opponent });
     const winnerWallet = await Wallet.findOne({ userId: winnerId });
 
     if (!winnerWallet) {
-      await Battle.findByIdAndUpdate(battleId, {
-        $set: { resultSettled: false, status: "result_submitted" },
-      });
-
-      return res.status(404).json({
-        success: false,
-        msg: "Winner wallet not found",
-      });
+      return res.status(404).json({ success: false, msg: "Winner wallet not found" });
     }
 
     if (creatorWallet) {
-      creatorWallet.locked = Math.max(
-        0,
-        Number(creatorWallet.locked || 0) - amount
-      );
+      creatorWallet.locked = Math.max(0, Number(creatorWallet.locked || 0) - amount);
       await creatorWallet.save();
     }
 
     if (opponentWallet) {
-      opponentWallet.locked = Math.max(
-        0,
-        Number(opponentWallet.locked || 0) - amount
-      );
+      opponentWallet.locked = Math.max(0, Number(opponentWallet.locked || 0) - amount);
       await opponentWallet.save();
     }
 
@@ -155,7 +114,7 @@ exports.approveBattle = async (req, res) => {
       amount: prize,
       type: "game_win",
       status: "success",
-      note: `Battle ${battle.battleId} approved`,
+      note: `Battle ${battle.battleId} approved by admin`,
       roomId: battle.battleId,
       balanceAfter: getPlayableBalance(winnerWallet),
     });
@@ -166,61 +125,64 @@ exports.approveBattle = async (req, res) => {
     battle.adminNote = req.body?.adminNote || "Winner approved by admin";
     await battle.save();
 
-    res.json({ success: true, msg: "Battle approved", battle });
+    return res.json({ success: true, msg: "Battle approved", battle });
   } catch (err) {
     console.log("❌ APPROVE BATTLE ERROR:", err);
     res.status(500).json({ success: false, msg: err.message });
   }
 };
 
+//
+
 exports.rejectBattle = async (req, res) => {
   try {
     const battleId = req.params.battleId;
+    const battle = await Battle.findById(battleId);
 
-    const battle = await Battle.findOneAndUpdate(
-      { _id: battleId, resultSettled: { $ne: true } },
-      {
-        $set: {
-          resultSettled: true,
-          status: "cancelled",
-          adminNote: req.body?.adminNote || "Cancelled by admin",
-        },
-      },
-      { new: true }
-    );
+    if (!battle) return res.status(404).json({ success: false, msg: "Battle not found" });
 
-    if (!battle) {
-      return res.status(400).json({
-        success: false,
-        msg: "Battle already settled/cancelled. Refund dobara add nahi hoga.",
-      });
-    }
+    const alreadyPaid = await Transaction.findOne({
+      roomId: battle.battleId,
+      type: "game_win",
+      status: "success",
+    });
 
-    const amount = Number(battle.amount || 0);
-
-    const existingRefund = await Transaction.findOne({
+    const alreadyRefunded = await Transaction.findOne({
       roomId: battle.battleId,
       type: "refund",
       status: "success",
     });
 
-    if (existingRefund) {
+    if (alreadyPaid) {
+      return res.status(400).json({
+        success: false,
+        msg: "Ye battle already winner ko paid hai, cancel/refund nahi ho sakta.",
+      });
+    }
+
+    if (battle.resultSettled || ["cancelled", "rejected"].includes(battle.status) || alreadyRefunded) {
+      battle.status = "cancelled";
+      battle.resultSettled = true;
+      battle.adminNote = "Already cancelled/refunded. Duplicate refund stopped.";
+      await battle.save();
+
       return res.json({
         success: true,
-        msg: "Battle already refunded. Duplicate refund stopped.",
+        msg: "Battle already cancelled/refunded. Refund dobara add nahi hua.",
         battle,
       });
     }
 
+    const amount = Number(battle.amount || 0);
+
     const creatorWallet = await Wallet.findOne({ userId: battle.createdBy });
-    const opponentWallet = await Wallet.findOne({ userId: battle.opponent });
+    const opponentWallet = battle.opponent
+      ? await Wallet.findOne({ userId: battle.opponent })
+      : null;
 
     if (creatorWallet) {
-      creatorWallet.balance = Number(creatorWallet.balance || 0) + amount;
-      creatorWallet.locked = Math.max(
-        0,
-        Number(creatorWallet.locked || 0) - amount
-      );
+      creatorWallet.winnings = Number(creatorWallet.winnings || 0) + amount;
+      creatorWallet.locked = Math.max(0, Number(creatorWallet.locked || 0) - amount);
       await creatorWallet.save();
 
       await Transaction.create({
@@ -235,11 +197,8 @@ exports.rejectBattle = async (req, res) => {
     }
 
     if (battle.opponent && opponentWallet) {
-      opponentWallet.balance = Number(opponentWallet.balance || 0) + amount;
-      opponentWallet.locked = Math.max(
-        0,
-        Number(opponentWallet.locked || 0) - amount
-      );
+      opponentWallet.winnings = Number(opponentWallet.winnings || 0) + amount;
+      opponentWallet.locked = Math.max(0, Number(opponentWallet.locked || 0) - amount);
       await opponentWallet.save();
 
       await Transaction.create({
@@ -253,7 +212,12 @@ exports.rejectBattle = async (req, res) => {
       });
     }
 
-    res.json({ success: true, msg: "Battle cancelled and refunded", battle });
+    battle.status = "cancelled";
+    battle.resultSettled = true;
+    battle.adminNote = req.body?.adminNote || "Cancelled by admin";
+    await battle.save();
+
+    return res.json({ success: true, msg: "Battle cancelled and refunded", battle });
   } catch (err) {
     console.log("❌ REJECT BATTLE ERROR:", err);
     res.status(500).json({ success: false, msg: err.message });

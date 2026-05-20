@@ -11,6 +11,7 @@ const Dashboard = () => {
       const res = await API.get("/admin/dashboard");
 
       setStats([
+        { title: "Total Users", value: res.data.totalUsers || 0, isCount: true },
         { title: "Total Deposit", value: res.data.totalDeposit || 0 },
         { title: "Total Withdraw", value: res.data.totalWithdraw || 0 },
         { title: "Total Earnings", value: res.data.totalEarnings || 0 },
@@ -46,7 +47,10 @@ const Dashboard = () => {
           {stats.map((item, index) => (
             <div className="card" key={index}>
               <h3>{item.title}</h3>
-              <p>₹{Number(item.value || 0).toLocaleString("en-IN")}</p>
+              <p>
+                {item.isCount ? "" : "₹"}
+                {Number(item.value || 0).toLocaleString("en-IN")}
+              </p>
             </div>
           ))}
         </div>
