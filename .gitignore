@@ -11,3 +11,6 @@ build/
 .vite/
 uploads/*
 !uploads/.gitkeep
+
+.vercel
+.env*
