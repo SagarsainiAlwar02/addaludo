@@ -58,13 +58,64 @@ exports.requestWithdraw = async (req, res) => {
       });
     }
 
-    const { amount, method, details } = req.body;
+    const { amount, method, details, type } = req.body;
+
     const withdrawAmount = Number(amount);
 
     if (!withdrawAmount || withdrawAmount < 200) {
       return res.status(400).json({ msg: "Minimum withdraw ₹200 hai" });
     }
 
+    // ✅ REFER REDEEM
+    if (type === "refer_redeem") {
+
+      if (withdrawAmount > 10000) {
+        return res.status(400).json({ msg: "Maximum redeem ₹10000 hai" });
+      }
+
+      let wallet = await Wallet.findOne({ userId });
+
+      if (!wallet) {
+        wallet = await Wallet.create({
+          userId,
+          balance: 0,
+          bonus: 0,
+          winnings: 0,
+          referralBalance: 0,
+          locked: 0,
+        });
+      }
+
+      if (Number(wallet.referralBalance || 0) < withdrawAmount) {
+        return res.status(400).json({ msg: "Insufficient referral balance" });
+      }
+
+      // referral balance -> main wallet
+      wallet.referralBalance =
+        Number(wallet.referralBalance || 0) - withdrawAmount;
+
+      wallet.balance =
+        Number(wallet.balance || 0) + withdrawAmount;
+
+      await wallet.save();
+
+      await Transaction.create({
+        userId,
+        amount: withdrawAmount,
+        type: "referral_redeem",
+        status: "success",
+        note: "Referral balance redeemed to main wallet",
+        balanceAfter: Number(wallet.balance || 0),
+      });
+
+      return res.json({
+        success: true,
+        msg: "Referral earning main wallet me add ho gayi",
+        wallet,
+      });
+    }
+
+    // ✅ NORMAL WITHDRAW
     if (!["upi", "bank"].includes(method)) {
       return res.status(400).json({ msg: "Invalid withdraw method" });
     }
@@ -86,9 +137,12 @@ exports.requestWithdraw = async (req, res) => {
       return res.status(400).json({ msg: "Insufficient winning balance" });
     }
 
-    // ✅ winnings se amount hold/lock
-    wallet.winnings = Number(wallet.winnings || 0) - withdrawAmount;
-    wallet.locked = Number(wallet.locked || 0) + withdrawAmount;
+    // winnings se amount hold/lock
+    wallet.winnings =
+      Number(wallet.winnings || 0) - withdrawAmount;
+
+    wallet.locked =
+      Number(wallet.locked || 0) + withdrawAmount;
 
     await wallet.save();
 
@@ -115,6 +169,7 @@ exports.requestWithdraw = async (req, res) => {
       withdraw,
       wallet,
     });
+
   } catch (err) {
     console.log("❌ REQUEST WITHDRAW ERROR:", err);
     res.status(500).json({ msg: err.message });

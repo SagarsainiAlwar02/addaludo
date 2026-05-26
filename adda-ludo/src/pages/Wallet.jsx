@@ -34,6 +34,7 @@ export default function Wallet() {
   const [withdraws, setWithdraws] = useState([]);
   const [payment, setPayment] = useState(null);
   const [timeLeft, setTimeLeft] = useState(300);
+  const [activeHistory, setActiveHistory] = useState("deposit");
 
   const authHeader = {
     headers: { Authorization: `Bearer ${token}` },
@@ -313,21 +314,40 @@ export default function Wallet() {
           </p>
         </div>
 
-        <HistoryBox
-          title="Deposit History"
-          empty="No deposit request yet."
-          items={deposits}
-          getStatusStyle={getStatusStyle}
-          type="deposit"
-        />
+        <div style={styles.historyCard}>
+          <div style={styles.historyTabs}>
+            <button
+              onClick={() => setActiveHistory("deposit")}
+              style={{
+                ...styles.historyTab,
+                ...(activeHistory === "deposit" ? styles.activeHistoryTab : {}),
+              }}
+            >
+              Deposit History
+            </button>
 
-        <HistoryBox
-          title="Withdraw History"
-          empty="No withdraw request yet."
-          items={withdraws}
-          getStatusStyle={getStatusStyle}
-          type="withdraw"
-        />
+            <button
+              onClick={() => setActiveHistory("withdraw")}
+              style={{
+                ...styles.historyTab,
+                ...(activeHistory === "withdraw" ? styles.activeHistoryTab : {}),
+              }}
+            >
+              Withdraw History
+            </button>
+          </div>
+
+          <HistoryBox
+            empty={
+              activeHistory === "deposit"
+                ? "No deposit request yet."
+                : "No withdraw request yet."
+            }
+            items={activeHistory === "deposit" ? deposits : withdraws}
+            getStatusStyle={getStatusStyle}
+            type={activeHistory === "deposit" ? "deposit" : "withdraw"}
+          />
+        </div>
       </div>
 
       {showAddCash && (
@@ -487,11 +507,9 @@ function CopyRow({ label, value, onCopy }) {
   );
 }
 
-function HistoryBox({ title, empty, items, getStatusStyle, type }) {
+function HistoryBox({ empty, items, getStatusStyle, type }) {
   return (
-    <div style={styles.card}>
-      <h3 style={styles.historyTitle}>{title}</h3>
-
+    <div>
       {items.length === 0 ? (
         <p style={styles.desc}>{empty}</p>
       ) : (
@@ -663,11 +681,35 @@ const styles = {
     fontWeight: 900,
   },
 
-  historyTitle: {
-    margin: "0 0 12px",
-    fontSize: 19,
-    fontWeight: 900,
+  historyCard: {
+    background: "#fff",
+    borderRadius: 22,
+    padding: 18,
+    marginBottom: 16,
+    boxShadow: "0 18px 45px rgba(15,23,42,.07)",
+  },
+
+  historyTabs: {
+    display: "grid",
+    gridTemplateColumns: "1fr 1fr",
+    gap: 10,
+    marginBottom: 14,
+  },
+
+  historyTab: {
+    border: "2px solid #e5e7eb",
+    background: "#fff",
     color: "#0f172a",
+    borderRadius: 16,
+    padding: "12px 8px",
+    fontSize: 16,
+    fontWeight: 900,
+  },
+
+  activeHistoryTab: {
+    border: "2px solid #22c55e",
+    background: "#f0fdf4",
+    color: "#166534",
   },
 
   depositItem: {
