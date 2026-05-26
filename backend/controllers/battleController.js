@@ -3,7 +3,7 @@ const Wallet = require("../models/wallet");
 const Transaction = require("../models/transaction");
 const User = require("../models/user");
 
-const OPEN_BATTLE_EXPIRE_MS = 2 * 60 * 1000;
+const OPEN_BATTLE_EXPIRE_MS = 5 * 60 * 1000;
 const MAX_SEARCHING_BATTLES = 2;
 
 const PUBLIC_BATTLE_STATUSES = [
