@@ -462,45 +462,46 @@ const Battle = () => {
           </div>
         </div>
 
-        <div className="mb-6 rounded-[28px] bg-white p-4 shadow-xl shadow-slate-200/80 ring-1 ring-slate-200">
-          <div className="mb-4 flex items-center justify-between">
-            <div>
-              <h2 className="text-xl font-black">Create Battle</h2>
-              <p className="text-xs font-bold text-slate-400">
-                Amount डालो और challenge create करो
-              </p>
-            </div>
+//
+     <div className="mb-5 rounded-xl bg-white p-3 shadow-md ring-1 ring-slate-200">
+  <div className="mb-3 flex items-center justify-between">
+    <div>
+      <h2 className="text-base font-bold">Create Battle</h2>
+      <p className="text-[11px] font-medium text-slate-400">
+        Amount डालो और challenge create करो
+      </p>
+    </div>
 
-            <button className="rounded-2xl bg-gradient-to-r from-indigo-500 to-violet-600 px-4 py-2 text-xs font-black text-white shadow-lg shadow-indigo-500/25">
-              Rules
-            </button>
-          </div>
+    <button className="rounded-md bg-indigo-600 px-3 py-1.5 text-[11px] font-bold text-white">
+      Rules
+    </button>
+  </div>
 
-          <div className="flex items-center gap-3 rounded-3xl bg-slate-100 p-2 ring-1 ring-slate-200">
-            <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-white text-xl shadow-sm">
-              ₹
-            </div>
+  <div className="flex items-center gap-2 rounded-lg bg-slate-100 p-2 ring-1 ring-slate-200">
+    <div className="flex h-9 w-9 items-center justify-center rounded-md bg-white text-base font-semibold shadow-sm">
+      ₹
+    </div>
 
-            <input
-              type="number"
-              placeholder="Enter Coin"
-              className="min-w-0 flex-1 bg-transparent py-3 text-lg font-black outline-none placeholder:text-slate-400"
-              value={betAmount}
-              min="50"
-              max="100000"
-              step="50"
-              onChange={(e) => setBetAmount(e.target.value)}
-            />
+    <input
+      type="number"
+      placeholder="Enter Amount"
+      className="min-w-0 flex-1 bg-transparent py-2 text-sm font-semibold outline-none placeholder:text-slate-400"
+      value={betAmount}
+      min="50"
+      max="100000"
+      step="50"
+      onChange={(e) => setBetAmount(e.target.value)}
+    />
 
-            <button
-              disabled={loading}
-              onClick={handleCreate}
-              className="rounded-2xl bg-gradient-to-r from-slate-900 to-slate-700 px-6 py-4 text-sm font-black tracking-wider text-white shadow-lg active:scale-95 disabled:opacity-60"
-            >
-              {loading ? "..." : "SET"}
-            </button>
-          </div>
-        </div>
+    <button
+      disabled={loading}
+      onClick={handleCreate}
+      className="rounded-md bg-slate-900 px-4 py-2 text-xs font-bold text-white active:scale-95 disabled:opacity-60"
+    >
+      {loading ? "..." : "Set"}
+    </button>
+  </div>
+</div>
 
         <SectionTitle title="Open Battles" badge={visibleOpenBattles.length} gradient="from-cyan-500 to-blue-600" />
 
