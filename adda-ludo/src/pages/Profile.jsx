@@ -119,23 +119,52 @@ export default function Profile({ onLogout }) {
     fetchProfile();
   }, []);
 
-  const saveProfile = () => {
-    const user = JSON.parse(localStorage.getItem("user")) || {};
 
-    const updatedUser = {
-      ...user,
-      name: tempName || "Player",
-    };
+  const saveProfile = async () => {
+  try {
+    const token = localStorage.getItem("token");
+    const cleanName = String(tempName || "").trim();
 
-    localStorage.setItem("user", JSON.stringify(updatedUser));
+    if (!cleanName) return alert("Name required");
+    if (cleanName.length < 3 || cleanName.length > 20) {
+      return alert("Name 3 se 20 character ke beech hona chahiye");
+    }
+
+    const res = await axios.patch(
+      `${API_URL}/user/profile/name`,
+      { name: cleanName },
+      {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      }
+    );
+
+    const savedUser = res.data?.user || {};
+    const oldUser = JSON.parse(localStorage.getItem("user") || "{}");
+
+    localStorage.setItem(
+      "user",
+      JSON.stringify({
+        ...oldUser,
+        ...savedUser,
+        name: savedUser.name || cleanName,
+      })
+    );
 
     setProfile((prev) => ({
       ...prev,
-      userName: tempName || "Player",
+      userName: savedUser.name || cleanName,
     }));
 
+    setTempName(savedUser.name || cleanName);
     setIsEditing(false);
-  };
+    alert("Name update ho gaya");
+  } catch (err) {
+    alert(err.response?.data?.msg || "Name update failed");
+  }
+};
+
 
   const handleLogout = () => {
     if (onLogout) return onLogout();

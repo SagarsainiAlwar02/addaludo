@@ -422,3 +422,50 @@ exports.submitKyc = async (req, res) => {
     });
   }
 };
+
+
+exports.updateName = async (req, res) => {
+  try {
+    const userId = req.user?.id || req.user;
+    let { name } = req.body;
+
+    name = String(name || "").trim();
+
+    if (!name) {
+      return res.status(400).json({ success: false, msg: "Name required" });
+    }
+
+    if (name.length < 3 || name.length > 20) {
+      return res.status(400).json({
+        success: false,
+        msg: "Name 3 se 20 character ke beech hona chahiye",
+      });
+    }
+
+    const user = await User.findByIdAndUpdate(
+      userId,
+      { name },
+      { new: true }
+    ).select("-password -__v");
+
+    if (!user) {
+      return res.status(404).json({ success: false, msg: "User not found" });
+    }
+
+    return res.json({
+      success: true,
+      msg: "Name updated successfully",
+      user: {
+        id: user._id,
+        _id: user._id,
+        name: user.name,
+        phone: user.phone,
+        referralCode: user.referralCode,
+        kycStatus: user.kycStatus || "not_submitted",
+      },
+    });
+  } catch (err) {
+    console.log("❌ UPDATE NAME ERROR:", err);
+    return res.status(500).json({ success: false, msg: err.message });
+  }
+};

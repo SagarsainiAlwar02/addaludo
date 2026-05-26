@@ -8,6 +8,7 @@ const auth = require("../middleware/auth");
 router.post("/register", userController.register);
 router.post("/login", userController.login);
 router.get("/profile", auth, userController.profile);
+router.patch("/profile/name", auth, userController.updateName);
 router.post("/kyc", auth, userController.submitKyc);
 
 router.get("/test", (req, res) => {
