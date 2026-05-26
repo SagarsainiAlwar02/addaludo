@@ -158,15 +158,7 @@ const Battle = () => {
       opponent: { name: "Player 741" },
     },
 
-{
-  battleId: "fake_run_11",
-  amount: 650,
-  prize: calculatePrize(10),
-  status: "running",
-  isFake: true,
-  createdBy: { name: "Player 111" },
-  opponent: { name: "Player 222" },
-},
+,
 {
   battleId: "fake_run_12",
   amount: 50,
