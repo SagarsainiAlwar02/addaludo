@@ -148,17 +148,10 @@ const Battle = () => {
       createdBy: { name: "Player 735" },
       opponent: { name: "Player 908" },
     },
-    {
-      battleId: "fake_run_10",
-      amount: 5000,
-      prize: calculatePrize(5000),
-      status: "running",
-      isFake: true,
-      createdBy: { name: "Player 163" },
-      opponent: { name: "Player 741" },
-    },
 
-,
+    
+
+
 {
   battleId: "fake_run_12",
   amount: 50,
@@ -344,7 +337,7 @@ const Battle = () => {
           new Date(a.updatedAt || a.createdAt || 0)
       );
 
-    return [...realRunningBattles, ...FAKE_RUNNING_BATTLES];
+   return [...realRunningBattles, ...FAKE_RUNNING_BATTLES].filter(Boolean);
   }, [allBattles]);
 
   const pendingBattles = useMemo(() => {
@@ -617,17 +610,16 @@ const Battle = () => {
          
           {runningBattles.length === 0 && <EmptyBox text="No Running Battles" />}
 
-         {runningBattles.map((battle) => (
+
+
+  {pendingBattles.filter(Boolean).map((battle) => (
   <MatchCard
     key={battle.battleId}
     battle={battle}
-    type="running"
+    type="pending"
     calculatePrize={calculatePrize}
     myId={myId}
-    onClick={() => {
-      if (battle.isFake) return;
-      navigate(`/room-code/${battle.battleId}`);
-    }}
+    onClick={() => navigate(`/room-code/${battle.battleId}`)}
   />
 ))}
         </div>
