@@ -160,7 +160,7 @@ const Battle = () => {
 
 {
   battleId: "fake_run_11",
-  amount: 10,
+  amount: 650,
   prize: calculatePrize(10),
   status: "running",
   isFake: true,
