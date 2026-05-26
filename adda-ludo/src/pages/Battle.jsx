@@ -573,21 +573,23 @@ function EmptyBox({ text }) {
   );
 }
 
+//
 function OpenCard({ battle, action, calculatePrize }) {
   return (
-    <div className="overflow-hidden rounded-[28px] bg-white shadow-xl shadow-cyan-100/70 ring-1 ring-cyan-100">
-      <div className="bg-gradient-to-r from-cyan-50 to-blue-50 px-4 py-3">
-        <p className="text-xs font-black uppercase tracking-widest text-cyan-700">
-          Challenge From
-        </p>
-        <h3 className="text-lg font-black text-slate-900">
-          {battle.createdBy?.name || "Player"}
-        </h3>
+    <div className="overflow-hidden rounded-xl bg-white shadow-md ring-1 ring-slate-200">
+      <div className="flex items-center justify-between gap-2 px-3 py-2">
+        <div className="min-w-0">
+          <p className="text-[11px] font-semibold text-slate-500">Challenge From</p>
+          <h3 className="truncate text-sm font-bold text-slate-900">
+            {battle.createdBy?.name || "Player"}
+          </h3>
+        </div>
+
+        <div className="shrink-0">{action}</div>
       </div>
 
-      <div className="grid grid-cols-3 items-center gap-2 p-4">
+      <div className="grid grid-cols-2 gap-2 border-t border-slate-100 px-3 py-2">
         <MoneyBlock label="Entry Fee" value={battle.amount} />
-        <div className="flex justify-center">{action}</div>
         <MoneyBlock label="Winning" value={battle.prize || calculatePrize(battle.amount)} right />
       </div>
     </div>
@@ -596,53 +598,62 @@ function OpenCard({ battle, action, calculatePrize }) {
 
 function MatchCard({ battle, type, calculatePrize, onClick }) {
   const isPending = type === "pending";
-  const bg = isPending
-    ? "from-[#fff7d6] via-[#fff0b8] to-[#ffd166]"
-    : "from-[#33206d] via-[#4f46e5] to-[#7c3aed]";
-
-  const textColor = isPending ? "text-slate-950" : "text-white";
-  const muted = isPending ? "text-slate-600" : "text-white/75";
 
   return (
     <div
       onClick={onClick}
-      className={`cursor-pointer overflow-hidden rounded-[28px] bg-gradient-to-br ${bg} p-4 shadow-xl active:scale-[0.99]`}
+      className={`cursor-pointer overflow-hidden rounded-xl bg-white p-3 shadow-md ring-1 active:scale-[0.99] ${
+        isPending ? "ring-orange-200" : "ring-indigo-200"
+      }`}
     >
-      <div className="mb-4 flex items-center justify-between gap-3">
-        <div>
-          <p className={`text-[10px] font-black uppercase tracking-widest ${muted}`}>
-            {isPending ? "Result Waiting" : "Game Play"}
+      <div className="mb-2 flex items-center justify-between gap-2">
+        <div className="min-w-0">
+          <p className="text-[11px] font-semibold text-slate-500">
+            {isPending ? "Result Waiting" : "Running Battle"}
           </p>
-          <h3 className={`text-base font-black leading-5 ${textColor}`}>
+
+          <h3 className="truncate text-sm font-bold text-slate-900">
             {battle.createdBy?.name || "Player"} VS {battle.opponent?.name || "Opponent"}
           </h3>
         </div>
 
-        <div className={`rounded-2xl px-3 py-2 text-xs font-black ${isPending ? "bg-black/10 text-slate-900" : "bg-white/15 text-white"}`}>
-          {isPending ? "PENDING" : "LIVE"}
+        <div
+          className={`shrink-0 rounded-md px-2 py-1 text-[11px] font-bold ${
+            isPending
+              ? "bg-orange-100 text-orange-700"
+              : "bg-green-100 text-green-700"
+          }`}
+        >
+          {isPending ? "Pending" : "Live"}
         </div>
       </div>
 
-      <div className="grid grid-cols-3 items-center gap-2">
-        <MoneyBlock label="Entry Fee" value={battle.amount} dark={!isPending} />
+      <div className="grid grid-cols-3 items-center gap-2 border-t border-slate-100 pt-2">
+        <MoneyBlock label="Entry Fee" value={battle.amount} />
+
         <div className="flex justify-center">
-          <div className={`flex h-14 w-14 items-center justify-center rounded-full text-sm font-black shadow-lg ${isPending ? "bg-white text-orange-600" : "bg-white text-indigo-700"}`}>
+          <div className="flex h-8 w-10 items-center justify-center rounded-md bg-slate-100 text-xs font-bold text-slate-700">
             VS
           </div>
         </div>
-        <MoneyBlock label="Winning" value={battle.prize || calculatePrize(battle.amount)} right dark={!isPending} />
+
+        <MoneyBlock
+          label="Winning"
+          value={battle.prize || calculatePrize(battle.amount)}
+          right
+        />
       </div>
     </div>
   );
 }
 
-function MoneyBlock({ label, value, right = false, dark = false }) {
+function MoneyBlock({ label, value, right = false }) {
   return (
     <div className={right ? "text-right" : "text-left"}>
-      <p className={`text-[11px] font-black uppercase ${dark ? "text-white/70" : "text-slate-500"}`}>
+      <p className="text-[11px] font-medium text-slate-500">
         {label}
       </p>
-      <p className={`mt-1 text-2xl font-black ${dark ? "text-white" : "text-slate-950"}`}>
+      <p className="mt-0.5 text-sm font-semibold text-slate-950">
         ₹{value}
       </p>
     </div>
