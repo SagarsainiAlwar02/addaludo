@@ -2,6 +2,17 @@ import React, { useState, useEffect } from "react";
 import "./Users.css";
 import API from "../../api";
 
+const getTotalBalance = (user) => {
+  const deposit = Number(user?.wallet?.balance || 0);
+  const winnings = Number(user?.wallet?.winnings || 0);
+  const totalBalance = Number(user?.wallet?.totalBalance || 0);
+
+  return totalBalance || deposit + winnings || Number(user?.balance || 0);
+};
+
+
+
+
 const Users = () => {
   const [filter, setFilter] = useState("all");
   const [search, setSearch] = useState("");
@@ -132,7 +143,7 @@ const Users = () => {
                     <td>{user.name || "Player"}</td>
                     <td>{phone}</td>
                     <td>{user.referralCode || "-"}</td>
-                    <td>₹{user.wallet?.totalBalance || user.balance || 0}</td>
+                   <td>₹{getTotalBalance(user)}</td>
                     <td>
                       <span className={`status-badge ${status}`}>{status}</span>
                     </td>
@@ -194,7 +205,7 @@ const Users = () => {
             </p>
             <p>
               <b>Balance:</b> ₹
-               {selectedUser.wallet?.totalBalance || selectedUser.balance || 0}
+              {getTotalBalance(selectedUser)}
             </p>
             <p>
               <b>Status:</b> {selectedUser.status || "active"}

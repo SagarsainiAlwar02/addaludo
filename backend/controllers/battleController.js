@@ -99,6 +99,8 @@ async function getWallet(userId) {
   return wallet;
 }
 
+//
+
 async function lockAmount(userId, amount, roomId) {
   const wallet = await getWallet(userId);
   amount = Number(amount || 0);
@@ -126,6 +128,7 @@ async function lockAmount(userId, amount, roomId) {
     type: "game_entry",
     status: "success",
     roomId,
+    uniqueTransactionKey: `${roomId}_game_entry_${userId}`,
     note: `Battle entry amount locked. Used wallet ₹${useBalance}, winnings ₹${useWinnings}`,
     balanceAfter: getPlayableBalance(wallet),
   });
@@ -133,12 +136,14 @@ async function lockAmount(userId, amount, roomId) {
   return wallet;
 }
 
+
+
 async function refundAmount(userId, amount, roomId, note = "Battle amount refunded") {
   const wallet = await getWallet(userId);
   amount = Number(amount || 0);
 
   wallet.locked = Math.max(0, Number(wallet.locked || 0) - amount);
-  wallet.balance = Number(wallet.balance || 0) + amount;
+ wallet.winnings = Number(wallet.winnings || 0) + amount;
   await wallet.save();
 
   await Transaction.create({
@@ -194,51 +199,100 @@ async function giveReferralCommission(winnerId, betAmount, roomId) {
   });
 }
 
+//
+
 async function settleWinner(battle, winnerId) {
-  if (battle.resultSettled) return;
+  const lockedBattle = await Battle.findOneAndUpdate(
+    {
+      _id: battle._id,
+      resultSettled: { $ne: true },
+      status: { $nin: ["approved", "cancelled", "rejected"] },
+    },
+    {
+      $set: {
+        resultSettled: true,
+        winner: winnerId,
+        status: "approved",
+      },
+    },
+    { new: true }
+  );
 
-  const finalPrize = calculateBattlePrize(battle.amount);
+  if (!lockedBattle) {
+    return null;
+  }
 
-  const creatorId = battle.createdBy.toString();
+  const alreadyPaid = await Transaction.findOne({
+    roomId: lockedBattle.battleId,
+    type: "game_win",
+    status: "success",
+  });
+
+  if (alreadyPaid) {
+    return lockedBattle;
+  }
+
+  const finalPrize = calculateBattlePrize(lockedBattle.amount);
+
+  const creatorId = lockedBattle.createdBy.toString();
   const winnerString = winnerId.toString();
-  const loserId = winnerString === creatorId ? battle.opponent : battle.createdBy;
+  const loserId =
+    winnerString === creatorId ? lockedBattle.opponent : lockedBattle.createdBy;
 
   const winnerWallet = await getWallet(winnerId);
   const loserWallet = await getWallet(loserId);
 
   winnerWallet.locked = Math.max(
     0,
-    Number(winnerWallet.locked || 0) - Number(battle.amount || 0)
+    Number(winnerWallet.locked || 0) - Number(lockedBattle.amount || 0)
   );
 
-  winnerWallet.winnings =
-    Number(winnerWallet.winnings || 0) + Number(finalPrize || 0);
 
-  await winnerWallet.save();
-
-  loserWallet.locked = Math.max(
-    0,
-    Number(loserWallet.locked || 0) - Number(battle.amount || 0)
-  );
-
-  await loserWallet.save();
-
+  //
+try {
   await Transaction.create({
     userId: winnerId,
     amount: finalPrize,
     type: "game_win",
     status: "success",
-    roomId: battle.battleId,
+    roomId: lockedBattle.battleId,
+    uniqueTransactionKey: `${lockedBattle.battleId}_game_win`,
     note: "Battle winning prize",
-    balanceAfter: getPlayableBalance(winnerWallet),
+    balanceAfter: 0,
   });
+} catch (txErr) {
+  if (txErr.code === 11000) {
+    return lockedBattle;
+  }
 
-  await giveReferralCommission(winnerId, battle.amount, battle.battleId);
-
-  battle.prize = finalPrize;
-  battle.winner = winnerId;
-  battle.resultSettled = true;
+  throw txErr;
 }
+
+winnerWallet.winnings =
+  Number(winnerWallet.winnings || 0) + Number(finalPrize || 0);
+
+await winnerWallet.save();
+
+loserWallet.locked = Math.max(
+  0,
+  Number(loserWallet.locked || 0) - Number(lockedBattle.amount || 0)
+);
+
+await loserWallet.save();
+//
+
+  lockedBattle.prize = finalPrize;
+  lockedBattle.adminNote =
+    "Auto approved because one user submitted win and other submitted loss";
+  await lockedBattle.save();
+
+  return lockedBattle;
+}
+
+
+//
+
+
 
 async function expireOldOpenBattles() {
   const expiryDate = new Date(Date.now() - OPEN_BATTLE_EXPIRE_MS);
@@ -477,6 +531,8 @@ exports.joinBattle = async (req, res) => {
   }
 };
 
+//
+
 exports.startBattle = async (req, res) => {
   try {
     const userId = getUserId(req);
@@ -502,46 +558,77 @@ exports.startBattle = async (req, res) => {
       });
     }
 
-    battle.prize = calculateBattlePrize(battle.amount);
+    const amount = Number(battle.amount || 0);
+    const prize = calculateBattlePrize(amount);
 
-    if (!battle.entryLocked) {
-      const creatorWallet = await getWallet(battle.createdBy);
-      const opponentWallet = await getWallet(battle.opponent);
+    const lockedBattle = await Battle.findOneAndUpdate(
+      {
+        _id: battle._id,
+        status: "join_requested",
+        entryLocked: { $ne: true },
+      },
+      {
+        $set: {
+          entryLocked: true,
+          status: "running",
+          timerStartedAt: new Date(),
+          prize,
+        },
+      },
+      { new: true }
+    );
 
-      if (getPlayableBalance(creatorWallet) < Number(battle.amount || 0)) {
-        return res.status(400).json({
-          success: false,
-          msg: "Creator wallet me insufficient balance hai",
-        });
-      }
+    if (!lockedBattle) {
+      const latestBattle = await Battle.findById(battle._id);
 
-      if (getPlayableBalance(opponentWallet) < Number(battle.amount || 0)) {
-        return res.status(400).json({
-          success: false,
-          msg: "Opponent wallet me insufficient balance hai",
-        });
-      }
-
-      await lockAmount(battle.createdBy, battle.amount, battle.battleId);
-      await lockAmount(battle.opponent, battle.amount, battle.battleId);
-
-      battle.entryLocked = true;
+      return res.json({
+        success: true,
+        msg: "Battle already started. Amount dobara deduct nahi hua.",
+        battle: latestBattle,
+      });
     }
 
-    battle.status = "running";
-    battle.timerStartedAt = new Date();
-    await battle.save();
+    const creatorWallet = await getWallet(lockedBattle.createdBy);
+    const opponentWallet = await getWallet(lockedBattle.opponent);
+
+    if (getPlayableBalance(creatorWallet) < amount) {
+      lockedBattle.entryLocked = false;
+      lockedBattle.status = "join_requested";
+      await lockedBattle.save();
+
+      return res.status(400).json({
+        success: false,
+        msg: "Creator wallet me insufficient balance hai",
+      });
+    }
+
+    if (getPlayableBalance(opponentWallet) < amount) {
+      lockedBattle.entryLocked = false;
+      lockedBattle.status = "join_requested";
+      await lockedBattle.save();
+
+      return res.status(400).json({
+        success: false,
+        msg: "Opponent wallet me insufficient balance hai",
+      });
+    }
+
+    await lockAmount(lockedBattle.createdBy, amount, lockedBattle.battleId);
+    await lockAmount(lockedBattle.opponent, amount, lockedBattle.battleId);
 
     return res.json({
       success: true,
       msg: "Battle started",
-      battle,
+      battle: lockedBattle,
     });
   } catch (err) {
     console.log("START BATTLE ERROR:", err);
     return res.status(500).json({ success: false, msg: err.message });
   }
 };
+
+
+
 
 exports.rejectBattleRequest = async (req, res) => {
   try {
@@ -768,20 +855,24 @@ exports.submitResult = async (req, res) => {
       (r1 === "loss" && r2 === "win")
     ) {
       const winnerId = r1 === "win" ? battle.createdBy : battle.opponent;
+       //
+       
+     const settledBattle = await settleWinner(battle, winnerId);
 
-      await settleWinner(battle, winnerId);
+if (!settledBattle) {
+  return res.json({
+    success: true,
+    msg: "Result already settled. Payment dobara add nahi hua.",
+    battle,
+  });
+}
 
-      battle.status = "approved";
-      battle.adminNote =
-        "Auto approved because one user submitted win and other submitted loss";
-      await battle.save();
-
-      return res.json({
-        success: true,
-        msg: "Result auto approved.",
-        battle,
-      });
-    }
+return res.json({
+  success: true,
+  msg: "Result auto approved.",
+  battle: settledBattle,
+});
+}
 
     battle.status = "result_submitted";
     battle.adminNote = "Admin approval required because result conflict found";

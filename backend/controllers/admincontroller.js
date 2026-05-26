@@ -127,12 +127,17 @@ exports.rejectTransaction = async (req, res) => {
 
     const wallet = await Wallet.findOne({ userId: tx.userId });
 
-    // ❌ If withdraw rejected → refund
-    if (tx.type === "withdraw" && wallet) {
-      wallet.balance += tx.amount;
-      wallet.locked -= tx.amount;
-      await wallet.save();
-    }
+   if (tx.type === "withdraw" && wallet) {
+  wallet.winnings =
+    Number(wallet.winnings || 0) + Number(tx.amount || 0);
+
+  wallet.locked = Math.max(
+    0,
+    Number(wallet.locked || 0) - Number(tx.amount || 0)
+  );
+
+  await wallet.save();
+}
 
     tx.status = "failed";
     await tx.save();

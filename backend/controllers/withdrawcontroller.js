@@ -6,23 +6,40 @@ exports.requestWithdraw = async (req, res) => {
   try {
     const { amount, method, details } = req.body;
 
+    const withdrawAmount = Number(amount);
+
+    if (!withdrawAmount || withdrawAmount <= 0) {
+      return res.status(400).json({
+        success: false,
+        msg: "Invalid withdraw amount",
+      });
+    }
+
     const wallet = await Wallet.findOne({ userId: req.user });
 
     if (!wallet) {
-      return res.status(404).json({ msg: "Wallet not found" });
+      return res.status(404).json({
+        success: false,
+        msg: "Wallet not found",
+      });
     }
 
-    if (wallet.balance < amount) {
-      return res.status(400).json({ msg: "Insufficient balance" });
+    if (Number(wallet.balance || 0) < withdrawAmount) {
+      return res.status(400).json({
+        success: false,
+        msg: "Insufficient balance",
+      });
     }
 
-    // deduct balance
-    wallet.balance -= Number(amount);
+    // balance se amount hatao aur locked me hold karo
+    wallet.balance = Number(wallet.balance || 0) - withdrawAmount;
+    wallet.locked = Number(wallet.locked || 0) + withdrawAmount;
+
     await wallet.save();
 
     const withdraw = await Withdraw.create({
       userId: req.user,
-      amount: Number(amount),
+      amount: withdrawAmount,
       method: method || "upi",
       details: details || {},
       status: "pending",
@@ -35,7 +52,10 @@ exports.requestWithdraw = async (req, res) => {
     });
   } catch (err) {
     console.log("Withdraw request error:", err);
-    res.status(500).json({ msg: err.message });
+    res.status(500).json({
+      success: false,
+      msg: err.message,
+    });
   }
 };
 
@@ -48,6 +68,9 @@ exports.getWithdraws = async (req, res) => {
 
     res.json(data);
   } catch (err) {
-    res.status(500).json({ msg: err.message });
+    res.status(500).json({
+      success: false,
+      msg: err.message,
+    });
   }
 };

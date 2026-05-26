@@ -84,7 +84,7 @@ const getPaymentSetting = async () => {
 };
 
 // ================= USERS =================
-router.get("/users", auth, async (req, res) => {
+ router.get("/users", auth, async (req, res) => {
   try {
     const users = await User.find()
       .select("-password")
@@ -102,15 +102,28 @@ router.get("/users", auth, async (req, res) => {
     const usersWithWallet = users.map((user) => {
       const wallet = walletMap[String(user._id)] || {};
 
+      const depositBalance = Number(wallet.balance || 0);
+      const winningsBalance = Number(wallet.winnings || 0);
+      const bonusBalance = Number(wallet.bonus || 0);
+      const referralBalance = Number(wallet.referralBalance || 0);
+      const lockedBalance = Number(wallet.locked || 0);
+
+      const totalBalance = depositBalance + winningsBalance;
+
       return {
         ...user,
-        balance: wallet.balance || 0,
+
+        // Admin Users table me ye total amount dikhayega
+        balance: totalBalance,
+
         wallet: {
-          balance: wallet.balance || 0,
-          bonus: wallet.bonus || 0,
-          winnings: wallet.winnings || 0,
-          referralBalance: wallet.referralBalance || 0,
-          locked: wallet.locked || 0,
+          balance: depositBalance,
+          deposit: depositBalance,
+          winnings: winningsBalance,
+          bonus: bonusBalance,
+          referralBalance,
+          locked: lockedBalance,
+          totalBalance,
         },
       };
     });
@@ -1043,6 +1056,7 @@ await wallet.save();
 
 
 // ================= ADMIN BATTLES / MATCHES =================
+// ================= ADMIN BATTLES / MATCHES =================
 router.get("/battles", auth, async (req, res) => {
   try {
     const battles = await Battle.find()
@@ -1095,10 +1109,6 @@ router.patch("/battles/approve/:id", auth, async (req, res) => {
 
     if (!battle) return res.status(404).json({ msg: "Battle not found" });
 
-    if (["approved", "completed", "cancelled", "rejected"].includes(battle.status)) {
-      return res.status(400).json({ msg: "Battle already processed hai" });
-    }
-
     const creatorId = String(battle.createdBy);
     const opponentId = battle.opponent ? String(battle.opponent) : null;
 
@@ -1109,6 +1119,30 @@ router.patch("/battles/approve/:id", auth, async (req, res) => {
     const amount = Number(battle.amount || 0);
     const prize = Number(battle.prize || amount * 2 || 0);
 
+    const alreadyPaid = await Transaction.findOne({
+      type: "game_win",
+      status: "success",
+      $or: [{ roomId: battle.battleId }, { roomId: String(battle._id) }],
+    });
+
+    if (battle.resultSettled || alreadyPaid) {
+      battle.status = "approved";
+      battle.winner = winnerId;
+      battle.resultSettled = true;
+      battle.adminNote =
+        adminNote || "Already settled. Duplicate payment stopped.";
+      battle.actionBy = adminId;
+      battle.actionAt = new Date();
+
+      await battle.save();
+
+      return res.json({
+        success: true,
+        msg: "Battle already paid thi. Duplicate payment stop kar diya.",
+        battle,
+      });
+    }
+
     const playerIds = [battle.createdBy, battle.opponent].filter(Boolean);
 
     for (const playerId of playerIds) {
@@ -1118,7 +1152,6 @@ router.patch("/battles/approve/:id", auth, async (req, res) => {
       wallet.locked = Math.max(0, Number(wallet.locked || 0) - amount);
 
       if (String(playerId) === String(winnerId)) {
-        wallet.balance = Number(wallet.balance || 0) + prize;
         wallet.winnings = Number(wallet.winnings || 0) + prize;
 
         await Transaction.create({
@@ -1127,8 +1160,9 @@ router.patch("/battles/approve/:id", auth, async (req, res) => {
           type: "game_win",
           status: "success",
           note: adminNote || "Admin declared match winner",
-          roomId: battle._id,
-          balanceAfter: wallet.balance,
+          roomId: battle.battleId,
+          balanceAfter:
+            Number(wallet.balance || 0) + Number(wallet.winnings || 0),
           approvedBy: adminId,
           approvedAt: new Date(),
         });
@@ -1139,6 +1173,7 @@ router.patch("/battles/approve/:id", auth, async (req, res) => {
 
     battle.status = "approved";
     battle.winner = winnerId;
+    battle.resultSettled = true;
     battle.adminNote = adminNote || "Winner declared by admin";
     battle.actionBy = adminId;
     battle.actionAt = new Date();
@@ -1165,11 +1200,31 @@ router.patch("/battles/reject/:id", auth, async (req, res) => {
 
     if (!battle) return res.status(404).json({ msg: "Battle not found" });
 
-    if (["approved", "completed", "cancelled", "rejected"].includes(battle.status)) {
-      return res.status(400).json({ msg: "Battle already processed hai" });
+    const amount = Number(battle.amount || 0);
+
+    const alreadyRefunded = await Transaction.findOne({
+      type: "refund",
+      status: "success",
+      $or: [{ roomId: battle.battleId }, { roomId: String(battle._id) }],
+    });
+
+    if (battle.resultSettled || alreadyRefunded) {
+      battle.status = "cancelled";
+      battle.resultSettled = true;
+      battle.adminNote =
+        adminNote || "Already settled. Duplicate refund stopped.";
+      battle.actionBy = adminId;
+      battle.actionAt = new Date();
+
+      await battle.save();
+
+      return res.json({
+        success: true,
+        msg: "Battle already refunded/settled thi. Duplicate refund stop kar diya.",
+        battle,
+      });
     }
 
-    const amount = Number(battle.amount || 0);
     const playerIds = [battle.createdBy, battle.opponent].filter(Boolean);
 
     for (const playerId of playerIds) {
@@ -1177,7 +1232,7 @@ router.patch("/battles/reject/:id", auth, async (req, res) => {
       if (!wallet) continue;
 
       wallet.locked = Math.max(0, Number(wallet.locked || 0) - amount);
-   wallet.winnings = Number(wallet.winnings || 0) + amount;
+      wallet.winnings = Number(wallet.winnings || 0) + amount;
 
       await wallet.save();
 
@@ -1187,14 +1242,16 @@ router.patch("/battles/reject/:id", auth, async (req, res) => {
         type: "refund",
         status: "success",
         note: adminNote || "Match cancelled by admin refund",
-        roomId: battle._id,
-      balanceAfter: wallet.winnings,
+        roomId: battle.battleId,
+        balanceAfter:
+          Number(wallet.balance || 0) + Number(wallet.winnings || 0),
         approvedBy: adminId,
         approvedAt: new Date(),
       });
     }
 
     battle.status = "cancelled";
+    battle.resultSettled = true;
     battle.adminNote = adminNote || "Battle cancelled/refunded by admin";
     battle.actionBy = adminId;
     battle.actionAt = new Date();
@@ -1211,9 +1268,5 @@ router.patch("/battles/reject/:id", auth, async (req, res) => {
     res.status(500).json({ msg: err.message });
   }
 });
-
-
-
-
 
 module.exports = router;

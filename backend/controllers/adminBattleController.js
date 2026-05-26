@@ -133,23 +133,18 @@ exports.approveBattle = async (req, res) => {
 };
 
 //
-
 exports.rejectBattle = async (req, res) => {
   try {
     const battleId = req.params.battleId;
     const battle = await Battle.findById(battleId);
 
-    if (!battle) return res.status(404).json({ success: false, msg: "Battle not found" });
+    if (!battle) {
+      return res.status(404).json({ success: false, msg: "Battle not found" });
+    }
 
     const alreadyPaid = await Transaction.findOne({
       roomId: battle.battleId,
       type: "game_win",
-      status: "success",
-    });
-
-    const alreadyRefunded = await Transaction.findOne({
-      roomId: battle.battleId,
-      type: "refund",
       status: "success",
     });
 
@@ -160,12 +155,7 @@ exports.rejectBattle = async (req, res) => {
       });
     }
 
-    if (battle.resultSettled || ["cancelled", "rejected"].includes(battle.status) || alreadyRefunded) {
-      battle.status = "cancelled";
-      battle.resultSettled = true;
-      battle.adminNote = "Already cancelled/refunded. Duplicate refund stopped.";
-      await battle.save();
-
+    if (battle.resultSettled || ["cancelled", "rejected"].includes(battle.status)) {
       return res.json({
         success: true,
         msg: "Battle already cancelled/refunded. Refund dobara add nahi hua.",
@@ -175,44 +165,40 @@ exports.rejectBattle = async (req, res) => {
 
     const amount = Number(battle.amount || 0);
 
-    const creatorWallet = await Wallet.findOne({ userId: battle.createdBy });
-    const opponentWallet = battle.opponent
-      ? await Wallet.findOne({ userId: battle.opponent })
-      : null;
+    if (battle.entryLocked) {
+      const players = [battle.createdBy, battle.opponent].filter(Boolean);
 
-    if (creatorWallet) {
-      creatorWallet.winnings = Number(creatorWallet.winnings || 0) + amount;
-      creatorWallet.locked = Math.max(0, Number(creatorWallet.locked || 0) - amount);
-      await creatorWallet.save();
+      for (const userId of players) {
+        const refundKey = `${battle.battleId}_refund_${userId}`;
 
-      await Transaction.create({
-        userId: battle.createdBy,
-        amount,
-        type: "refund",
-        status: "success",
-        note: `Battle ${battle.battleId} cancelled refund`,
-        roomId: battle.battleId,
-        balanceAfter: getPlayableBalance(creatorWallet),
-      });
-    }
+        const alreadyRefundedUser = await Transaction.findOne({
+          uniqueTransactionKey: refundKey,
+        });
 
-    if (battle.opponent && opponentWallet) {
-      opponentWallet.winnings = Number(opponentWallet.winnings || 0) + amount;
-      opponentWallet.locked = Math.max(0, Number(opponentWallet.locked || 0) - amount);
-      await opponentWallet.save();
+        if (alreadyRefundedUser) continue;
 
-      await Transaction.create({
-        userId: battle.opponent,
-        amount,
-        type: "refund",
-        status: "success",
-        note: `Battle ${battle.battleId} cancelled refund`,
-        roomId: battle.battleId,
-        balanceAfter: getPlayableBalance(opponentWallet),
-      });
+        const wallet = await Wallet.findOne({ userId });
+        if (!wallet) continue;
+
+        wallet.locked = Math.max(0, Number(wallet.locked || 0) - amount);
+        wallet.winnings = Number(wallet.winnings || 0) + amount;
+        await wallet.save();
+
+        await Transaction.create({
+          userId,
+          amount,
+          type: "refund",
+          status: "success",
+          note: `Battle ${battle.battleId} cancelled refund`,
+          roomId: battle.battleId,
+          uniqueTransactionKey: refundKey,
+          balanceAfter: getPlayableBalance(wallet),
+        });
+      }
     }
 
     battle.status = "cancelled";
+    battle.winner = null;
     battle.resultSettled = true;
     battle.adminNote = req.body?.adminNote || "Cancelled by admin";
     await battle.save();
