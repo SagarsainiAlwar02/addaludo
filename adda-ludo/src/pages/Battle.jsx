@@ -462,7 +462,7 @@ const Battle = () => {
           </div>
         </div>
 
-//
+
      <div className="mb-5 rounded-xl bg-white p-3 shadow-md ring-1 ring-slate-200">
   <div className="mb-3 flex items-center justify-between">
     <div>
@@ -557,14 +557,17 @@ const Battle = () => {
   );
 };
 
+
 function SectionTitle({ title, badge, gradient }) {
   return (
     <div className="mb-3 mt-7 flex items-center justify-between">
       <h3 className="text-lg font-black text-slate-900">{title}</h3>
 
-      <div className={`rounded-2xl bg-gradient-to-r ${gradient} px-4 py-2 text-sm font-black text-white shadow-lg`}>
-        {badge}
-      </div>
+      {badge > 0 && (
+        <div className={`rounded-2xl bg-gradient-to-r ${gradient} px-4 py-2 text-sm font-black text-white shadow-lg`}>
+          {badge}
+        </div>
+      )}
     </div>
   );
 }
@@ -577,7 +580,7 @@ function EmptyBox({ text }) {
   );
 }
 
-//
+
 function OpenCard({ battle, action, calculatePrize }) {
   return (
     <div className="overflow-hidden rounded-xl bg-white shadow-md ring-1 ring-slate-200">
