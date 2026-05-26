@@ -617,24 +617,36 @@ function MatchCard({ battle, type, calculatePrize, onClick }) {
           </h3>
         </div>
 
-        <div
-          className={`shrink-0 rounded-md px-2 py-1 text-[11px] font-bold ${
-            isPending
-              ? "bg-orange-100 text-orange-700"
-              : "bg-green-100 text-green-700"
-          }`}
-        >
-          {isPending ? "Pending" : "Live"}
-        </div>
+
+        <div className="flex items-center gap-2">
+  <div
+    className={`rounded-md px-2 py-1 text-[11px] font-bold ${
+      isPending
+        ? "bg-orange-100 text-orange-700"
+        : "bg-green-100 text-green-700"
+    }`}
+  >
+    {isPending ? "Pending" : "Live"}
+  </div>
+
+  {!isPending && (
+    <button
+      className="rounded-md bg-indigo-600 px-3 py-1 text-[11px] font-bold text-white shadow-sm"
+    >
+      View
+    </button>
+  )}
+</div>
+        
       </div>
 
       <div className="grid grid-cols-3 items-center gap-2 border-t border-slate-100 pt-2">
         <MoneyBlock label="Entry Fee" value={battle.amount} />
 
         <div className="flex justify-center">
-          <div className="flex h-8 w-10 items-center justify-center rounded-md bg-slate-100 text-xs font-bold text-slate-700">
-            VS
-          </div>
+         <div className="flex h-9 w-12 items-center justify-center rounded-lg bg-gradient-to-r from-pink-500 via-violet-500 to-indigo-500 text-xs font-bold text-white shadow-md">
+  VS
+</div>
         </div>
 
         <MoneyBlock
