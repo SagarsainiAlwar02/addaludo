@@ -520,19 +520,22 @@ const Battle = () => {
         <SectionTitle title="Running Battles" badge={runningBattles.length} gradient="from-violet-600 to-indigo-700" />
 
         <div className="space-y-4">
+         
           {runningBattles.length === 0 && <EmptyBox text="No Running Battles" />}
-          {runningBattles.map((battle) => (
-            <MatchCard
-              key={battle.battleId}
-              battle={battle}
-              type="running"
-              calculatePrize={calculatePrize}
-              onClick={() => {
-                if (battle.isFake) return;
-                navigate(`/room-code/${battle.battleId}`);
-              }}
-            />
-          ))}
+
+         {runningBattles.map((battle) => (
+  <MatchCard
+    key={battle.battleId}
+    battle={battle}
+    type="running"
+    calculatePrize={calculatePrize}
+    myId={myId}
+    onClick={() => {
+      if (battle.isFake) return;
+      navigate(`/room-code/${battle.battleId}`);
+    }}
+  />
+))}
         </div>
 
         <SectionTitle title="Pending Results" badge={pendingBattles.length} gradient="from-amber-500 to-orange-600" />
@@ -597,8 +600,26 @@ function OpenCard({ battle, action, calculatePrize }) {
   );
 }
 
-function MatchCard({ battle, type, calculatePrize, onClick }) {
+function MatchCard({ battle, type, calculatePrize, onClick, myId }) {
   const isPending = type === "pending";
+
+  const isMine =
+    String(
+      battle?.createdBy?._id ||
+      battle?.createdBy?.id ||
+      battle?.createdBy ||
+      ""
+    ) === myId;
+
+  const isOpponent =
+    String(
+      battle?.opponent?._id ||
+      battle?.opponent?.id ||
+      battle?.opponent ||
+      ""
+    ) === myId;
+
+  const bg = isPending
 
   return (
     <div
@@ -630,13 +651,13 @@ function MatchCard({ battle, type, calculatePrize, onClick }) {
     {isPending ? "Pending" : "Live"}
   </div>
 
-  {!isPending && (
-    <button
-      className="rounded-md bg-indigo-600 px-3 py-1 text-[11px] font-bold text-white shadow-sm"
-    >
-      View
-    </button>
-  )}
+{!isPending && (isMine || isOpponent) && (
+  <button
+    className="rounded-md bg-indigo-600 px-3 py-1 text-[11px] font-bold text-white shadow-sm"
+  >
+    View
+  </button>
+)}
 </div>
         
       </div>
