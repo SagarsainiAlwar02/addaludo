@@ -876,6 +876,12 @@ const Battle = () => {
     { battleId: "fake_run_8", amount: 6500, prize: calculatePrize(6500), status: "running", isFake: true, createdBy: { name: "Player 898" }, opponent: { name: "Player 909" } },
     { battleId: "fake_run_9", amount: 8000, prize: calculatePrize(8000), status: "running", isFake: true, createdBy: { name: "Player 147" }, opponent: { name: "Player 258" } },
     { battleId: "fake_run_10", amount: 10000, prize: calculatePrize(10000), status: "running", isFake: true, createdBy: { name: "Player 369" }, opponent: { name: "Player 741" } },
+        { battleId: "fake_run_11", amount: 2000, prize: calculatePrize(2000), status: "running", isFake: true, createdBy: { name: "Player 512" }, opponent: { name: "Player 624" } },
+    { battleId: "fake_run_12", amount: 2500, prize: calculatePrize(2500), status: "running", isFake: true, createdBy: { name: "Player 735" }, opponent: { name: "Player 846" } },
+    { battleId: "fake_run_13", amount: 3000, prize: calculatePrize(3000), status: "running", isFake: true, createdBy: { name: "Player 957" }, opponent: { name: "Player 168" } },
+    { battleId: "fake_run_14", amount: 3500, prize: calculatePrize(3500), status: "running", isFake: true, createdBy: { name: "Player 279" }, opponent: { name: "Player 381" } },
+    { battleId: "fake_run_15", amount: 4000, prize: calculatePrize(4000), status: "running", isFake: true, createdBy: { name: "Player 492" }, opponent: { name: "Player 504" } },
+    { battleId: "fake_run_16", amount: 4500, prize: calculatePrize(4500), status: "running", isFake: true, createdBy: { name: "Player 615" }, opponent: { name: "Player 726" } },
   ];
 
   const fetchBattles = async () => {
