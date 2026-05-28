@@ -2,14 +2,24 @@ const User = require("../models/user");
 const Transaction = require("../models/transaction");
 const Wallet = require("../models/wallet");
 
+
+
 // ================= GET USERS =================
 exports.getUsers = async (req, res) => {
   try {
-    const users = await User.find().select("-password").lean();
+    const limit = Number(req.query.limit || 100);
+
+    const users = await User.find()
+      .select("-password")
+      .sort({ createdAt: -1 })
+      .limit(limit)
+      .lean();
 
     const wallets = await Wallet.find({
       userId: { $in: users.map((u) => u._id) },
-    }).lean();
+    })
+      .select("userId balance winnings bonus locked")
+      .lean();
 
     const walletMap = {};
     wallets.forEach((w) => {
@@ -65,9 +75,13 @@ exports.blockUser = async (req, res) => {
 // ================= TRANSACTIONS =================
 exports.getTransactions = async (req, res) => {
   try {
+    const limit = Number(req.query.limit || 100);
+
     const tx = await Transaction.find()
-      .populate("userId", "name email")
-      .sort({ createdAt: -1 });
+      .populate("userId", "name email phone")
+      .sort({ createdAt: -1 })
+      .limit(limit)
+      .lean();
 
     res.json(tx);
   } catch (err) {
