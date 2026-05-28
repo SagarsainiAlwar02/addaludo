@@ -871,7 +871,7 @@ const Battle = () => {
     { battleId: "fake_run_3", amount: 250, prize: calculatePrize(250), status: "running", isFake: true, createdBy: { name: "Player 777" }, opponent: { name: "Player 888" } },
     { battleId: "fake_run_4", amount: 500, prize: calculatePrize(500), status: "running", isFake: true, createdBy: { name: "Player 999" }, opponent: { name: "Player 121" } },
     { battleId: "fake_run_5", amount: 650, prize: calculatePrize(650), status: "running", isFake: true, createdBy: { name: "Player 232" }, opponent: { name: "Player 343" } },
-    { battleId: "fake_run_6", amount: 890, prize: calculatePrize(890), status: "running", isFake: true, createdBy: { name: "Player 454" }, opponent: { name: "Player 565" } },
+   
     { battleId: "fake_run_7", amount: 3000, prize: calculatePrize(3000), status: "running", isFake: true, createdBy: { name: "Player 676" }, opponent: { name: "Player 787" } },
     { battleId: "fake_run_8", amount: 6500, prize: calculatePrize(6500), status: "running", isFake: true, createdBy: { name: "Player 898" }, opponent: { name: "Player 909" } },
     { battleId: "fake_run_9", amount: 8000, prize: calculatePrize(8000), status: "running", isFake: true, createdBy: { name: "Player 147" }, opponent: { name: "Player 258" } },
