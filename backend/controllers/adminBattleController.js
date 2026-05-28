@@ -6,24 +6,43 @@ function getPlayableBalance(wallet) {
   return Number(wallet.balance || 0) + Number(wallet.winnings || 0);
 }
 
+
 exports.getAllBattles = async (req, res) => {
   try {
+    const page = Number(req.query.page || 1);
+    const limit = Number(req.query.limit || 50);
+
     const battles = await Battle.find()
-      .populate("createdBy", "name phone email")
-      .populate("opponent", "name phone email")
-      .populate("winner", "name phone email")
-      .populate("roomCodeSetBy", "name phone email")
-      .populate("resultSubmittedBy", "name phone email")
-      .populate("results.user", "name phone email")
+      .select(
+        "battleId amount prize status createdAt updatedAt createdBy opponent winner roomCodeSetBy resultSubmittedBy results ludoKingRoomCode screenshot"
+      )
+      .populate("createdBy", "name phone")
+      .populate("opponent", "name phone")
+      .populate("winner", "name phone")
+      .populate("roomCodeSetBy", "name phone")
+      .populate("resultSubmittedBy", "name phone")
+      .populate("results.user", "name phone")
       .sort({ createdAt: -1 })
+      .skip((page - 1) * limit)
+      .limit(limit)
       .lean();
 
-    res.json(battles);
+    const total = await Battle.countDocuments();
+
+    res.json({
+      success: true,
+      page,
+      limit,
+      total,
+      totalPages: Math.ceil(total / limit),
+      battles,
+    });
   } catch (err) {
     console.log("❌ ADMIN GET BATTLES ERROR:", err);
     res.status(500).json({ success: false, msg: err.message });
   }
 };
+
 
 exports.getBattleById = async (req, res) => {
   try {
