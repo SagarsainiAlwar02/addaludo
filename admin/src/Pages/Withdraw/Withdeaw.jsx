@@ -13,7 +13,7 @@ const Withdrawal = () => {
     try {
       setLoading(true);
 
-      const res = await API.get("/admin/withdraws");
+     const res = await API.get("/admin/withdraws?limit=50");
 
       setWithdraws(Array.isArray(res.data) ? res.data : []);
     } catch (err) {

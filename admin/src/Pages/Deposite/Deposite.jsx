@@ -14,7 +14,7 @@ const Deposit = () => {
     try {
       setLoading(true);
 
-      const res = await API.get("/admin/deposits");
+     const res = await API.get("/admin/deposits?limit=50");
 
       const list = Array.isArray(res.data)
         ? res.data
@@ -152,11 +152,14 @@ const Deposit = () => {
                   <td>
                     {screenshotUrl ? (
                       <a href={screenshotUrl} target="_blank" rel="noreferrer">
-                        <img
-                          src={screenshotUrl}
-                          alt="proof"
-                          className="proof-img"
-                        />
+                       <img
+  src={screenshotUrl}
+  alt="proof"
+  className="proof-img"
+  loading="lazy"
+  width="60"
+  height="60"
+/>
                       </a>
                     ) : (
                       "-"
