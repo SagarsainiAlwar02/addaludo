@@ -7,12 +7,12 @@ const IMAGE_BASE = "https://api.addaludo.com";
 const Deposit = () => {
   const [tab, setTab] = useState("request");
   const [deposits, setDeposits] = useState([]);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(false);
   const [searchMobile, setSearchMobile] = useState("");
 
   const fetchDeposits = async () => {
     try {
-      setLoading(true);
+    
 
      const res = await API.get("/admin/deposits?limit=50");
 
@@ -73,7 +73,7 @@ const Deposit = () => {
     String(item.userId?.phone || "").includes(searchMobile)
   );
 
-  if (loading) return <p>Loading...</p>;
+  
 
   return (
     <div className="deposit-container">

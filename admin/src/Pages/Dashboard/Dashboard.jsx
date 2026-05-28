@@ -4,7 +4,7 @@ import "./Dashboard.css";
 
 const Dashboard = () => {
   const [stats, setStats] = useState([]);
-  const [loading, setLoading] = useState(true);
+const [loading, setLoading] = useState(false);
 
   const fetchStats = async () => {
     try {
@@ -37,26 +37,22 @@ const Dashboard = () => {
   }, []);
 
   return (
-    <div className="dashboard-container">
-      <h1 className="heading">Dashboard</h1>
+  <div className="dashboard-container">
+    <h1 className="heading">Dashboard</h1>
 
-      {loading ? (
-        <p>Loading...</p>
-      ) : (
-        <div className="card-grid">
-          {stats.map((item, index) => (
-            <div className="card" key={index}>
-              <h3>{item.title}</h3>
-              <p>
-                {item.isCount ? "" : "₹"}
-                {Number(item.value || 0).toLocaleString("en-IN")}
-              </p>
-            </div>
-          ))}
+    <div className="card-grid">
+      {stats.map((item, index) => (
+        <div className="card" key={index}>
+          <h3>{item.title}</h3>
+          <p>
+            {item.isCount ? "" : "₹"}
+            {Number(item.value || 0).toLocaleString("en-IN")}
+          </p>
         </div>
-      )}
+      ))}
     </div>
-  );
+  </div>
+);
 };
 
 export default Dashboard;

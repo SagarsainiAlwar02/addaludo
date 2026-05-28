@@ -6,12 +6,12 @@ const Withdrawal = () => {
   const [tab, setTab] = useState("request");
   const [selectedUser, setSelectedUser] = useState(null);
   const [withdraws, setWithdraws] = useState([]);
-  const [loading, setLoading] = useState(true);
+const [loading, setLoading] = useState(false);
   const [searchMobile, setSearchMobile] = useState("");
 
   const fetchWithdraws = async () => {
     try {
-      setLoading(true);
+      
 
      const res = await API.get("/admin/withdraws?limit=50");
 
@@ -84,7 +84,7 @@ const Withdrawal = () => {
     String(item.userId?.phone || "").includes(searchMobile)
   );
 
-  if (loading) return <p>Loading...</p>;
+
 
   return (
     <div className="withdraw-container">
