@@ -789,15 +789,7 @@
 
 
 
-
-
-
-
-
-
-
-
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useEffect, useMemo, useState, useCallback } from "react";
 import axios from "axios";
 import { useNavigate } from "react-router-dom";
 
@@ -807,17 +799,57 @@ const API_BASE =
 
 const MAX_SEARCHING_BATTLES = 2;
 
+const calculatePrizeAmount = (amount) => {
+  const amt = parseInt(amount, 10);
+  if (isNaN(amt)) return 0;
+
+  const totalPool = amt * 2;
+  let platformFee = 0;
+
+  if (amt >= 50 && amt <= 500) {
+    platformFee = amt * 0.05 * 2;
+  } else if (amt > 500 && amt <= 100000) {
+    platformFee = amt * 0.025 * 2;
+  }
+
+  return Math.floor(totalPool - platformFee);
+};
+
+const FAKE_RUNNING_BATTLES = [
+  { battleId: "fake_run_1", amount: 50, prize: calculatePrizeAmount(50), status: "running", isFake: true, createdBy: { name: "Player 333" }, opponent: { name: "Player 444" } },
+  { battleId: "fake_run_2", amount: 100, prize: calculatePrizeAmount(100), status: "running", isFake: true, createdBy: { name: "Player 555" }, opponent: { name: "Player 666" } },
+  { battleId: "fake_run_3", amount: 250, prize: calculatePrizeAmount(250), status: "running", isFake: true, createdBy: { name: "Player 777" }, opponent: { name: "Player 888" } },
+  { battleId: "fake_run_4", amount: 500, prize: calculatePrizeAmount(500), status: "running", isFake: true, createdBy: { name: "Player 999" }, opponent: { name: "Player 121" } },
+  { battleId: "fake_run_5", amount: 650, prize: calculatePrizeAmount(650), status: "running", isFake: true, createdBy: { name: "Player 232" }, opponent: { name: "Player 343" } },
+  { battleId: "fake_run_6", amount: 890, prize: calculatePrizeAmount(890), status: "running", isFake: true, createdBy: { name: "Player 454" }, opponent: { name: "Player 565" } },
+  { battleId: "fake_run_7", amount: 2000, prize: calculatePrizeAmount(2000), status: "running", isFake: true, createdBy: { name: "Player 512" }, opponent: { name: "Player 624" } },
+  { battleId: "fake_run_8", amount: 2500, prize: calculatePrizeAmount(2500), status: "running", isFake: true, createdBy: { name: "Player 735" }, opponent: { name: "Player 846" } },
+  { battleId: "fake_run_9", amount: 3000, prize: calculatePrizeAmount(3000), status: "running", isFake: true, createdBy: { name: "Player 676" }, opponent: { name: "Player 787" } },
+  { battleId: "fake_run_10", amount: 3500, prize: calculatePrizeAmount(3500), status: "running", isFake: true, createdBy: { name: "Player 279" }, opponent: { name: "Player 381" } },
+  { battleId: "fake_run_11", amount: 4000, prize: calculatePrizeAmount(4000), status: "running", isFake: true, createdBy: { name: "Player 492" }, opponent: { name: "Player 504" } },
+  { battleId: "fake_run_12", amount: 4500, prize: calculatePrizeAmount(4500), status: "running", isFake: true, createdBy: { name: "Player 615" }, opponent: { name: "Player 726" } },
+  { battleId: "fake_run_13", amount: 6500, prize: calculatePrizeAmount(6500), status: "running", isFake: true, createdBy: { name: "Player 898" }, opponent: { name: "Player 909" } },
+  { battleId: "fake_run_14", amount: 8000, prize: calculatePrizeAmount(8000), status: "running", isFake: true, createdBy: { name: "Player 147" }, opponent: { name: "Player 258" } },
+  { battleId: "fake_run_15", amount: 10000, prize: calculatePrizeAmount(10000), status: "running", isFake: true, createdBy: { name: "Player 369" }, opponent: { name: "Player 741" } },
+];
+
+const getCreatorId = (battle) =>
+  String(battle?.createdBy?._id || battle?.createdBy?.id || battle?.createdBy || "");
+
+const getOpponentId = (battle) =>
+  String(battle?.opponent?._id || battle?.opponent?.id || battle?.opponent || "");
+
 const Battle = () => {
   const navigate = useNavigate();
 
   const [betAmount, setBetAmount] = useState("");
   const [openBattles, setOpenBattles] = useState([]);
   const [myBattles, setMyBattles] = useState([]);
-  const [loading, setLoading] = useState(false);
+  const [actionLoading, setActionLoading] = useState(false);
 
   const token = localStorage.getItem("token");
 
-  const getUserId = () => {
+  const myId = useMemo(() => {
     try {
       const user = JSON.parse(localStorage.getItem("user") || "{}");
       if (user?._id || user?.id) return String(user._id || user.id);
@@ -830,61 +862,26 @@ const Battle = () => {
     } catch {
       return "";
     }
-  };
+  }, []);
 
-  const myId = getUserId();
+  const authHeader = useCallback(
+    () => ({
+      headers: { Authorization: `Bearer ${token}` },
+    }),
+    [token]
+  );
 
-  const authHeader = () => ({
-    headers: { Authorization: `Bearer ${token}` },
-  });
+  const calculatePrize = useCallback((amount) => calculatePrizeAmount(amount), []);
 
-  const getCreatorId = (battle) =>
-    String(battle?.createdBy?._id || battle?.createdBy?.id || battle?.createdBy || "");
+  const hasMyResult = useCallback(
+    (battle) =>
+      Array.isArray(battle?.results)
+        ? battle.results.some((item) => String(item?.user?._id || item?.user || "") === myId)
+        : false,
+    [myId]
+  );
 
-  const getOpponentId = (battle) =>
-    String(battle?.opponent?._id || battle?.opponent?.id || battle?.opponent || "");
-
-  const hasMyResult = (battle) =>
-    Array.isArray(battle?.results)
-      ? battle.results.some((item) => String(item?.user?._id || item?.user || "") === myId)
-      : false;
-
-  const calculatePrize = (amount) => {
-    const amt = parseInt(amount, 10);
-    if (isNaN(amt)) return 0;
-
-    const totalPool = amt * 2;
-    let platformFee = 0;
-
-    if (amt >= 50 && amt <= 500) {
-      platformFee = amt * 0.05 * 2;
-    } else if (amt > 500 && amt <= 100000) {
-      platformFee = amt * 0.025 * 2;
-    }
-
-    return Math.floor(totalPool - platformFee);
-  };
-
-  const FAKE_RUNNING_BATTLES = [
-    { battleId: "fake_run_1", amount: 50, prize: calculatePrize(50), status: "running", isFake: true, createdBy: { name: "Player 333" }, opponent: { name: "Player 444" } },
-    { battleId: "fake_run_2", amount: 100, prize: calculatePrize(100), status: "running", isFake: true, createdBy: { name: "Player 555" }, opponent: { name: "Player 666" } },
-    { battleId: "fake_run_3", amount: 250, prize: calculatePrize(250), status: "running", isFake: true, createdBy: { name: "Player 777" }, opponent: { name: "Player 888" } },
-    { battleId: "fake_run_4", amount: 500, prize: calculatePrize(500), status: "running", isFake: true, createdBy: { name: "Player 999" }, opponent: { name: "Player 121" } },
-    { battleId: "fake_run_5", amount: 650, prize: calculatePrize(650), status: "running", isFake: true, createdBy: { name: "Player 232" }, opponent: { name: "Player 343" } },
-   
-    { battleId: "fake_run_7", amount: 3000, prize: calculatePrize(3000), status: "running", isFake: true, createdBy: { name: "Player 676" }, opponent: { name: "Player 787" } },
-    { battleId: "fake_run_8", amount: 6500, prize: calculatePrize(6500), status: "running", isFake: true, createdBy: { name: "Player 898" }, opponent: { name: "Player 909" } },
-    { battleId: "fake_run_9", amount: 8000, prize: calculatePrize(8000), status: "running", isFake: true, createdBy: { name: "Player 147" }, opponent: { name: "Player 258" } },
-    { battleId: "fake_run_10", amount: 10000, prize: calculatePrize(10000), status: "running", isFake: true, createdBy: { name: "Player 369" }, opponent: { name: "Player 741" } },
-        { battleId: "fake_run_11", amount: 2000, prize: calculatePrize(2000), status: "running", isFake: true, createdBy: { name: "Player 512" }, opponent: { name: "Player 624" } },
-    { battleId: "fake_run_12", amount: 2500, prize: calculatePrize(2500), status: "running", isFake: true, createdBy: { name: "Player 735" }, opponent: { name: "Player 846" } },
-    { battleId: "fake_run_13", amount: 3000, prize: calculatePrize(3000), status: "running", isFake: true, createdBy: { name: "Player 957" }, opponent: { name: "Player 168" } },
-    { battleId: "fake_run_14", amount: 3500, prize: calculatePrize(3500), status: "running", isFake: true, createdBy: { name: "Player 279" }, opponent: { name: "Player 381" } },
-    { battleId: "fake_run_15", amount: 4000, prize: calculatePrize(4000), status: "running", isFake: true, createdBy: { name: "Player 492" }, opponent: { name: "Player 504" } },
-    { battleId: "fake_run_16", amount: 4500, prize: calculatePrize(4500), status: "running", isFake: true, createdBy: { name: "Player 615" }, opponent: { name: "Player 726" } },
-  ];
-
-  const fetchBattles = async () => {
+  const fetchBattles = useCallback(async () => {
     if (!token) return;
 
     try {
@@ -893,12 +890,12 @@ const Battle = () => {
         axios.get(`${API_BASE}/battle/my`, authHeader()),
       ]);
 
-      setOpenBattles(openRes.data?.battles || []);
-      setMyBattles(myRes.data?.battles || []);
+      setOpenBattles(Array.isArray(openRes.data?.battles) ? openRes.data.battles : []);
+      setMyBattles(Array.isArray(myRes.data?.battles) ? myRes.data.battles : []);
     } catch (err) {
       console.log("Fetch error:", err.response?.data || err.message);
     }
-  };
+  }, [token, authHeader]);
 
   useEffect(() => {
     if (!token) {
@@ -907,94 +904,135 @@ const Battle = () => {
     }
 
     fetchBattles();
-    const interval = setInterval(fetchBattles, 3000);
+
+    const interval = setInterval(() => {
+      fetchBattles();
+    }, 10000);
 
     return () => clearInterval(interval);
-  }, []);
+  }, [token, navigate, fetchBattles]);
 
   const allBattles = useMemo(() => {
     const map = new Map();
 
-    [...openBattles, ...myBattles].filter(Boolean).forEach((battle) => {
-      if (battle?.battleId) map.set(battle.battleId, battle);
-    });
+    for (const battle of [...openBattles, ...myBattles]) {
+      if (!battle?.battleId) continue;
+      map.set(battle.battleId, battle);
+    }
 
     return Array.from(map.values());
   }, [openBattles, myBattles]);
 
   const mySearchingBattles = useMemo(() => {
-    return myBattles.filter((battle) => {
+    const list = [];
+
+    for (const battle of myBattles) {
       const status = String(battle?.status || "").toLowerCase();
-      return status === "open" && getCreatorId(battle) === myId;
-    });
+      if (status === "open" && getCreatorId(battle) === myId) {
+        list.push(battle);
+      }
+    }
+
+    return list;
   }, [myBattles, myId]);
 
   const myActiveBattle = useMemo(() => {
-    return myBattles.find((battle) => {
+    const activeStatuses = new Set([
+      "join_requested",
+      "running",
+      "room_submitted",
+      "result_submitted",
+      "cancel_requested",
+    ]);
+
+    for (const battle of myBattles) {
       const status = String(battle?.status || "").toLowerCase();
+      if (!activeStatuses.has(status)) continue;
 
-      const activeStatuses = [
-        "join_requested",
-        "running",
-        "room_submitted",
-        "result_submitted",
-        "cancel_requested",
-      ];
-
-      if (!activeStatuses.includes(status)) return false;
-
-      if (["result_submitted", "cancel_requested"].includes(status)) {
-        return !hasMyResult(battle);
+      if (status === "result_submitted" || status === "cancel_requested") {
+        if (!hasMyResult(battle)) return battle;
+      } else {
+        return battle;
       }
+    }
 
-      return true;
-    });
-  }, [myBattles, myId]);
+    return null;
+  }, [myBattles, hasMyResult]);
 
   const visibleOpenBattles = useMemo(() => {
-    return allBattles
-      .filter((battle) => {
-        const status = String(battle?.status || "").toLowerCase();
-        const isCreator = getCreatorId(battle) === myId;
-        const isOpponent = getOpponentId(battle) === myId;
+    const list = [];
 
-        return status === "open" || (status === "join_requested" && (isCreator || isOpponent));
-      })
-      .sort((a, b) => new Date(b.createdAt || 0) - new Date(a.createdAt || 0));
+    for (const battle of allBattles) {
+      const status = String(battle?.status || "").toLowerCase();
+      const isCreator = getCreatorId(battle) === myId;
+      const isOpponent = getOpponentId(battle) === myId;
+
+      if (status === "open" || (status === "join_requested" && (isCreator || isOpponent))) {
+        list.push(battle);
+      }
+    }
+
+    list.sort((a, b) => new Date(b.createdAt || 0) - new Date(a.createdAt || 0));
+    return list;
   }, [allBattles, myId]);
 
   const runningBattles = useMemo(() => {
-    const realRunningBattles = allBattles
-      .filter((battle) =>
-        ["running", "room_submitted"].includes(String(battle?.status || "").toLowerCase())
-      )
-      .sort(
-        (a, b) =>
-          new Date(b.updatedAt || b.createdAt || 0) -
-          new Date(a.updatedAt || a.createdAt || 0)
-      );
+    const realRunningBattles = [];
 
-    return [...realRunningBattles, ...FAKE_RUNNING_BATTLES].filter(Boolean);
+    for (const battle of allBattles) {
+      const status = String(battle?.status || "").toLowerCase();
+
+      if (status === "running" || status === "room_submitted") {
+        realRunningBattles.push(battle);
+      }
+    }
+
+    realRunningBattles.sort(
+      (a, b) =>
+        new Date(b.updatedAt || b.createdAt || 0) -
+        new Date(a.updatedAt || a.createdAt || 0)
+    );
+
+    return [...realRunningBattles, ...FAKE_RUNNING_BATTLES];
   }, [allBattles]);
 
   const pendingBattles = useMemo(() => {
-    return allBattles
-      .filter((battle) =>
-        ["result_submitted", "cancel_requested"].includes(String(battle?.status || "").toLowerCase())
-      )
-      .sort(
-        (a, b) =>
-          new Date(b.updatedAt || b.createdAt || 0) -
-          new Date(a.updatedAt || a.createdAt || 0)
-      );
+    const list = [];
+
+    for (const battle of allBattles) {
+      const status = String(battle?.status || "").toLowerCase();
+
+      if (status === "result_submitted" || status === "cancel_requested") {
+        list.push(battle);
+      }
+    }
+
+    list.sort(
+      (a, b) =>
+        new Date(b.updatedAt || b.createdAt || 0) -
+        new Date(a.updatedAt || a.createdAt || 0)
+    );
+
+    return list;
   }, [allBattles]);
 
   const validateAmount = () => {
     const amt = Number(betAmount);
 
-    if (!amt || amt < 50) return alert("Minimum battle amount ₹50 hai"), false;
-    if (amt > 100000) return alert("Maximum battle amount ₹100000 hai"), false;
-    if (amt % 50 !== 0) return alert("Amount ₹50 ke multiple me hona chahiye"), false;
+    if (!amt || amt < 50) {
+      alert("Minimum battle amount ₹50 hai");
+      return false;
+    }
+
+    if (amt > 100000) {
+      alert("Maximum battle amount ₹100000 hai");
+      return false;
+    }
+
+    if (amt % 50 !== 0) {
+      alert("Amount ₹50 ke multiple me hona chahiye");
+      return false;
+    }
 
     return true;
   };
@@ -1025,15 +1063,15 @@ const Battle = () => {
     }
 
     try {
-      setLoading(true);
+      setActionLoading(true);
       await axios.post(`${API_BASE}/battle/create`, { amount: amt }, authHeader());
       setBetAmount("");
-      await fetchBattles();
+      fetchBattles();
       alert("Battle set ho gayi!");
     } catch (err) {
       alert(err.response?.data?.msg || "Create failed");
     } finally {
-      setLoading(false);
+      setActionLoading(false);
     }
   };
 
@@ -1044,31 +1082,31 @@ const Battle = () => {
     }
 
     try {
-      setLoading(true);
+      setActionLoading(true);
       const res = await axios.post(`${API_BASE}/battle/join/${battleId}`, {}, authHeader());
       const joinedId = res.data?.battle?.battleId || battleId;
 
-      await fetchBattles();
+      fetchBattles();
       navigate(`/room-code/${joinedId}`);
     } catch (err) {
       alert(err.response?.data?.msg || "Join failed");
     } finally {
-      setLoading(false);
+      setActionLoading(false);
     }
   };
 
   const startBattle = async (battleId) => {
     try {
-      setLoading(true);
+      setActionLoading(true);
       const res = await axios.post(`${API_BASE}/battle/start/${battleId}`, {}, authHeader());
       const startedId = res.data?.battle?.battleId || battleId;
 
-      await fetchBattles();
+      fetchBattles();
       navigate(`/room-code/${startedId}`);
     } catch (err) {
       alert(err.response?.data?.msg || "Start failed");
     } finally {
-      setLoading(false);
+      setActionLoading(false);
     }
   };
 
@@ -1076,14 +1114,14 @@ const Battle = () => {
     if (!window.confirm("Player request reject karni hai?")) return;
 
     try {
-      setLoading(true);
+      setActionLoading(true);
       await axios.post(`${API_BASE}/battle/reject/${battleId}`, {}, authHeader());
-      await fetchBattles();
+      fetchBattles();
       alert("Request reject ho gayi");
     } catch (err) {
       alert(err.response?.data?.msg || "Reject failed");
     } finally {
-      setLoading(false);
+      setActionLoading(false);
     }
   };
 
@@ -1091,14 +1129,14 @@ const Battle = () => {
     if (!window.confirm("Cancel this battle?")) return;
 
     try {
-      setLoading(true);
+      setActionLoading(true);
       await axios.patch(`${API_BASE}/battle/cancel/${battleId}`, {}, authHeader());
-      await fetchBattles();
+      fetchBattles();
       alert("Battle cancelled");
     } catch (err) {
       alert(err.response?.data?.msg || "Cancel failed");
     } finally {
-      setLoading(false);
+      setActionLoading(false);
     }
   };
 
@@ -1109,7 +1147,11 @@ const Battle = () => {
 
     if (status === "open" && isMine) {
       return (
-        <button disabled={loading} onClick={() => cancelBattle(battle.battleId)} className="rounded-2xl bg-red-500/10 px-4 py-2 text-xs font-black text-red-600 ring-1 ring-red-200 disabled:opacity-50">
+        <button
+          disabled={actionLoading}
+          onClick={() => cancelBattle(battle.battleId)}
+          className="rounded-2xl bg-red-500/10 px-4 py-2 text-xs font-black text-red-600 ring-1 ring-red-200 disabled:opacity-50"
+        >
           Cancel
         </button>
       );
@@ -1117,7 +1159,11 @@ const Battle = () => {
 
     if (status === "open" && !isMine) {
       return (
-        <button disabled={loading} onClick={() => joinMatch(battle.battleId)} className="rounded-2xl bg-gradient-to-r from-emerald-500 to-green-600 px-6 py-3 text-sm font-black text-white shadow-lg shadow-green-500/30 active:scale-95 disabled:opacity-50">
+        <button
+          disabled={actionLoading}
+          onClick={() => joinMatch(battle.battleId)}
+          className="rounded-2xl bg-gradient-to-r from-emerald-500 to-green-600 px-6 py-3 text-sm font-black text-white shadow-lg shadow-green-500/30 active:scale-95 disabled:opacity-50"
+        >
           PLAY
         </button>
       );
@@ -1126,10 +1172,19 @@ const Battle = () => {
     if (status === "join_requested" && isMine) {
       return (
         <div className="flex flex-col gap-2">
-          <button disabled={loading} onClick={() => startBattle(battle.battleId)} className="rounded-xl bg-green-600 px-4 py-2 text-xs font-black text-white">
+          <button
+            disabled={actionLoading}
+            onClick={() => startBattle(battle.battleId)}
+            className="rounded-xl bg-green-600 px-4 py-2 text-xs font-black text-white disabled:opacity-50"
+          >
             START
           </button>
-          <button disabled={loading} onClick={() => rejectBattle(battle.battleId)} className="rounded-xl bg-red-500 px-4 py-2 text-xs font-black text-white">
+
+          <button
+            disabled={actionLoading}
+            onClick={() => rejectBattle(battle.battleId)}
+            className="rounded-xl bg-red-500 px-4 py-2 text-xs font-black text-white disabled:opacity-50"
+          >
             REJECT
           </button>
         </div>
@@ -1199,8 +1254,12 @@ const Battle = () => {
               onChange={(e) => setBetAmount(e.target.value)}
             />
 
-            <button disabled={loading} onClick={handleCreate} className="rounded-md bg-slate-900 px-4 py-2 text-xs font-bold text-white active:scale-95 disabled:opacity-60">
-              {loading ? "..." : "Set"}
+            <button
+              disabled={actionLoading}
+              onClick={handleCreate}
+              className="rounded-md bg-slate-900 px-4 py-2 text-xs font-bold text-white active:scale-95 disabled:opacity-60"
+            >
+              {actionLoading ? "..." : "Set"}
             </button>
           </div>
         </div>
@@ -1209,8 +1268,14 @@ const Battle = () => {
 
         <div className="space-y-4">
           {visibleOpenBattles.length === 0 && <EmptyBox text="No Battles Live" />}
-          {visibleOpenBattles.filter(Boolean).map((battle) => (
-            <OpenCard key={battle.battleId} battle={battle} action={getOpenAction(battle)} calculatePrize={calculatePrize} />
+
+          {visibleOpenBattles.map((battle) => (
+            <OpenCard
+              key={battle.battleId}
+              battle={battle}
+              action={getOpenAction(battle)}
+              calculatePrize={calculatePrize}
+            />
           ))}
         </div>
 
@@ -1218,7 +1283,8 @@ const Battle = () => {
 
         <div className="space-y-4">
           {runningBattles.length === 0 && <EmptyBox text="No Running Battles" />}
-          {runningBattles.filter(Boolean).map((battle) => (
+
+          {runningBattles.map((battle) => (
             <MatchCard
               key={battle.battleId}
               battle={battle}
@@ -1237,7 +1303,8 @@ const Battle = () => {
 
         <div className="space-y-4">
           {pendingBattles.length === 0 && <EmptyBox text="No Pending Results" />}
-          {pendingBattles.filter(Boolean).map((battle) => (
+
+          {pendingBattles.map((battle) => (
             <MatchCard
               key={battle.battleId}
               battle={battle}
@@ -1368,3 +1435,9 @@ function MoneyBlock({ label, value, right = false }) {
 }
 
 export default Battle;
+
+
+
+
+
+
