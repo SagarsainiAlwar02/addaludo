@@ -816,20 +816,38 @@ const calculatePrizeAmount = (amount) => {
 };
 
 const FAKE_RUNNING_BATTLES = [
+  { battleId: "fake_run_golu", amount: 2000, prize: calculatePrizeAmount(2000), status: "running", isFake: true, createdBy: { name: "golu" }, opponent: { name: "Player 901" } },
+
+  { battleId: "fake_run_amit", amount: 1500, prize: calculatePrizeAmount(1500), status: "running", isFake: true, createdBy: { name: "Amit" }, opponent: { name: "Player 654" } },
+
+  { battleId: "fake_run_bhomla", amount: 3250, prize: calculatePrizeAmount(3250), status: "running", isFake: true, createdBy: { name: "bhomla" }, opponent: { name: "Player 777" } },
+
   { battleId: "fake_run_1", amount: 50, prize: calculatePrizeAmount(50), status: "running", isFake: true, createdBy: { name: "Player 333" }, opponent: { name: "Player 444" } },
+
   { battleId: "fake_run_2", amount: 100, prize: calculatePrizeAmount(100), status: "running", isFake: true, createdBy: { name: "Player 555" }, opponent: { name: "Player 666" } },
+
   { battleId: "fake_run_3", amount: 250, prize: calculatePrizeAmount(250), status: "running", isFake: true, createdBy: { name: "Player 777" }, opponent: { name: "Player 888" } },
+
   { battleId: "fake_run_4", amount: 500, prize: calculatePrizeAmount(500), status: "running", isFake: true, createdBy: { name: "Player 999" }, opponent: { name: "Player 121" } },
+
   { battleId: "fake_run_5", amount: 650, prize: calculatePrizeAmount(650), status: "running", isFake: true, createdBy: { name: "Player 232" }, opponent: { name: "Player 343" } },
-  { battleId: "fake_run_6", amount: 890, prize: calculatePrizeAmount(890), status: "running", isFake: true, createdBy: { name: "Player 454" }, opponent: { name: "Player 565" } },
+
   { battleId: "fake_run_7", amount: 2000, prize: calculatePrizeAmount(2000), status: "running", isFake: true, createdBy: { name: "Player 512" }, opponent: { name: "Player 624" } },
+
   { battleId: "fake_run_8", amount: 2500, prize: calculatePrizeAmount(2500), status: "running", isFake: true, createdBy: { name: "Player 735" }, opponent: { name: "Player 846" } },
+
   { battleId: "fake_run_9", amount: 3000, prize: calculatePrizeAmount(3000), status: "running", isFake: true, createdBy: { name: "Player 676" }, opponent: { name: "Player 787" } },
+
   { battleId: "fake_run_10", amount: 3500, prize: calculatePrizeAmount(3500), status: "running", isFake: true, createdBy: { name: "Player 279" }, opponent: { name: "Player 381" } },
+
   { battleId: "fake_run_11", amount: 4000, prize: calculatePrizeAmount(4000), status: "running", isFake: true, createdBy: { name: "Player 492" }, opponent: { name: "Player 504" } },
+
   { battleId: "fake_run_12", amount: 4500, prize: calculatePrizeAmount(4500), status: "running", isFake: true, createdBy: { name: "Player 615" }, opponent: { name: "Player 726" } },
+
   { battleId: "fake_run_13", amount: 6500, prize: calculatePrizeAmount(6500), status: "running", isFake: true, createdBy: { name: "Player 898" }, opponent: { name: "Player 909" } },
+
   { battleId: "fake_run_14", amount: 8000, prize: calculatePrizeAmount(8000), status: "running", isFake: true, createdBy: { name: "Player 147" }, opponent: { name: "Player 258" } },
+
   { battleId: "fake_run_15", amount: 10000, prize: calculatePrizeAmount(10000), status: "running", isFake: true, createdBy: { name: "Player 369" }, opponent: { name: "Player 741" } },
 ];
 
