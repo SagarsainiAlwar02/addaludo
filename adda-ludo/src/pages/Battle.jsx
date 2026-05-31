@@ -1,9 +1,3 @@
-
-
-
-
-
-
 import React, { useEffect, useMemo, useState, useCallback } from "react";
 import axios from "axios";
 import { useNavigate } from "react-router-dom";
@@ -291,7 +285,7 @@ const Battle = () => {
     });
 
     if (sameOpenAmount) {
-      alert(`₹${amt} ki open battle already lagi hui hai.`);
+      alert(`₹${amt} ki open battle already लगी हुई है.`);
       return;
     }
 
@@ -449,7 +443,12 @@ const Battle = () => {
               <p className="text-xs font-black uppercase tracking-[0.25em] text-cyan-100">
                 Adda Ludo
               </p>
-          अगर कोई Popular में Code देता है तो I'D Block कर दी जाएगी ! Contact no. : 7689017559
+            </div>
+
+            <div className="mt-4 rounded-2xl bg-black/20 px-4 py-3 text-center text-sm font-bold leading-6 text-white ring-1 ring-white/10">
+              अगर कोई Popular में Code देता है तो I&apos;D Block कर दी जाएगी ! Contact no. : 7689017559
+            </div>
+          </div>
         </div>
 
         <div className="mb-5 rounded-xl bg-white p-3 shadow-md ring-1 ring-slate-200">
@@ -663,9 +662,3 @@ function MoneyBlock({ label, value, right = false }) {
 }
 
 export default Battle;
-
-
-
-
-
-
