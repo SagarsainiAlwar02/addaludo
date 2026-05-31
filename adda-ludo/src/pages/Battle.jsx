@@ -449,7 +449,7 @@ const Battle = () => {
               <p className="text-xs font-black uppercase tracking-[0.25em] text-cyan-100">
                 Adda Ludo
               </p>
-          अगर कोई Popular में Code देता है तो I'D Block कर दी जाएगी ! &nbsp; | &nbsp; Contact no. : 7689017559
+          अगर कोई Popular में Code देता है तो I'D Block कर दी जाएगी ! Contact no. : 7689017559
         </div>
 
         <div className="mb-5 rounded-xl bg-white p-3 shadow-md ring-1 ring-slate-200">
