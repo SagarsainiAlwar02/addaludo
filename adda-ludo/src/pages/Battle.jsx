@@ -450,22 +450,29 @@ const Battle = () => {
                 Adda Ludo
               </p>
             </div>
-              <div className="mt-4 rounded-2xl bg-black/20 px-4 py-3 text-center text-sm font-bold leading-6 text-white ring-1 ring-white/10">
-  <div>अगर कोई Popular में Code देता है तो I'D</div>
 
-  <div>Block कर दी जाएगी !</div>
+            <div className="mt-4 rounded-[28px] border border-white/10 bg-gradient-to-r from-[#1e293b]/90 via-[#0f172a]/90 to-[#111827]/90 p-4 text-center shadow-2xl backdrop-blur-xl">
+  
+  <p className="text-sm font-extrabold leading-6 text-white">
+    अगर कोई Popular में Code देता है तो I'D
+  </p>
 
-  <div className="mt-3 flex items-center justify-center gap-3">
-    <div className="rounded-xl bg-black px-4 py-1 text-white shadow">
-      Contact no.
+  <p className="text-sm font-extrabold text-red-400">
+    Block कर दी जाएगी !
+  </p>
+
+  <div className="mt-4 flex items-center justify-center gap-3">
+    
+    <div className="rounded-2xl border border-cyan-400/30 bg-cyan-500/10 px-4 py-2 text-xs font-bold uppercase tracking-wider text-cyan-200 shadow-lg">
+      Contact No.
     </div>
 
-    <div className="rounded-xl bg-black px-4 py-1 text-white shadow">
-      7414027116
+    <div className="rounded-2xl bg-gradient-to-r from-cyan-400 to-blue-500 px-5 py-2 text-base font-extrabold tracking-wide text-white shadow-lg shadow-cyan-500/30">
+      7689017559
     </div>
+
   </div>
 </div>
-            
           </div>
         </div>
 
