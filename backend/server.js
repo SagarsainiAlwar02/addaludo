@@ -128,26 +128,15 @@ app.post("/api/send-otp", async (req, res) => {
 
     console.log("📲 OTP GENERATED:", phone, otp);
 
-    if (!process.env.FAST2SMS_API_KEY) {
-      return res.status(500).json({
-        success: false,
-        msg: "FAST2SMS_API_KEY missing",
-      });
-    }
 
-    await axios.post(
-      "https://www.fast2sms.com/dev/bulkV2",
-      {
-        route: "q",
-        message: `Your OTP is ${otp}`,
-        numbers: phone,
-      },
-      {
-        headers: {
-          authorization: process.env.FAST2SMS_API_KEY,
-        },
-      }
-    );
+
+  const message = `Welcome to the ADDALUDO powered by SMSINDIAHUB.\nYour OTP for registration is ${otp}`;
+
+const smsUrl = `http://cloud.smsindiahub.in/api/mt/SendSMS?user=${process.env.SMS_USERNAME}&password=${encodeURIComponent(process.env.SMS_PASSWORD)}&senderid=SMSHUB&channel=Transactional&DCS=0&flashsms=0&number=91${phone}&text=${encodeURIComponent(message)}&DLTTemplateId=${process.env.SMS_DLT_TEMPLATE_ID}&route=${process.env.SMS_ROUTE}&PEId=${process.env.SMS_PE_ID}`;
+
+const smsResponse = await axios.get(smsUrl);
+
+console.log("✅ SMSINDIAHUB RESPONSE:", smsResponse.data);
 
     return res.json({
       success: true,

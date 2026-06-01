@@ -22,29 +22,22 @@ async function generateUniqueReferralCode() {
   return code;
 }
 
+
 async function sendFast2SMS(phone, otp) {
-  const apiKey = process.env.FAST2SMS_API_KEY;
+  try {
+    const message = `Welcome to the ABC powered by SMSINDIAHUB. Your OTP for registration is ${otp}`;
 
-  if (!apiKey) {
-    throw new Error("FAST2SMS_API_KEY missing in .env");
+    const url = `http://cloud.smsindiahub.in/api/mt/SendSMS?user=${process.env.SMS_USERNAME}&password=${process.env.SMS_PASSWORD}&senderid=SMSHUB&channel=Transactional&DCS=0&flashsms=0&number=91${phone}&text=${encodeURIComponent(message)}&DLTTemplateId=${process.env.SMS_DLT_TEMPLATE_ID}&route=${process.env.SMS_ROUTE}&PEId=${process.env.SMS_PE_ID}`;
+
+    const response = await axios.get(url);
+
+    console.log("SMS RESPONSE:", response.data);
+
+    return response.data;
+  } catch (error) {
+    console.error("SMS ERROR:", error.response?.data || error.message);
+    return null;
   }
-
-  const response = await axios.post(
-    "https://www.fast2sms.com/dev/bulkV2",
-    {
-      route: "otp",
-      variables_values: otp,
-      numbers: phone,
-    },
-    {
-      headers: {
-        authorization: apiKey,
-        "Content-Type": "application/json",
-      },
-    }
-  );
-
-  return response.data;
 }
 
 exports.sendOtp = async (req, res) => {
