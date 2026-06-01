@@ -21,16 +21,20 @@ const Users = () => {
 
   const fetchUsers = async () => {
     try {
-      const res = await API.get("/admin/users");
+     const res = await API.get(`/admin/users?limit=50&search=${search}`);
       setUsers(Array.isArray(res.data) ? res.data : []);
     } catch (err) {
       console.log("Fetch users error:", err.response?.data || err.message);
     }
   };
 
-  useEffect(() => {
+ useEffect(() => {
+  const timer = setTimeout(() => {
     fetchUsers();
-  }, []);
+  }, 400);
+
+  return () => clearTimeout(timer);
+}, [search]);
 
   const filteredUsers = users.filter((user) => {
     const status = user.status || "active";

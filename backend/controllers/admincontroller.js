@@ -7,17 +7,29 @@ const Wallet = require("../models/wallet");
 // ================= GET USERS =================
 exports.getUsers = async (req, res) => {
   try {
-    const limit = Number(req.query.limit || 100);
+    const limit = Math.min(Number(req.query.limit || 50), 100);
+    const search = String(req.query.search || "").trim();
 
-    const users = await User.find()
-      .select("-password")
+    const query = {};
+
+    if (search) {
+      query.$or = [
+        { phone: { $regex: search, $options: "i" } },
+        { mobile: { $regex: search, $options: "i" } },
+        { name: { $regex: search, $options: "i" } },
+        { referralCode: { $regex: search, $options: "i" } },
+      ];
+    }
+
+    const users = await User.find(query)
+      .select("name phone mobile email referralCode status createdAt")
       .sort({ createdAt: -1 })
       .limit(limit)
       .lean();
 
-    const wallets = await Wallet.find({
-      userId: { $in: users.map((u) => u._id) },
-    })
+    const userIds = users.map((u) => u._id);
+
+    const wallets = await Wallet.find({ userId: { $in: userIds } })
       .select("userId balance winnings bonus locked")
       .lean();
 
@@ -52,7 +64,6 @@ exports.getUsers = async (req, res) => {
     res.status(500).json({ msg: err.message });
   }
 };
-
 // ================= BLOCK / UNBLOCK USER =================
 exports.blockUser = async (req, res) => {
   try {
