@@ -889,6 +889,7 @@ return res.json({
   }
 };
 
+
 exports.cancelBattle = async (req, res) => {
   try {
     const userId = getUserId(req);
@@ -910,6 +911,38 @@ exports.cancelBattle = async (req, res) => {
 
       battle.status = "cancelled";
       battle.adminNote = "Open battle cancelled by creator";
+      await battle.save();
+
+      return res.json({ success: true, msg: "Battle cancelled", battle });
+    }
+
+    if (battle.status === "join_requested") {
+      const isCreator = battle.createdBy.toString() === userId;
+      const isOpponent = battle.opponent?.toString() === userId;
+
+      if (!isCreator && !isOpponent) {
+        return res.status(403).json({
+          success: false,
+          msg: "You are not part of this battle",
+        });
+      }
+
+      if (isOpponent) {
+        battle.opponent = null;
+        battle.status = "open";
+        battle.timerStartedAt = null;
+        battle.adminNote = "Join request cancelled by opponent";
+        await battle.save();
+
+        return res.json({
+          success: true,
+          msg: "Request cancelled",
+          battle,
+        });
+      }
+
+      battle.status = "cancelled";
+      battle.adminNote = "Join requested battle cancelled by creator";
       await battle.save();
 
       return res.json({

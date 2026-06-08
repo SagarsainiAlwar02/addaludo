@@ -418,14 +418,23 @@ const Battle = () => {
       );
     }
 
+
     if (status === "join_requested" && isOpponent) {
-      return (
-        <div className="flex flex-col items-center gap-1">
-          <div className="h-7 w-7 animate-spin rounded-full border-4 border-emerald-100 border-t-emerald-500" />
-          <p className="text-[10px] font-black text-slate-500">WAITING</p>
-        </div>
-      );
-    }
+  return (
+    <div className="flex flex-col items-center gap-1">
+      <div className="h-7 w-7 animate-spin rounded-full border-4 border-emerald-100 border-t-emerald-500" />
+      <p className="text-[10px] font-black text-slate-500">WAITING</p>
+
+      <button
+        disabled={actionLoading}
+        onClick={() => cancelBattle(battle.battleId)}
+        className="rounded-md bg-red-500 px-2 py-1 text-[10px] font-bold text-white disabled:opacity-50"
+      >
+        Cancel
+      </button>
+    </div>
+  );
+}
 
     return (
       <button disabled className="rounded-xl bg-slate-200 px-4 py-2 text-xs font-black text-slate-500">
