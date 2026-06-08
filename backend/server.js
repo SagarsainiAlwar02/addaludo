@@ -17,6 +17,22 @@ const Wallet = require("./models/wallet");
 
 const app = express();
 
+function makeReferralCode() {
+  return "BA-" + Math.floor(100000 + Math.random() * 900000);
+}
+
+async function generateUniqueReferralCode() {
+  let code;
+  let exists = true;
+
+  while (exists) {
+    code = makeReferralCode();
+    exists = await User.findOne({ referralCode: code });
+  }
+
+  return code;
+}
+
 const uploadPath = path.join(__dirname, "uploads");
 if (!fs.existsSync(uploadPath)) {
   fs.mkdirSync(uploadPath, { recursive: true });
@@ -90,7 +106,6 @@ app.use("/api/match-proof", require("./routes/matchProofRoutes"));
 
 app.use("/api/kyc", require("./routes/kyc"));
 
-
 app.post(
   "/api/user/kyc",
   require("./middleware/auth"),
@@ -128,15 +143,19 @@ app.post("/api/send-otp", async (req, res) => {
 
     console.log("📲 OTP GENERATED:", phone, otp);
 
+    const message = `Welcome to the ADDALUDO powered by SMSINDIAHUB.\nYour OTP for registration is ${otp}`;
 
+    const smsUrl = `http://cloud.smsindiahub.in/api/mt/SendSMS?user=${process.env.SMS_USERNAME}&password=${encodeURIComponent(
+      process.env.SMS_PASSWORD
+    )}&senderid=SMSHUB&channel=Transactional&DCS=0&flashsms=0&number=91${phone}&text=${encodeURIComponent(
+      message
+    )}&DLTTemplateId=${process.env.SMS_DLT_TEMPLATE_ID}&route=${
+      process.env.SMS_ROUTE
+    }&PEId=${process.env.SMS_PE_ID}`;
 
-  const message = `Welcome to the ADDALUDO powered by SMSINDIAHUB.\nYour OTP for registration is ${otp}`;
+    const smsResponse = await axios.get(smsUrl);
 
-const smsUrl = `http://cloud.smsindiahub.in/api/mt/SendSMS?user=${process.env.SMS_USERNAME}&password=${encodeURIComponent(process.env.SMS_PASSWORD)}&senderid=SMSHUB&channel=Transactional&DCS=0&flashsms=0&number=91${phone}&text=${encodeURIComponent(message)}&DLTTemplateId=${process.env.SMS_DLT_TEMPLATE_ID}&route=${process.env.SMS_ROUTE}&PEId=${process.env.SMS_PE_ID}`;
-
-const smsResponse = await axios.get(smsUrl);
-
-console.log("✅ SMSINDIAHUB RESPONSE:", smsResponse.data);
+    console.log("✅ SMSINDIAHUB RESPONSE:", smsResponse.data);
 
     return res.json({
       success: true,
@@ -226,6 +245,7 @@ app.post("/api/otp-login", async (req, res) => {
         password: "nopassword",
         role: "user",
         status: "active",
+        referralCode: await generateUniqueReferralCode(),
         referredBy,
       });
 
@@ -237,6 +257,11 @@ app.post("/api/otp-login", async (req, res) => {
         success: false,
         msg: "Account blocked",
       });
+    }
+
+    if (!user.referralCode) {
+      user.referralCode = await generateUniqueReferralCode();
+      await user.save();
     }
 
     let wallet = await Wallet.findOne({ userId: user._id });
