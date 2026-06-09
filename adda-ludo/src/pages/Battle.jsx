@@ -438,7 +438,7 @@ const Battle = () => {
             </div>
 
             <div className="mt-4 rounded-2xl bg-black/20 px-4 py-3 text-center text-sm font-bold leading-6 text-white ring-1 ring-white/10">
-              अगर कोई Popular में Code देता है तो I&apos;D Block कर दी जाएगी ! Contact no. : 7689017559
+              अगर कोई Popular में Code देता है तो I&apos;D Block कर दी जाएगी ! 
             </div>
           </div>
         </div>
