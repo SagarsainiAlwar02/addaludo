@@ -134,9 +134,11 @@ const Deposit = () => {
               const user = item.userId || {};
               const admin = item.approvedBy || {};
 
-              const screenshotUrl = item.screenshot
-                ? `${IMAGE_BASE}${item.screenshot}`
-                : "";
+            const screenshotUrl = item.screenshot
+  ? item.screenshot.startsWith("http")
+    ? item.screenshot
+    : `${IMAGE_BASE}${item.screenshot}`
+  : "";
 
               const isBonus = item.type === "bonus";
 

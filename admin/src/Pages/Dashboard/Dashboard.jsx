@@ -4,7 +4,7 @@ import "./Dashboard.css";
 
 const Dashboard = () => {
   const [stats, setStats] = useState([]);
-const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true);
 
   const fetchStats = async () => {
     try {
@@ -32,27 +32,31 @@ const [loading, setLoading] = useState(false);
   useEffect(() => {
     fetchStats();
 
-   const interval = setInterval(fetchStats, 60000);
+    const interval = setInterval(fetchStats, 10000);
     return () => clearInterval(interval);
   }, []);
 
   return (
-  <div className="dashboard-container">
-    <h1 className="heading">Dashboard</h1>
+    <div className="dashboard-container">
+      <h1 className="heading">Dashboard</h1>
 
-    <div className="card-grid">
-      {stats.map((item, index) => (
-        <div className="card" key={index}>
-          <h3>{item.title}</h3>
-          <p>
-            {item.isCount ? "" : "₹"}
-            {Number(item.value || 0).toLocaleString("en-IN")}
-          </p>
+      {loading ? (
+        <p>Loading...</p>
+      ) : (
+        <div className="card-grid">
+          {stats.map((item, index) => (
+            <div className="card" key={index}>
+              <h3>{item.title}</h3>
+              <p>
+                {item.isCount ? "" : "₹"}
+                {Number(item.value || 0).toLocaleString("en-IN")}
+              </p>
+            </div>
+          ))}
         </div>
-      ))}
+      )}
     </div>
-  </div>
-);
+  );
 };
 
 export default Dashboard;

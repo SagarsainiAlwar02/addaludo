@@ -117,5 +117,10 @@ const battleSchema = new mongoose.Schema(
   { timestamps: true }
 );
 
+battleSchema.index({ createdAt: -1 });
+battleSchema.index({ status: 1, createdAt: -1 });
+battleSchema.index({ createdBy: 1, status: 1 });
+battleSchema.index({ opponent: 1, status: 1 });
 module.exports =
+
   mongoose.models.Battle || mongoose.model("Battle", battleSchema);

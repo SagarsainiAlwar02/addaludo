@@ -15,7 +15,7 @@ const Matches = () => {
   const fetchMatches = async () => {
     try {
       setLoading(true);
-      const res = await API.get("/admin/battles");
+   const res = await API.get("/admin/battles?limit=200");
       setMatches(Array.isArray(res.data) ? res.data : res.data.battles || []);
     } catch (err) {
       console.log("Matches error:", err.response?.data || err.message);
@@ -101,15 +101,29 @@ const Matches = () => {
     });
   };
 
-  const openMatchDetails = async (match) => {
-    try {
-      const res = await API.get(`/admin/battles/${match._id}`);
-      setSelectedMatch(res.data.battle || match);
-    } catch (err) {
-      console.log("Match detail error:", err.response?.data || err.message);
-      setSelectedMatch(match);
-    }
-  };
+
+
+const openMatchDetails = async (match) => {
+  setSelectedMatch(match);
+
+  try {
+    const id = match?._id || match?.id;
+
+    if (!id) return;
+
+    const res = await API.get(`/admin/battles/${id}`);
+
+    setSelectedMatch(
+      res.data?.battle ||
+      res.data?.match ||
+      res.data ||
+      match
+    );
+  } catch (err) {
+    console.log("Match detail error:", err.response?.data || err.message);
+    setSelectedMatch(match);
+  }
+};
 
   const decideWinner = async (match, user, label) => {
     try {
@@ -349,13 +363,17 @@ const Matches = () => {
                   {match.status || "-"}
                 </td>
                 <td>
-                  <button
-                    className="view"
-                    type="button"
-                    onClick={() => openMatchDetails(match)}
-                  >
-                    View
-                  </button>
+ <button
+  className="view"
+  type="button"
+  onClick={(e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    openMatchDetails(match);
+  }}
+>
+  View
+</button>
                 </td>
               </tr>
             ))

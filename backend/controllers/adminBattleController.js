@@ -9,37 +9,29 @@ function getPlayableBalance(wallet) {
 
 exports.getAllBattles = async (req, res) => {
   try {
-    const page = Number(req.query.page || 1);
-    const limit = Number(req.query.limit || 50);
+    const limit = Math.min(Number(req.query.limit || 50), 200);
 
-    const battles = await Battle.find()
+    const battles = await Battle.find({})
       .select(
-        "battleId amount prize status createdAt updatedAt createdBy opponent winner roomCodeSetBy resultSubmittedBy results ludoKingRoomCode screenshot"
+        "battleId amount prize status createdAt updatedAt createdBy opponent winner ludoKingRoomCode"
       )
       .populate("createdBy", "name phone")
       .populate("opponent", "name phone")
       .populate("winner", "name phone")
-      .populate("roomCodeSetBy", "name phone")
-      .populate("resultSubmittedBy", "name phone")
-      .populate("results.user", "name phone")
       .sort({ createdAt: -1 })
-      .skip((page - 1) * limit)
       .limit(limit)
       .lean();
 
-    const total = await Battle.countDocuments();
-
     res.json({
       success: true,
-      page,
-      limit,
-      total,
-      totalPages: Math.ceil(total / limit),
       battles,
     });
   } catch (err) {
-    console.log("❌ ADMIN GET BATTLES ERROR:", err);
-    res.status(500).json({ success: false, msg: err.message });
+    console.log("ADMIN GET BATTLES ERROR:", err);
+    res.status(500).json({
+      success: false,
+      msg: err.message,
+    });
   }
 };
 

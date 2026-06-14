@@ -53,15 +53,8 @@ const allowedOrigins = [
 const corsOptions = {
   origin: function (origin, callback) {
     if (!origin) return callback(null, true);
-
-    if (allowedOrigins.includes(origin)) {
-      return callback(null, true);
-    }
-
-    if (origin.endsWith(".vercel.app")) {
-      return callback(null, true);
-    }
-
+    if (allowedOrigins.includes(origin)) return callback(null, true);
+    if (origin.endsWith(".vercel.app")) return callback(null, true);
     return callback(null, true);
   },
   methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
@@ -71,6 +64,13 @@ const corsOptions = {
 
 app.use(cors(corsOptions));
 app.options(/.*/, cors(corsOptions));
+
+app.use((req, res, next) => {
+  if (req.method === "OPTIONS") {
+    return res.sendStatus(204);
+  }
+  next();
+});
 
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
@@ -143,26 +143,30 @@ app.post("/api/send-otp", async (req, res) => {
 
     console.log("📲 OTP GENERATED:", phone, otp);
 
-    const message = `Welcome to the ADDALUDO powered by SMSINDIAHUB.\nYour OTP for registration is ${otp}`;
+    const smsResponse = await axios.post(
+      "https://www.fast2sms.com/dev/bulkV2",
+      {
+        route: "otp",
+        variables_values: otp,
+        flash: 0,
+        numbers: phone,
+      },
+      {
+        headers: {
+          authorization: process.env.FAST2SMS_API_KEY,
+          "Content-Type": "application/json",
+        },
+      }
+    );
 
-    const smsUrl = `http://cloud.smsindiahub.in/api/mt/SendSMS?user=${process.env.SMS_USERNAME}&password=${encodeURIComponent(
-      process.env.SMS_PASSWORD
-    )}&senderid=SMSHUB&channel=Transactional&DCS=0&flashsms=0&number=91${phone}&text=${encodeURIComponent(
-      message
-    )}&DLTTemplateId=${process.env.SMS_DLT_TEMPLATE_ID}&route=${
-      process.env.SMS_ROUTE
-    }&PEId=${process.env.SMS_PE_ID}`;
-
-    const smsResponse = await axios.get(smsUrl);
-
-    console.log("✅ SMSINDIAHUB RESPONSE:", smsResponse.data);
+    console.log("✅ FAST2SMS RESPONSE:", smsResponse.data);
 
     return res.json({
       success: true,
       msg: "OTP sent successfully",
     });
   } catch (err) {
-    console.log("❌ SMS ERROR:", err.response?.data || err.message);
+    console.log("❌ FAST2SMS ERROR:", err.response?.data || err.message);
 
     return res.status(500).json({
       success: false,
