@@ -2,10 +2,19 @@ const mongoose = require("mongoose");
 
 const battleSchema = new mongoose.Schema(
   {
-    battleId: { type: String, unique: true, index: true },
+  battleId: {
+  type: String,
+  required: true,
+  unique: true,
+  index: true,
+},
 
     amount: { type: Number, required: true, min: 50 },
-    prize: { type: Number, required: true },
+   prize: {
+  type: Number,
+  required: true,
+  min: 0,
+}, 
 
     createdBy: {
       type: mongoose.Schema.Types.ObjectId,
@@ -21,7 +30,16 @@ const battleSchema = new mongoose.Schema(
       index: true,
     },
 
-    ludoKingRoomCode: { type: String, default: "" },
+  ludoKingRoomCode: {
+  type: String,
+  default: "",
+  validate: {
+    validator(v) {
+      return v === "" || /^\d{8}$/.test(v);
+    },
+    message: "Room code must be 8 digits",
+  },
+},
 
     roomCodeSetBy: {
       type: mongoose.Schema.Types.ObjectId,
@@ -48,29 +66,37 @@ const battleSchema = new mongoose.Schema(
       enum: ["", "win", "loss", "cancel"],
       default: "",
     },
-
-    results: [
-      {
-        user: {
-          type: mongoose.Schema.Types.ObjectId,
-          ref: "User",
-          required: true,
-        },
-        result: {
-          type: String,
-          enum: ["win", "loss", "cancel"],
-          required: true,
-        },
-        screenshot: {
-          type: String,
-          default: "",
-        },
-        submittedAt: {
-          type: Date,
-          default: Date.now,
-        },
+results: {
+  type: [
+    {
+      user: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "User",
+        required: true,
       },
-    ],
+      result: {
+        type: String,
+        enum: ["win", "loss", "cancel"],
+        required: true,
+      },
+      screenshot: {
+        type: String,
+        default: "",
+      },
+      submittedAt: {
+        type: Date,
+        default: Date.now,
+      },
+    },
+  ],
+  validate: {
+    validator(arr) {
+      const ids = arr.map((x) => String(x.user));
+      return ids.length === new Set(ids).size;
+    },
+    message: "Duplicate result submission not allowed",
+  },
+},
 
     cancelVotes: [
       {
@@ -121,6 +147,9 @@ battleSchema.index({ createdAt: -1 });
 battleSchema.index({ status: 1, createdAt: -1 });
 battleSchema.index({ createdBy: 1, status: 1 });
 battleSchema.index({ opponent: 1, status: 1 });
+
+battleSchema.index({ battleId: 1, status: 1 });
 module.exports =
+
 
   mongoose.models.Battle || mongoose.model("Battle", battleSchema);
