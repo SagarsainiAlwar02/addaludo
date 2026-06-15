@@ -7,6 +7,31 @@ exports.createMatch = async (req, res) => {
   try {
     const { entryFee, playersLimit } = req.body;
 
+    const wallet = await Wallet.findOne({ userId: req.user._id });
+
+if (!wallet) {
+  return res.status(404).json({ msg: "Wallet not found" });
+}
+
+if (Number(wallet.balance || 0) < Number(entryFee || 0)) {
+  return res.status(400).json({
+    msg: "Insufficient balance",
+  });
+}
+
+wallet.balance =
+  Number(wallet.balance || 0) - Number(entryFee || 0);
+
+await wallet.save();
+
+await Transaction.create({
+  userId: req.user._id,
+  amount: entryFee,
+  type: "debit",
+  status: "success",
+  note: "Match creator entry fee",
+});
+
     const match = await Match.create({
       entryFee,
       playersLimit: playersLimit || 2,
@@ -24,7 +49,26 @@ exports.createMatch = async (req, res) => {
 // ================= JOIN MATCH =================
 exports.joinMatch = async (req, res) => {
   try {
-    const match = await Match.findById(req.params.id);
+    const match = await Match.findOneAndUpdate(
+  {
+    _id: req.params.id,
+    status: { $ne: "completed" },
+  },
+  {
+    $set: {
+      status: "completed",
+    },
+  },
+  {
+    new: true,
+  }
+);
+
+if (!match) {
+  return res.status(400).json({
+    msg: "Winner already declared",
+  });
+}
 
     if (!match) return res.status(404).json({ msg: "Match not found" });
 
@@ -95,20 +139,26 @@ exports.declareWinner = async (req, res) => {
     const commission = Math.floor(totalPool * 0.1); // 10% platform fee
     const prize = totalPool - commission;
 
-    wallet.balance += prize;
+   await Wallet.findOneAndUpdate(
+  { userId: winnerId },
+  {
+    $inc: {
+      balance: prize,
+    },
+  }
+);
 
-    await Transaction.create({
-      userId: winnerId,
-      amount: prize,
-      type: "credit",
-      status: "success",
-      note: "Match winning prize"
-    });
-
+await Transaction.create({
+  userId: winnerId,
+  amount: prize,
+  type: "credit",
+  status: "success",
+  note: "Match winning prize"
+});
     match.winner = winnerId;
     match.status = "completed";
 
-    await wallet.save();
+   
     await match.save();
 
     res.json({
