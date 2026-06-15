@@ -16,19 +16,22 @@ const getUserId = (req) => {
 
 // ================== GET OR CREATE WALLET ==================
 const getOrCreateWallet = async (userId) => {
-  let wallet = await Wallet.findOne({ userId });
-
-  if (!wallet) {
-    wallet = await Wallet.create({
-      userId,
-      balance: 0,
-      bonus: 0,
-      winnings: 0,
-      locked: 0,
-    });
-  }
-
-  return wallet;
+  return await Wallet.findOneAndUpdate(
+    { userId },
+    {
+      $setOnInsert: {
+        userId,
+        balance: 0,
+        bonus: 0,
+        winnings: 0,
+        locked: 0,
+      },
+    },
+    {
+      upsert: true,
+      new: true,
+    }
+  );
 };
 
 // ================== GET WALLET ==================
@@ -75,8 +78,26 @@ exports.deductMoney = async (req, res) => {
       return res.status(400).json({ msg: "Insufficient balance" });
     }
 
-    wallet.balance -= amount;
-    await wallet.save();
+   const updatedWallet = await Wallet.findOneAndUpdate(
+  {
+    userId,
+    balance: { $gte: amount },
+  },
+  {
+    $inc: {
+      balance: -amount,
+    },
+  },
+  {
+    new: true,
+  }
+);
+
+if (!updatedWallet) {
+  return res.status(400).json({
+    msg: "Insufficient balance",
+  });
+}
 
     await Transaction.create({
       userId,
@@ -84,13 +105,13 @@ exports.deductMoney = async (req, res) => {
       type: "admin_adjust",
       status: "success",
       note: "Manual deduction",
-      balanceAfter: wallet.balance,
+    balanceAfter: updatedWallet.balance,
     });
 
     res.json({
       success: true,
       msg: "Money deducted successfully",
-      balance: wallet.balance,
+      balance: updatedWallet.balance,
     });
   } catch (err) {
     console.log("❌ DEDUCT MONEY ERROR:", err);
@@ -126,14 +147,42 @@ exports.withdrawRequest = async (req, res) => {
 
     const wallet = await getOrCreateWallet(userId);
 
+    const pendingWithdraw = await Withdraw.findOne({
+  userId,
+  status: "pending",
+});
+
+if (pendingWithdraw) {
+  return res.status(400).json({
+    msg: "Withdraw request already pending",
+  });
+}
+
     if (wallet.balance < amount) {
       return res.status(400).json({ msg: "Not enough balance" });
     }
 
-    wallet.balance -= amount;
-    wallet.locked += amount;
-    await wallet.save();
+const updatedWallet = await Wallet.findOneAndUpdate(
+  {
+    userId,
+    balance: { $gte: amount },
+  },
+  {
+    $inc: {
+      balance: -amount,
+      locked: amount,
+    },
+  },
+  {
+    new: true,
+  }
+);
 
+if (!updatedWallet) {
+  return res.status(400).json({
+    msg: "Not enough balance",
+  });
+}
     const withdraw = await Withdraw.create({
       userId,
       amount,
@@ -146,15 +195,15 @@ exports.withdrawRequest = async (req, res) => {
       type: "withdraw",
       status: "pending",
       note: "Withdraw request",
-      balanceAfter: wallet.balance,
+      balanceAfter: updatedWallet.balance,
     });
 
     res.json({
       success: true,
       msg: "Withdraw request sent successfully",
       withdraw,
-      balance: wallet.balance,
-      locked: wallet.locked,
+  balance: updatedWallet.balance,
+locked: updatedWallet.locked,
     });
   } catch (err) {
     console.log("❌ WITHDRAW ERROR:", err);
