@@ -91,13 +91,27 @@ exports.requestWithdraw = async (req, res) => {
       }
 
       // referral balance -> main wallet
-      wallet.referralBalance =
-        Number(wallet.referralBalance || 0) - withdrawAmount;
+      const updatedWallet = await Wallet.findOneAndUpdate(
+  {
+    userId,
+    referralBalance: { $gte: withdrawAmount },
+  },
+  {
+    $inc: {
+      referralBalance: -withdrawAmount,
+      balance: withdrawAmount,
+    },
+  },
+  {
+    new: true,
+  }
+);
 
-      wallet.balance =
-        Number(wallet.balance || 0) + withdrawAmount;
-
-      await wallet.save();
+if (!updatedWallet) {
+  return res.status(400).json({
+    msg: "Insufficient referral balance",
+  });
+}
 
       await Transaction.create({
         userId,
@@ -111,11 +125,22 @@ exports.requestWithdraw = async (req, res) => {
       return res.json({
         success: true,
         msg: "Referral earning main wallet me add ho gayi",
-        wallet,
+      wallet: updatedWallet,
       });
     }
 
     // ✅ NORMAL WITHDRAW
+
+    const pendingWithdraw = await Withdraw.findOne({
+  userId,
+  status: "pending",
+});
+
+if (pendingWithdraw) {
+  return res.status(400).json({
+    msg: "Aapki ek withdraw request already pending hai",
+  });
+}
     if (!["upi", "bank"].includes(method)) {
       return res.status(400).json({ msg: "Invalid withdraw method" });
     }
@@ -138,14 +163,27 @@ exports.requestWithdraw = async (req, res) => {
     }
 
     // winnings se amount hold/lock
-    wallet.winnings =
-      Number(wallet.winnings || 0) - withdrawAmount;
+   const updatedWallet = await Wallet.findOneAndUpdate(
+  {
+    userId,
+    winnings: { $gte: withdrawAmount },
+  },
+  {
+    $inc: {
+      winnings: -withdrawAmount,
+      locked: withdrawAmount,
+    },
+  },
+  {
+    new: true,
+  }
+);
 
-    wallet.locked =
-      Number(wallet.locked || 0) + withdrawAmount;
-
-    await wallet.save();
-
+if (!updatedWallet) {
+  return res.status(400).json({
+    msg: "Insufficient winning balance",
+  });
+}
     const withdraw = await Withdraw.create({
       userId,
       amount: withdrawAmount,
@@ -160,14 +198,14 @@ exports.requestWithdraw = async (req, res) => {
       type: "withdraw",
       status: "pending",
       note: "Withdraw request created",
-      balanceAfter: wallet.balance,
+   balanceAfter: Number(updatedWallet.balance || 0),
     });
 
     res.json({
       success: true,
       msg: "Withdraw request submitted successfully",
       withdraw,
-      wallet,
+   wallet: updatedWallet,
     });
 
   } catch (err) {
