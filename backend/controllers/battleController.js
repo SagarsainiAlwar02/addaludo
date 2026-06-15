@@ -279,6 +279,11 @@ loserWallet.locked = Math.max(
 );
 
 await loserWallet.save();
+await giveReferralCommission(
+  winnerId,
+  lockedBattle.amount,
+  lockedBattle.battleId
+);
 //
 
   lockedBattle.prize = finalPrize;
@@ -304,7 +309,7 @@ async function expireOldOpenBattles() {
 
   for (const battle of oldBattles) {
     battle.status = "cancelled";
-   battle.adminNote = "Auto cancelled after 2 minutes";
+   battle.adminNote = "Auto cancelled after 5 minutes";
     await battle.save();
   }
 }
