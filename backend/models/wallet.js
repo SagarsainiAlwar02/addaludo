@@ -15,25 +15,29 @@ const walletSchema = new mongoose.Schema({
     min: 0
   },
 
-  bonus: {
-    type: Number,
-    default: 0
-  },
+ bonus: {
+  type: Number,
+  default: 0,
+  min: 0,
+},
 
-  winnings: {
-    type: Number,
-    default: 0
-  },
+winnings: {
+  type: Number,
+  default: 0,
+  min: 0,
+},
+ 
+referralBalance: {
+  type: Number,
+  default: 0,
+  min: 0,
+},
 
-  referralBalance: {
-    type: Number,
-    default: 0
-  },
-
-  locked: {
-    type: Number,
-    default: 0
-  }
+ locked: {
+  type: Number,
+  default: 0,
+  min: 0,
+}
 
 }, { timestamps: true });
 
