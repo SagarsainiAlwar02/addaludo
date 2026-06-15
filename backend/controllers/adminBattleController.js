@@ -62,9 +62,28 @@ exports.getBattleById = async (req, res) => {
 exports.approveBattle = async (req, res) => {
   try {
     const battleId = req.params.battleId;
-    const battle = await Battle.findById(battleId);
+    const battle = await Battle.findOneAndUpdate(
+  {
+    _id: battleId,
+    resultSettled: false,
+  },
+  {
+    $set: {
+      resultSettled: true,
+    },
+  },
+  {
+    new: true,
+  }
+);
 
-    if (!battle) return res.status(404).json({ success: false, msg: "Battle not found" });
+if (!battle) {
+  return res.status(400).json({
+    success: false,
+    msg: "Battle already settled",
+  });
+}
+  
 
     const winnerId = req.body?.winnerId || battle.winner || battle.resultSubmittedBy;
     if (!winnerId) return res.status(400).json({ success: false, msg: "Winner not found" });
@@ -97,7 +116,10 @@ exports.approveBattle = async (req, res) => {
     }
 
     const amount = Number(battle.amount || 0);
-    const prize = Number(battle.prize || amount * 2);
+   const prize = Math.min(
+  Number(battle.prize || amount * 2),
+  amount * 2
+);
 
     const creatorWallet = await Wallet.findOne({ userId: battle.createdBy });
     const opponentWallet = await Wallet.findOne({ userId: battle.opponent });
@@ -147,11 +169,27 @@ exports.approveBattle = async (req, res) => {
 exports.rejectBattle = async (req, res) => {
   try {
     const battleId = req.params.battleId;
-    const battle = await Battle.findById(battleId);
+  const battle = await Battle.findOneAndUpdate(
+  {
+    _id: battleId,
+    resultSettled: false,
+  },
+  {
+    $set: {
+      resultSettled: true,
+    },
+  },
+  {
+    new: true,
+  }
+);
 
-    if (!battle) {
-      return res.status(404).json({ success: false, msg: "Battle not found" });
-    }
+if (!battle) {
+  return res.status(400).json({
+    success: false,
+    msg: "Battle already settled",
+  });
+}
 
     const alreadyPaid = await Transaction.findOne({
       roomId: battle.battleId,
