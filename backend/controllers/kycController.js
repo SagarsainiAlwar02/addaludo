@@ -19,9 +19,11 @@ exports.submitKyc = async (req, res) => {
     const user = await User.findById(userId);
     if (!user) return res.status(404).json({ msg: "User not found" });
 
-    if (user.kycStatus === "approved") {
-      return res.status(400).json({ msg: "KYC already approved" });
-    }
+  if (["approved", "pending"].includes(user.kycStatus)) {
+  return res.status(400).json({
+    msg: "KYC already submitted",
+  });
+}
 
     user.kycStatus = "pending";
     user.kyc = {
@@ -68,15 +70,29 @@ exports.getAllKyc = async (req, res) => {
 
 exports.approveKyc = async (req, res) => {
   try {
-    const user = await User.findById(req.params.id);
-    if (!user) return res.status(404).json({ msg: "User not found" });
+  const user = await User.findOneAndUpdate(
+  {
+    _id: req.params.id,
+    kycStatus: "pending",
+  },
+  {
+    $set: {
+      kycStatus: "approved",
+      "kyc.approvedAt": new Date(),
+      "kyc.rejectedAt": null,
+      "kyc.rejectReason": "",
+    },
+  },
+  {
+    new: true,
+  }
+);
 
-    user.kycStatus = "approved";
-    user.kyc.approvedAt = new Date();
-    user.kyc.rejectedAt = null;
-    user.kyc.rejectReason = "";
-
-    await user.save();
+if (!user) {
+  return res.status(400).json({
+    msg: "KYC already processed or user not found",
+  });
+}
 
     res.json({ success: true, msg: "KYC approved", user });
   } catch (err) {
@@ -88,8 +104,29 @@ exports.rejectKyc = async (req, res) => {
   try {
     const { reason } = req.body;
 
-    const user = await User.findById(req.params.id);
-    if (!user) return res.status(404).json({ msg: "User not found" });
+   const user = await User.findOneAndUpdate(
+  {
+    _id: req.params.id,
+    kycStatus: "pending",
+  },
+  {
+    $set: {
+      kycStatus: "rejected",
+      "kyc.rejectedAt": new Date(),
+      "kyc.approvedAt": null,
+      "kyc.rejectReason": reason || "KYC rejected by admin",
+    },
+  },
+  {
+    new: true,
+  }
+);
+
+if (!user) {
+  return res.status(400).json({
+    msg: "KYC already processed or user not found",
+  });
+}
 
     user.kycStatus = "rejected";
     user.kyc.rejectedAt = new Date();
