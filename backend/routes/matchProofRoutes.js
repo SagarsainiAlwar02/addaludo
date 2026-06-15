@@ -1,3 +1,4 @@
+const fs = require("fs");
 const express = require("express");
 const multer = require("multer");
 const path = require("path");
@@ -11,12 +12,16 @@ const {
 const auth = require("../middleware/auth");
 
 const router = express.Router();
+const uploadDir = "uploads/screenshots";
+
+if (!fs.existsSync(uploadDir)) {
+  fs.mkdirSync(uploadDir, { recursive: true });
+}
 
 const storage = multer.diskStorage({
-  destination: function (req, file, cb) {
-    cb(null, "uploads/screenshots");
-  },
-
+destination: function (req, file, cb) {
+  cb(null, uploadDir);
+}
   filename: function (req, file, cb) {
     const ext = path.extname(file.originalname);
     const uniqueName = `win_${Date.now()}_${Math.round(Math.random() * 1e9)}${ext}`;
@@ -45,7 +50,7 @@ const upload = multer({
 router.post("/upload", auth, upload.single("screenshot"), uploadMatchProof);
 
 // Admin ke liye
-router.get("/", getMatchProofs);
-router.patch("/:id/status", updateMatchProofStatus);
+router.get("/", auth, getMatchProofs);
+router.patch("/:id/status", auth, updateMatchProofStatus);
 
 module.exports = router;
