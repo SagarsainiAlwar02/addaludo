@@ -23,18 +23,21 @@ const depositSchema = new mongoose.Schema(
       index: true,
     },
 
-    utr: {
-      type: String,
-      required: true,
-      trim: true,
-      unique: true,
-      index: true,
-    },
+   utr: {
+  type: String,
+  required: true,
+  trim: true,
+  unique: true,
+  index: true,
+  minlength: 6,
+  maxlength: 50,
+},
 
-    screenshot: {
-      type: String,
-      required: true,
-    },
+   screenshot: {
+  type: String,
+  required: true,
+  trim: true,
+},
 
     status: {
       type: String,
@@ -43,10 +46,11 @@ const depositSchema = new mongoose.Schema(
       index: true,
     },
 
-    adminNote: {
-      type: String,
-      default: "",
-    },
+   adminNote: {
+  type: String,
+  default: "",
+  maxlength: 500,
+},
 
     approvedBy: {
       type: mongoose.Schema.Types.ObjectId,
@@ -61,6 +65,17 @@ const depositSchema = new mongoose.Schema(
   },
   { timestamps: true }
 );
+
+
+depositSchema.index({
+  userId: 1,
+  status: 1,
+});
+
+depositSchema.index({
+  status: 1,
+  createdAt: -1,
+});
 
 module.exports =
   mongoose.models.Deposit || mongoose.model("Deposit", depositSchema);
