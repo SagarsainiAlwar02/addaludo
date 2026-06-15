@@ -103,13 +103,26 @@ exports.getTransactions = async (req, res) => {
 // ================= APPROVE TRANSACTION =================
 exports.approveTransaction = async (req, res) => {
   try {
-    const tx = await Transaction.findById(req.params.id);
+   const tx = await Transaction.findOneAndUpdate(
+  {
+    _id: req.params.id,
+    status: "pending",
+  },
+  {
+    $set: {
+      status: "success",
+    },
+  },
+  {
+    new: true,
+  }
+);
 
-    if (!tx) return res.status(404).json({ msg: "Transaction not found" });
-
-    if (tx.status !== "pending") {
-      return res.status(400).json({ msg: "Already processed" });
-    }
+if (!tx) {
+  return res.status(400).json({
+    msg: "Already processed",
+  });
+}
 
     const wallet = await Wallet.findOne({ userId: tx.userId });
 
@@ -127,7 +140,7 @@ exports.approveTransaction = async (req, res) => {
       wallet.locked -= tx.amount;
     }
 
-    tx.status = "success";
+
 
     await wallet.save();
     await tx.save();
@@ -142,13 +155,26 @@ exports.approveTransaction = async (req, res) => {
 // ================= REJECT TRANSACTION =================
 exports.rejectTransaction = async (req, res) => {
   try {
-    const tx = await Transaction.findById(req.params.id);
+  const tx = await Transaction.findOneAndUpdate(
+  {
+    _id: req.params.id,
+    status: "pending",
+  },
+  {
+    $set: {
+      status: "failed",
+    },
+  },
+  {
+    new: true,
+  }
+);
 
-    if (!tx) return res.status(404).json({ msg: "Transaction not found" });
-
-    if (tx.status !== "pending") {
-      return res.status(400).json({ msg: "Already processed" });
-    }
+if (!tx) {
+  return res.status(400).json({
+    msg: "Already processed",
+  });
+}
 
     const wallet = await Wallet.findOne({ userId: tx.userId });
 
@@ -164,8 +190,6 @@ exports.rejectTransaction = async (req, res) => {
   await wallet.save();
 }
 
-    tx.status = "failed";
-    await tx.save();
 
     res.json({ msg: "Transaction rejected" });
 
