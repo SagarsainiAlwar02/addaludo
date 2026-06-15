@@ -1,64 +1,9 @@
-// const jwt = require("jsonwebtoken");
-// const User = require("../models/user");
-
-// module.exports = async (req, res, next) => {
-//   try {
-//     let token = req.header("Authorization") || req.headers.authorization;
-
-//     if (!token) {
-//       return res.status(401).json({ msg: "No token, access denied" });
-//     }
-
-//     if (token.startsWith("Bearer ")) {
-//       token = token.slice(7).trim();
-//     }
-
-//     if (!token) {
-//       return res.status(401).json({ msg: "Token missing" });
-//     }
-
-//     const decoded = jwt.verify(
-//       token,
-//       process.env.JWT_SECRET || "secret"
-//     );
-
-//     if (!decoded || !decoded.id) {
-//       return res.status(401).json({ msg: "Invalid token payload" });
-//     }
-
-//     const userId = String(decoded.id);
-
-//     const user = await User.findById(userId).select("-password");
-
-//     if (!user) {
-//       return res.status(401).json({ msg: "User not found" });
-//     }
-
-//     if (user.status === "blocked") {
-//       return res.status(403).json({ msg: "Account blocked" });
-//     }
-
-//     // ✅ Controllers ke liye clean string id
-//     req.user = userId;
-
-//     // ✅ Full user data agar kahin zarurat pade
-//     req.userData = user;
-
-//     next();
-
-//   } catch (err) {
-//     console.error("❌ AUTH ERROR:", err.message);
-
-//     return res.status(401).json({
-//       msg: "Token invalid or expired"
-//     });
-//   }
-// };
 
 
 
 
 const jwt = require("jsonwebtoken");
+const mongoose = require("mongoose");
 const User = require("../models/user");
 
 module.exports = async function auth(req, res, next) {
@@ -73,8 +18,21 @@ module.exports = async function auth(req, res, next) {
     }
 
     const token = header.split(" ")[1];
-    const decoded = jwt.verify(token, process.env.JWT_SECRET || "secret");
+    if (!process.env.JWT_SECRET) {
+  throw new Error("JWT_SECRET missing");
+}
 
+const decoded = jwt.verify(
+  token,
+  process.env.JWT_SECRET
+);
+
+if (!mongoose.Types.ObjectId.isValid(decoded.id)) {
+  return res.status(401).json({
+    success: false,
+    msg: "Invalid token",
+  });
+}
     const user = await User.findById(decoded.id);
 
     if (!user) {
@@ -95,11 +53,13 @@ module.exports = async function auth(req, res, next) {
     req.userData = user;
 
     next();
+} catch (err) {
 
-  } catch (err) {
-    return res.status(401).json({
-      success: false,
-      msg: "Invalid token"
-    });
-  }
+  console.log("AUTH ERROR:", err.message);
+
+  return res.status(401).json({
+    success: false,
+    msg: "Invalid token",
+  });
+}
 };
