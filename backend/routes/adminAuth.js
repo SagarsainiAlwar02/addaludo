@@ -77,11 +77,22 @@ router.post("/login", async (req, res) => {
       return res.status(400).json({ msg: "Wrong password" });
     }
 
-    const token = jwt.sign(
-      { id: admin._id, role: admin.role },
-      process.env.JWT_SECRET || "secret",
-      { expiresIn: "7d" }
-    );
+  if (!process.env.JWT_SECRET) {
+  return res.status(500).json({
+    msg: "JWT_SECRET missing in env"
+  });
+}
+
+const token = jwt.sign(
+  {
+    id: admin._id,
+    role: admin.role,
+  },
+  process.env.JWT_SECRET,
+  {
+    expiresIn: "7d",
+  }
+);
 
     res.json({
       success: true,
