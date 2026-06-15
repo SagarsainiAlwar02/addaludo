@@ -32,11 +32,28 @@ exports.uploadScanner = async (req, res) => {
       setting.scanner.image = `/uploads/payment/${req.file.filename}`;
     }
 
-    if (req.body.scannerLimit) {
-      const limit = JSON.parse(req.body.scannerLimit);
-      setting.scanner.min = Number(limit.min || 0);
-      setting.scanner.max = Number(limit.max || 2000);
-    }
+   if (req.body.scannerLimit) {
+  let limit = {};
+
+  try {
+    limit = JSON.parse(req.body.scannerLimit);
+  } catch {
+    return res.status(400).json({
+      success: false,
+      msg: "Invalid scanner limit format",
+    });
+  }
+
+ setting.scanner.min = Math.max(
+  0,
+  Number(limit.min || 0)
+);
+
+setting.scanner.max = Math.max(
+  setting.scanner.min,
+  Number(limit.max || 2000)
+);
+}
 
     setting.scanner.active = true;
 
@@ -56,9 +73,15 @@ exports.saveUpi = async (req, res) => {
   try {
     const setting = await getOrCreateSetting();
 
-    setting.upiList = Array.isArray(req.body.upiList)
-      ? req.body.upiList.map((x) => String(x).trim()).filter(Boolean)
-      : [];
+  setting.upiList = Array.isArray(req.body.upiList)
+  ? [
+      ...new Set(
+        req.body.upiList
+          .map((x) => String(x).trim().toLowerCase())
+          .filter(Boolean)
+      ),
+    ]
+  : [];
 
     if (req.body.upiLimit) {
       setting.upiLimit = {
@@ -83,11 +106,12 @@ exports.saveBank = async (req, res) => {
   try {
     const setting = await getOrCreateSetting();
 
-    setting.bank = {
-      name: req.body.name || "",
-      accountNumber: req.body.accountNumber || "",
-      ifsc: req.body.ifsc || "",
-    };
+ if (!req.body.accountNumber || !req.body.ifsc) {
+  return res.status(400).json({
+    success: false,
+    msg: "Account number and IFSC required",
+  });
+}
 
     await setting.save();
 
