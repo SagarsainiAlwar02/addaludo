@@ -17,6 +17,10 @@ const Wallet = require("./models/wallet");
 
 const app = express();
 
+if (!process.env.JWT_SECRET) {
+  throw new Error("JWT_SECRET is missing in .env");
+}
+
 function makeReferralCode() {
   return "BA-" + Math.floor(100000 + Math.random() * 900000);
 }
@@ -72,8 +76,11 @@ app.use((req, res, next) => {
   next();
 });
 
-app.use(express.json());
-app.use(express.urlencoded({ extended: true }));
+app.use(express.json({ limit: "2mb" }));
+app.use(express.urlencoded({
+  extended: true,
+  limit: "2mb",
+}));
 app.use("/uploads", express.static(uploadPath));
 
 const server = http.createServer(app);
@@ -113,6 +120,16 @@ app.post(
 );
 
 const otpStore = {};
+
+setInterval(() => {
+  const now = Date.now();
+
+  Object.keys(otpStore).forEach((phone) => {
+    if (now - otpStore[phone].createdAt > 5 * 60 * 1000) {
+      delete otpStore[phone];
+    }
+  });
+}, 60000);
 
 app.post("/api/send-otp", async (req, res) => {
   try {
@@ -280,10 +297,10 @@ app.post("/api/otp-login", async (req, res) => {
     }
 
     const token = jwt.sign(
-      { id: user._id },
-      process.env.JWT_SECRET || "secret",
-      { expiresIn: "7d" }
-    );
+  { id: user._id },
+  process.env.JWT_SECRET,
+  { expiresIn: "7d" }
+);
 
     return res.json({
       success: true,
@@ -331,6 +348,7 @@ app.use((req, res) => {
   });
 });
 
+mongoose.set("strictQuery", true);
 const PORT = process.env.PORT || 5000;
 
 mongoose

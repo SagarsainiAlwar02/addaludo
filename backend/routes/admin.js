@@ -389,7 +389,7 @@ router.post("/add-bonus", auth, async (req, res) => {
       });
     }
 
-    wallet.balance = Number(wallet.balance || 0) + bonusAmount;
+    wallet.bonus = Number(wallet.bonus || 0) + bonusAmount;
     await wallet.save();
 
     const transaction = await Transaction.create({
@@ -398,7 +398,7 @@ router.post("/add-bonus", auth, async (req, res) => {
       type: "bonus",
       status: "success",
       note: reason || "Admin bonus added",
-      balanceAfter: wallet.balance,
+    balanceAfter: wallet.bonus,
       approvedBy: adminId,
       approvedAt: new Date(),
     });
@@ -1105,9 +1105,26 @@ router.patch("/battles/approve/:id", auth, async (req, res) => {
       return res.status(400).json({ msg: "Winner required hai" });
     }
 
-    const battle = await Battle.findById(req.params.id);
+  const battle = await Battle.findOneAndUpdate(
+  {
+    _id: req.params.id,
+    resultSettled: false,
+  },
+  {
+    $set: {
+      resultSettled: true,
+    },
+  },
+  {
+    new: true,
+  }
+);
 
-    if (!battle) return res.status(404).json({ msg: "Battle not found" });
+if (!battle) {
+  return res.status(400).json({
+    msg: "Battle already settled or not found",
+  });
+}
 
     const creatorId = String(battle.createdBy);
     const opponentId = battle.opponent ? String(battle.opponent) : null;
@@ -1125,14 +1142,13 @@ router.patch("/battles/approve/:id", auth, async (req, res) => {
       $or: [{ roomId: battle.battleId }, { roomId: String(battle._id) }],
     });
 
-    if (battle.resultSettled || alreadyPaid) {
-      battle.status = "approved";
-      battle.winner = winnerId;
-      battle.resultSettled = true;
-      battle.adminNote =
-        adminNote || "Already settled. Duplicate payment stopped.";
-      battle.actionBy = adminId;
-      battle.actionAt = new Date();
+   if (alreadyPaid) {
+   battle.status = "approved";
+battle.winner = winnerId;
+battle.adminNote =
+  adminNote || "Already settled. Duplicate payment stopped.";
+battle.actionBy = adminId;
+battle.actionAt = new Date();
 
       await battle.save();
 
@@ -1173,7 +1189,7 @@ router.patch("/battles/approve/:id", auth, async (req, res) => {
 
     battle.status = "approved";
     battle.winner = winnerId;
-    battle.resultSettled = true;
+  
     battle.adminNote = adminNote || "Winner declared by admin";
     battle.actionBy = adminId;
     battle.actionAt = new Date();
@@ -1196,9 +1212,26 @@ router.patch("/battles/reject/:id", auth, async (req, res) => {
     const adminId = getAdminId(req);
     const { adminNote } = req.body;
 
-    const battle = await Battle.findById(req.params.id);
+const battle = await Battle.findOneAndUpdate(
+  {
+    _id: req.params.id,
+    resultSettled: false,
+  },
+  {
+    $set: {
+      resultSettled: true,
+    },
+  },
+  {
+    new: true,
+  }
+);
 
-    if (!battle) return res.status(404).json({ msg: "Battle not found" });
+if (!battle) {
+  return res.status(400).json({
+    msg: "Battle already settled or not found",
+  });
+}
 
     const amount = Number(battle.amount || 0);
 
@@ -1208,9 +1241,9 @@ router.patch("/battles/reject/:id", auth, async (req, res) => {
       $or: [{ roomId: battle.battleId }, { roomId: String(battle._id) }],
     });
 
-    if (battle.resultSettled || alreadyRefunded) {
+   if (alreadyRefunded) {
       battle.status = "cancelled";
-      battle.resultSettled = true;
+    
       battle.adminNote =
         adminNote || "Already settled. Duplicate refund stopped.";
       battle.actionBy = adminId;
