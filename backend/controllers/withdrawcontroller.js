@@ -5,17 +5,34 @@ const Withdraw = require("../models/withdraw");
 exports.requestWithdraw = async (req, res) => {
   try {
     const { amount, method, details } = req.body;
+    if (!["upi", "bank"].includes(method)) {
+  return res.status(400).json({
+    success: false,
+    msg: "Invalid withdraw method",
+  });
+}
 
     const withdrawAmount = Number(amount);
 
-    if (!withdrawAmount || withdrawAmount <= 0) {
-      return res.status(400).json({
-        success: false,
-        msg: "Invalid withdraw amount",
-      });
-    }
+  if (!withdrawAmount || withdrawAmount < 200) {
+  return res.status(400).json({
+    success: false,
+    msg: "Minimum withdraw ₹200 hai",
+  });
+}
 
     const wallet = await Wallet.findOne({ userId: req.user });
+    const pendingWithdraw = await Withdraw.findOne({
+  userId: req.user,
+  status: "pending",
+});
+
+if (pendingWithdraw) {
+  return res.status(400).json({
+    success: false,
+    msg: "Withdraw request already pending",
+  });
+}
 
     if (!wallet) {
       return res.status(404).json({
@@ -32,10 +49,28 @@ exports.requestWithdraw = async (req, res) => {
     }
 
     // balance se amount hatao aur locked me hold karo
-    wallet.balance = Number(wallet.balance || 0) - withdrawAmount;
-    wallet.locked = Number(wallet.locked || 0) + withdrawAmount;
+  const updatedWallet = await Wallet.findOneAndUpdate(
+  {
+    userId: req.user,
+    balance: { $gte: withdrawAmount },
+  },
+  {
+    $inc: {
+      balance: -withdrawAmount,
+      locked: withdrawAmount,
+    },
+  },
+  {
+    new: true,
+  }
+);
 
-    await wallet.save();
+if (!updatedWallet) {
+  return res.status(400).json({
+    success: false,
+    msg: "Insufficient balance",
+  });
+}
 
     const withdraw = await Withdraw.create({
       userId: req.user,
