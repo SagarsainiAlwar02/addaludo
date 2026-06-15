@@ -54,7 +54,9 @@ exports.createDepositRequest = async (req, res) => {
   try {
     const userId = getUserId(req);
     const amount = Number(req.body.amount);
-    const utr = String(req.body.utr || "").trim();
+const utr = String(req.body.utr || "")
+  .trim()
+  .toUpperCase();
 
     if (!amount || amount < 100) {
       return res.status(400).json({
@@ -176,21 +178,30 @@ exports.adminGetDeposits = async (req, res) => {
 exports.adminApproveDeposit = async (req, res) => {
   try {
     const adminId = getAdminId(req);
-    const deposit = await Deposit.findById(req.params.id);
+   const deposit = await Deposit.findOneAndUpdate(
+  {
+    _id: req.params.id,
+    status: "pending",
+  },
+  {
+    $set: {
+      status: "approved",
+      approvedBy: adminId,
+      approvedAt: new Date(),
+      adminNote: req.body.adminNote || "Approved",
+    },
+  },
+  {
+    new: true,
+  }
+);
 
-    if (!deposit) {
-      return res.status(404).json({
-        success: false,
-        msg: "Deposit request not found",
-      });
-    }
-
-    if (deposit.status !== "pending") {
-      return res.status(400).json({
-        success: false,
-        msg: "Deposit already processed",
-      });
-    }
+if (!deposit) {
+  return res.status(400).json({
+    success: false,
+    msg: "Deposit already processed",
+  });
+}
 
     const wallet = await getOrCreateWallet(deposit.userId);
 
@@ -199,12 +210,7 @@ exports.adminApproveDeposit = async (req, res) => {
 
     await wallet.save();
 
-    deposit.status = "approved";
-    deposit.approvedBy = adminId;
-    deposit.approvedAt = new Date();
-    deposit.adminNote = req.body.adminNote || "Approved";
-    await deposit.save();
-
+  
     await Transaction.create({
       userId: deposit.userId,
       amount: deposit.amount,
@@ -235,27 +241,32 @@ exports.adminApproveDeposit = async (req, res) => {
 exports.adminRejectDeposit = async (req, res) => {
   try {
     const adminId = getAdminId(req);
-    const deposit = await Deposit.findById(req.params.id);
+   const deposit = await Deposit.findOneAndUpdate(
+  {
+    _id: req.params.id,
+    status: "pending",
+  },
+  {
+    $set: {
+      status: "rejected",
+      approvedBy: adminId,
+      approvedAt: new Date(),
+      adminNote: req.body.adminNote || "Rejected",
+    },
+  },
+  {
+    new: true,
+  }
+);
 
-    if (!deposit) {
-      return res.status(404).json({
-        success: false,
-        msg: "Deposit request not found",
-      });
-    }
+if (!deposit) {
+  return res.status(400).json({
+    success: false,
+    msg: "Deposit already processed",
+  });
+}
 
-    if (deposit.status !== "pending") {
-      return res.status(400).json({
-        success: false,
-        msg: "Deposit already processed",
-      });
-    }
-
-    deposit.status = "rejected";
-    deposit.approvedBy = adminId;
-    deposit.approvedAt = new Date();
-    deposit.adminNote = req.body.adminNote || "Rejected";
-    await deposit.save();
+ 
 
     await Transaction.create({
       userId: deposit.userId,
