@@ -11,12 +11,37 @@ const gameRoomSchema = new mongoose.Schema({
   },
 
   // 👥 players in room
-  players: [
+ players: {
+  type: [
     {
       userId: {
         type: String,
-        required: true
+        required: true,
       },
+      socketId: {
+        type: String,
+        required: true,
+      },
+      username: {
+        type: String,
+        default: "Player",
+        trim: true,
+        maxlength: 30,
+      },
+      amount: {
+        type: Number,
+        default: 0,
+        min: 0,
+      },
+    },
+  ],
+  validate: {
+    validator(arr) {
+      return arr.length <= 2;
+    },
+    message: "Maximum 2 players allowed",
+  },
+},
       socketId: {
         type: String,
         required: true

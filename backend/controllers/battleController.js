@@ -965,3 +965,122 @@ exports.cancelBattle = async (req, res) => {
     return res.status(500).json({ success: false, msg: err.message });
   }
 };
+
+
+
+
+
+
+// ====== ADMIN PANEL KE LIYE SARE MATCHES FETCH KARNE KA FUNCTION ======
+exports.getAdminBattles = async (req, res) => {
+  try {
+    // Database se saare battles uthao aur players/winner ka data populate karo
+    const battles = await Battle.find({})
+      .populate("createdBy", "name phone mobile username")
+      .populate("opponent", "name phone mobile username")
+      .populate("winner", "name phone mobile username")
+      .sort({ createdAt: -1 });
+
+    return res.json({
+      success: true,
+      battles: battles || []
+    });
+  } catch (err) {
+    console.log("ADMIN FETCH BATTLES ERROR:", err);
+    return res.status(500).json({ success: false, msg: err.message });
+  }
+};
+
+
+
+
+// 1. Saare Matches Admin Panel me dikhane ke liye
+exports.getAdminBattles = async (req, res) => {
+  try {
+    const battles = await Battle.find({})
+      .populate("createdBy", "name phone mobile username")
+      .populate("opponent", "name phone mobile username")
+      .populate("winner", "name phone mobile username")
+      .sort({ createdAt: -1 });
+
+    return res.json({ success: true, battles: battles || [] });
+  } catch (err) {
+    return res.status(500).json({ success: false, msg: err.message });
+  }
+};
+
+// 2. Kisi Ek Match ki details modal me kholne ke liye
+exports.getAdminSingleBattle = async (req, res) => {
+  try {
+    const battle = await Battle.findById(req.params.id)
+      .populate("createdBy", "name phone mobile username")
+      .populate("opponent", "name phone mobile username")
+      .populate("winner", "name phone mobile username")
+      .populate("resultSubmittedBy", "name phone");
+
+    if (!battle) return res.status(404).json({ success: false, msg: "Match nahi mila" });
+    return res.json({ success: true, battle });
+  } catch (err) {
+    return res.status(500).json({ success: false, msg: err.message });
+  }
+};
+
+// 3. Admin dwara Winner Set karne ke liye (Win Button)
+exports.approveAdminBattle = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { winnerId, adminNote } = req.body;
+
+    const battle = await Battle.findById(id);
+    if (!battle) return res.status(404).json({ success: false, msg: "Match nahi mila" });
+
+    // battleController ka built-in settleWinner function call kiya
+    const settledBattle = await settleWinner(battle, winnerId);
+    if (!settledBattle) {
+      return res.status(400).json({ success: false, msg: "Result already settled ya invalid status hai" });
+    }
+
+    if (adminNote) {
+      settledBattle.adminNote = adminNote;
+      await settledBattle.save();
+    }
+
+    return res.json({ success: true, msg: "Winner approved successfully", battle: settledBattle });
+  } catch (err) {
+    return res.status(500).json({ success: false, msg: err.message });
+  }
+};
+
+// 4. Admin dwara Full Match Cancel aur Refund karne ke liye (Cancel Button)
+exports.rejectAdminBattle = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { adminNote } = req.body;
+
+    const battle = await Battle.findById(id);
+    if (!battle) return res.status(404).json({ success: false, msg: "Match nahi mila" });
+
+    if (["approved", "cancelled", "rejected"].includes(battle.status)) {
+      return res.status(400).json({ success: false, msg: "Ye match already close ho chuka hai" });
+    }
+
+    // Agar match running tha toh dono players ko refund karo
+    if (battle.entryLocked || ["running", "room_submitted", "result_submitted", "cancel_requested"].includes(battle.status)) {
+      if (battle.createdBy) {
+        await refundAmount(battle.createdBy, battle.amount, battle.battleId, adminNote || "Cancelled by admin");
+      }
+      if (battle.opponent) {
+        await refundAmount(battle.opponent, battle.amount, battle.battleId, adminNote || "Cancelled by admin");
+      }
+    }
+
+    battle.status = "cancelled";
+    battle.adminNote = adminNote || "Cancelled by admin from match view";
+    battle.resultSettled = true;
+    await battle.save();
+
+    return res.json({ success: true, msg: "Match cancel aur refund ho gaya", battle });
+  } catch (err) {
+    return res.status(500).json({ success: false, msg: err.message });
+  }
+};
