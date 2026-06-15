@@ -142,31 +142,27 @@ app.post("/api/send-otp", async (req, res) => {
     };
 
     console.log("📲 OTP GENERATED:", phone, otp);
+const smsResponse = await axios.get(
+  `https://2factor.in/API/V1/${process.env.TWO_FACTOR_API_KEY}/SMS/${phone}/${otp}`
+);
 
-    const smsResponse = await axios.post(
-      "https://www.fast2sms.com/dev/bulkV2",
-      {
-        route: "otp",
-        variables_values: otp,
-        flash: 0,
-        numbers: phone,
-      },
-      {
-        headers: {
-          authorization: process.env.FAST2SMS_API_KEY,
-          "Content-Type": "application/json",
-        },
-      }
-    );
+console.log("✅ 2FACTOR RESPONSE:", smsResponse.data);
 
-    console.log("✅ FAST2SMS RESPONSE:", smsResponse.data);
+if (smsResponse.data.Status !== "Success") {
+  return res.status(500).json({
+    success: false,
+    msg: "SMS failed",
+    error: smsResponse.data,
+  });
+}
 
-    return res.json({
-      success: true,
-      msg: "OTP sent successfully",
-    });
+return res.json({
+  success: true,
+  msg: "OTP sent successfully",
+});
+
   } catch (err) {
-    console.log("❌ FAST2SMS ERROR:", err.response?.data || err.message);
+    console.log("❌ 2FACTOR ERROR:", err.response?.data || err.message);
 
     return res.status(500).json({
       success: false,

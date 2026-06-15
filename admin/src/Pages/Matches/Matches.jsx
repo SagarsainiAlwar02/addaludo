@@ -12,28 +12,29 @@ const Matches = () => {
   const [searchMobile, setSearchMobile] = useState("");
   const [actionLoading, setActionLoading] = useState(false);
 
-  const fetchMatches = async () => {
-    try {
-      setLoading(true);
-   const res = await API.get("/admin/battles?limit=200");
-      setMatches(Array.isArray(res.data) ? res.data : res.data.battles || []);
-    } catch (err) {
-      console.log("Matches error:", err.response?.data || err.message);
-      setMatches([]);
-    } finally {
-      setLoading(false);
-    }
-  };
 
-  useEffect(() => {
-    fetchMatches();
+const fetchMatches = async () => {
+  try {
+    setLoading(true);
 
-    const interval = setInterval(() => {
-      fetchMatches();
-    }, 5000);
+    const res = await API.get("/admin/battles?limit=200");
 
-    return () => clearInterval(interval);
-  }, []);
+    console.log("MATCH API RESPONSE", res.data);
+
+    setMatches(
+      Array.isArray(res.data)
+        ? res.data
+        : Array.isArray(res.data?.battles)
+        ? res.data.battles
+        : []
+    );
+  } catch (err) {
+    console.log("Matches error:", err.response?.data || err.message);
+    setMatches([]);
+  } finally {
+    setLoading(false);
+  }
+};
 
   const getStatusGroup = (status) => {
     if (
