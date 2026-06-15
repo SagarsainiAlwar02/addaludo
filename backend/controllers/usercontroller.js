@@ -59,10 +59,15 @@ exports.sendOtp = async (req, res) => {
     console.log("📲 OTP:", phone, otp);
     console.log("✅ FAST2SMS RESPONSE:", smsRes);
 
-    otpStore[phone] = {
-      otp,
-      createdAt: Date.now(),
-    };
+   otpStore[phone] = {
+  otp,
+  createdAt: Date.now(),
+  attempts: 0,
+};
+
+setTimeout(() => {
+  delete otpStore[phone];
+}, 5 * 60 * 1000);
 
     return res.json({
       success: true,
@@ -104,10 +109,21 @@ exports.verifyOtp = async (req, res) => {
       return res.status(400).json({ msg: "OTP expired" });
     }
 
-    if (stored.otp !== otp) {
-      return res.status(400).json({ msg: "Invalid OTP" });
-    }
+  if (stored.otp !== otp) {
+  stored.attempts = (stored.attempts || 0) + 1;
 
+  if (stored.attempts >= 5) {
+    delete otpStore[phone];
+
+    return res.status(400).json({
+      msg: "Too many attempts. Request OTP again",
+    });
+  }
+
+  return res.status(400).json({
+    msg: "Invalid OTP",
+  });
+}
     delete otpStore[phone];
 
     let user = await User.findOne({ phone });
@@ -137,14 +153,23 @@ exports.verifyOtp = async (req, res) => {
         referredBy,
       });
 
-      await Wallet.create({
-        userId: user._id,
-        balance: 0,
-        bonus: 0,
-        winnings: 0,
-        referralBalance: 0,
-        locked: 0,
-      });
+     await Wallet.findOneAndUpdate(
+  { userId: user._id },
+  {
+    $setOnInsert: {
+      userId: user._id,
+      balance: 0,
+      bonus: 0,
+      winnings: 0,
+      referralBalance: 0,
+      locked: 0,
+    },
+  },
+  {
+    upsert: true,
+    new: true,
+  }
+);
 
       isNewUser = true;
     }
@@ -428,6 +453,13 @@ exports.updateName = async (req, res) => {
       return res.status(400).json({ success: false, msg: "Name required" });
     }
 
+
+    if (!/^[a-zA-Z0-9 ]+$/.test(name)) {
+  return res.status(400).json({
+    success: false,
+    msg: "Invalid name",
+  });
+}
     if (name.length < 3 || name.length > 20) {
       return res.status(400).json({
         success: false,
