@@ -1,3 +1,5 @@
+const Battle = require("../models/battle");
+
 const MatchProof = require("../models/matchProof");
 
 exports.uploadMatchProof = async (req, res) => {
@@ -16,24 +18,31 @@ exports.uploadMatchProof = async (req, res) => {
       });
     }
 
-    const { roomId, entryAmount, prizePool, winAmount } = req.body;
-
+const { roomId } = req.body;
     if (!roomId) {
       return res.status(400).json({
         success: false,
         msg: "Room ID required",
       });
     }
+    const battle = await Battle.findOne({ battleId: roomId });
 
-    const proof = await MatchProof.create({
-      userId: req.user,
-      roomId,
-      entryAmount: Number(entryAmount || 0),
-      prizePool: Number(prizePool || 0),
-      winAmount: Number(winAmount || 0),
-      screenshotUrl: `/uploads/screenshots/${req.file.filename}`,
-      status: "pending",
-    });
+if (!battle) {
+  return res.status(404).json({
+    success: false,
+    msg: "Battle not found",
+  });
+}
+
+  const proof = await MatchProof.create({
+  userId: req.user,
+  roomId,
+  entryAmount: Number(battle.amount || 0),
+  prizePool: Number(battle.prize || 0),
+  winAmount: Number(battle.prize || 0),
+  screenshotUrl: `/uploads/screenshots/${req.file.filename}`,
+  status: "pending",
+});
 
     res.status(201).json({
       success: true,
@@ -79,11 +88,27 @@ exports.updateMatchProofStatus = async (req, res) => {
       });
     }
 
-    const proof = await MatchProof.findByIdAndUpdate(
-      req.params.id,
-      { status },
-      { new: true }
-    );
+    const proof = await MatchProof.findOneAndUpdate(
+  {
+    _id: req.params.id,
+    status: "pending",
+  },
+  {
+    $set: {
+      status,
+    },
+  },
+  {
+    new: true,
+  }
+);
+
+if (!proof) {
+  return res.status(400).json({
+    success: false,
+    msg: "Proof already processed or not found",
+  });
+}
 
     if (!proof) {
       return res.status(404).json({
