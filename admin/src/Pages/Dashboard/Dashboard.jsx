@@ -1,10 +1,11 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useRef } from "react";
 import API from "../../api";
 import "./Dashboard.css";
 
 const Dashboard = () => {
   const [stats, setStats] = useState([]);
   const [loading, setLoading] = useState(true);
+  const fetchedRef = useRef(false);
 
   const fetchStats = async () => {
     try {
@@ -30,6 +31,9 @@ const Dashboard = () => {
   };
 
   useEffect(() => {
+    if (fetchedRef.current) return;
+    fetchedRef.current = true;
+
     fetchStats();
 
     const interval = setInterval(fetchStats, 10000);

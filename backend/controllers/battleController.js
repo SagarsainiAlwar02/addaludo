@@ -971,18 +971,44 @@ export const cancelBattle = async (req, res) => {
 
 
 
-// ====== ADMIN PANEL KE LIYE SARE MATCHES FETCH KARNE KA FUNCTION ======
 export const getAdminBattles = async (req, res) => {
   try {
-    // Database se saare battles uthao aur players/winner ka data populate karo
-    const battles = await Battle.find({})
+    // 1. Get query parameters and convert them to numbers
+    const limit = parseInt(req.query.limit, 10) || 50; 
+    const page = parseInt(req.query.page, 10) || 1;
+    const skip = (page - 1) * limit;
+
+    // Optional: Filter options handle karne ke liye (jaise agar status wise search karna ho)
+    const filter = {};
+    if (req.query.status) {
+      filter.status = req.query.status;
+    }
+    if (req.query.battleId) {
+      filter.battleId = req.query.battleId;
+    }
+
+    // 2. Fetch battles with limit, skip, and lean optimization
+    const battles = await Battle.find(filter)
+      .select(
+        "battleId amount prize status createdAt updatedAt createdBy opponent winner ludoKingRoomCode results resultSubmittedBy resultType winner adminNote"
+      )
+      .sort({ createdAt: -1 })
+      .skip(skip)
+      .limit(limit)
       .populate("createdBy", "name phone mobile username")
       .populate("opponent", "name phone mobile username")
       .populate("winner", "name phone mobile username")
-      .sort({ createdAt: -1 });
+      .lean();
+
+    // 3. Get total count for frontend pagination controls
+    const totalBattles = await Battle.countDocuments(filter);
 
     return res.json({
       success: true,
+      count: battles.length,
+      total: totalBattles,
+      page,
+      totalPages: Math.ceil(totalBattles / limit),
       battles: battles || []
     });
   } catch (err) {
@@ -990,6 +1016,8 @@ export const getAdminBattles = async (req, res) => {
     return res.status(500).json({ success: false, msg: err.message });
   }
 };
+
+
 
 
 

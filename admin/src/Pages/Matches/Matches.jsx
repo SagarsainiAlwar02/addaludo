@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useEffect, useMemo, useState, useRef } from "react";
 import API from "../../api";
 import "./Matches.css";
 
@@ -11,6 +11,7 @@ const Matches = () => {
   const [loading, setLoading] = useState(false);
   const [searchMobile, setSearchMobile] = useState("");
   const [actionLoading, setActionLoading] = useState(false);
+  const fetchedRef = useRef(false);
 
 
 const fetchMatches = async () => {
@@ -35,6 +36,12 @@ const fetchMatches = async () => {
     setLoading(false);
   }
 };
+
+  useEffect(() => {
+    if (fetchedRef.current) return;
+    fetchedRef.current = true;
+    fetchMatches();
+  }, []);
 
   const getStatusGroup = (status) => {
     if (
