@@ -1,13 +1,13 @@
-const Battle = require("../models/battle");
-const Wallet = require("../models/wallet");
-const Transaction = require("../models/transaction");
+import Battle from "../models/battle.js";
+import Wallet from "../models/wallet.js";
+import Transaction from "../models/transaction.js";
 
 function getPlayableBalance(wallet) {
   return Number(wallet.balance || 0) + Number(wallet.winnings || 0);
 }
 
 
-exports.getAllBattles = async (req, res) => {
+export const getAllBattles = async (req, res) => {
   try {
     const limit = Math.min(Number(req.query.limit || 50), 200);
 
@@ -36,7 +36,7 @@ exports.getAllBattles = async (req, res) => {
 };
 
 
-exports.getBattleById = async (req, res) => {
+export const getBattleById = async (req, res) => {
   try {
     const battle = await Battle.findById(req.params.battleId)
       .populate("createdBy", "name phone email")
@@ -59,7 +59,7 @@ exports.getBattleById = async (req, res) => {
 
 //
 
-exports.approveBattle = async (req, res) => {
+export const approveBattle = async (req, res) => {
   try {
     const battleId = req.params.battleId;
     const battle = await Battle.findOneAndUpdate(
@@ -166,7 +166,7 @@ if (!battle) {
 };
 
 //
-exports.rejectBattle = async (req, res) => {
+export const rejectBattle = async (req, res) => {
   try {
     const battleId = req.params.battleId;
   const battle = await Battle.findOneAndUpdate(

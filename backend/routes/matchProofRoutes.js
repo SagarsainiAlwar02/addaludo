@@ -1,15 +1,19 @@
-const fs = require("fs");
-const express = require("express");
-const multer = require("multer");
-const path = require("path");
+import fs from "fs";
+import express from "express";
+import multer from "multer";
+import path from "path";
+import { fileURLToPath } from "url";
 
-const {
+import {
   uploadMatchProof,
   getMatchProofs,
   updateMatchProofStatus,
-} = require("../controllers/matchProofController");
+} from "../controllers/matchProofController.js";
 
-const auth = require("../middleware/auth");
+import auth from "../middleware/auth.js";
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 const router = express.Router();
 const uploadDir = "uploads/screenshots";
@@ -19,9 +23,9 @@ if (!fs.existsSync(uploadDir)) {
 }
 
 const storage = multer.diskStorage({
-destination: function (req, file, cb) {
-  cb(null, uploadDir);
-}
+  destination: function (req, file, cb) {
+    cb(null, uploadDir);
+  },
   filename: function (req, file, cb) {
     const ext = path.extname(file.originalname);
     const uniqueName = `win_${Date.now()}_${Math.round(Math.random() * 1e9)}${ext}`;
@@ -53,4 +57,4 @@ router.post("/upload", auth, upload.single("screenshot"), uploadMatchProof);
 router.get("/", auth, getMatchProofs);
 router.patch("/:id/status", auth, updateMatchProofStatus);
 
-module.exports = router;
+export default router;

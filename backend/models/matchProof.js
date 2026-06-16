@@ -1,4 +1,4 @@
-const mongoose = require("mongoose");
+import mongoose from "mongoose";
 
 const matchProofSchema = new mongoose.Schema(
   {
@@ -45,4 +45,4 @@ const matchProofSchema = new mongoose.Schema(
   { timestamps: true }
 );
 
-module.exports = mongoose.model("MatchProof", matchProofSchema);
+export default mongoose.model("MatchProof", matchProofSchema);

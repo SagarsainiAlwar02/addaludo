@@ -1,8 +1,8 @@
-const Wallet = require("../models/wallet");
-const Withdraw = require("../models/withdraw");
+import Wallet from "../models/wallet.js";
+import Withdraw from "../models/withdraw.js";
 
 // 💰 request withdraw
-exports.requestWithdraw = async (req, res) => {
+export const requestWithdraw = async (req, res) => {
   try {
     const { amount, method, details } = req.body;
     if (!["upi", "bank"].includes(method)) {
@@ -95,7 +95,7 @@ if (!updatedWallet) {
 };
 
 // 📜 get user withdraw history
-exports.getWithdraws = async (req, res) => {
+export const getWithdraws = async (req, res) => {
   try {
     const data = await Withdraw.find({ userId: req.user }).sort({
       createdAt: -1,

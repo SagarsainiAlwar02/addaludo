@@ -1,12 +1,10 @@
 
 
+import jwt from "jsonwebtoken";
+import mongoose from "mongoose";
+import User from "../models/user.js";
 
-
-const jwt = require("jsonwebtoken");
-const mongoose = require("mongoose");
-const User = require("../models/user");
-
-module.exports = async function auth(req, res, next) {
+export default async function auth(req, res, next) {
   try {
     const header = req.headers.authorization;
 

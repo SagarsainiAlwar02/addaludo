@@ -1,22 +1,25 @@
-const Battle = require("../models/battle");
+import Battle from "../models/battle.js";
 
-const express = require("express");
+import express from "express";
+import { fileURLToPath } from "url";
+import path from "path";
+
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 const router = express.Router();
-const Deposit = require("../models/deposit");
+import Deposit from "../models/deposit.js";
 
-const multer = require("multer");
-const path = require("path");
-const fs = require("fs");
-const bcrypt = require("bcryptjs");
+import multer from "multer";
+import fs from "fs";
+import bcrypt from "bcryptjs";
 
-const auth = require("../middleware/auth");
+import auth from "../middleware/auth.js";
 
-const Withdraw = require("../models/withdraw");
-const Wallet = require("../models/wallet");
-const Transaction = require("../models/transaction");
-const User = require("../models/user");
-const PaymentSetting = require("../models/paymentSetting");
+import Withdraw from "../models/withdraw.js";
+import Wallet from "../models/wallet.js";
+import Transaction from "../models/transaction.js";
+import User from "../models/user.js";
+import PaymentSetting from "../models/paymentSetting.js";
 
 // ================= UPLOAD SETUP =================
 const uploadDir = path.join(__dirname, "../uploads/payment");
@@ -1302,4 +1305,4 @@ if (!battle) {
   }
 });
 
-module.exports = router;
+export default router;

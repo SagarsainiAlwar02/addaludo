@@ -1,16 +1,20 @@
-const express = require("express");
+import express from "express";
 const router = express.Router();
-const multer = require("multer");
-const path = require("path");
-const fs = require("fs");
-const auth = require("../middleware/auth");
+import multer from "multer";
+import path from "path";
+import fs from "fs";
+import { fileURLToPath } from "url";
 
-const {
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
+
+import auth from "../middleware/auth.js";
+
+import {
   getPaymentSettings,
   uploadScanner,
   saveUpi,
   saveBank,
-} = require("../controllers/paymentController");
+} from "../controllers/paymentController.js";
 
 const paymentDir = path.join(__dirname, "../uploads/payment");
 
@@ -37,4 +41,4 @@ router.post("/upload-scanner", auth, upload.single("file"), uploadScanner);
 router.post("/save-upi", auth, saveUpi);
 router.post("/save-bank", auth, saveBank);
 
-module.exports = router;
+export default router;

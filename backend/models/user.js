@@ -1,4 +1,4 @@
-const mongoose = require("mongoose");
+import mongoose from "mongoose";
 
 function makeReferralCode() {
   return "BA-" + Math.floor(100000 + Math.random() * 900000);
@@ -98,4 +98,4 @@ userSchema.pre("save", async function (next) {
   }
 });
 
-module.exports = mongoose.models.User || mongoose.model("User", userSchema);
+export default mongoose.models.User || mongoose.model("User", userSchema);

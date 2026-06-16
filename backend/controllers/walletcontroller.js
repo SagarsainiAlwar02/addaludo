@@ -1,7 +1,7 @@
-const Wallet = require("../models/wallet");
-const Transaction = require("../models/transaction");
-const Withdraw = require("../models/withdraw");
-const mongoose = require("mongoose");
+import Wallet from "../models/wallet.js";
+import Transaction from "../models/transaction.js";
+import Withdraw from "../models/withdraw.js";
+import mongoose from "mongoose";
 
 // ================== USER ID SAFE ==================
 const getUserId = (req) => {
@@ -35,7 +35,7 @@ const getOrCreateWallet = async (userId) => {
 };
 
 // ================== GET WALLET ==================
-exports.getWallet = async (req, res) => {
+export const getWallet = async (req, res) => {
   try {
     const userId = getUserId(req);
     const wallet = await getOrCreateWallet(userId);
@@ -55,7 +55,7 @@ exports.getWallet = async (req, res) => {
 // ================== ADD MONEY DISABLED ==================
 // ✅ Direct wallet add unsafe hai.
 // ✅ Ab deposit request system use hoga: /api/deposit/create
-exports.addMoney = async (req, res) => {
+export const addMoney = async (req, res) => {
   return res.status(403).json({
     success: false,
     msg: "Direct wallet add disabled. Please use deposit request system.",
@@ -63,7 +63,7 @@ exports.addMoney = async (req, res) => {
 };
 
 // ================== DEDUCT MONEY ==================
-exports.deductMoney = async (req, res) => {
+export const deductMoney = async (req, res) => {
   try {
     const userId = getUserId(req);
     const amount = Number(req.body.amount);
@@ -120,7 +120,7 @@ if (!updatedWallet) {
 };
 
 // ================== TRANSACTIONS ==================
-exports.getTransactions = async (req, res) => {
+export const getTransactions = async (req, res) => {
   try {
     const userId = getUserId(req);
 
@@ -136,7 +136,7 @@ exports.getTransactions = async (req, res) => {
 };
 
 // ================== WITHDRAW REQUEST ==================
-exports.withdrawRequest = async (req, res) => {
+export const withdrawRequest = async (req, res) => {
   try {
     const userId = getUserId(req);
     const amount = Number(req.body.amount);

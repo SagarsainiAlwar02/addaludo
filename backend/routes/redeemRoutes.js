@@ -1,16 +1,16 @@
-const express = require("express");
+import express from "express";
 const router = express.Router();
 
-const {
+import {
   getRedeemData,
   requestWithdraw,
   getWithdrawHistory,
-} = require("../controllers/redeemController");
+} from "../controllers/redeemController.js";
 
-const auth = require("../middleware/auth");
+import auth from "../middleware/auth.js"; 
 
 router.get("/", auth, getRedeemData);
 router.post("/withdraw", auth, requestWithdraw);
 router.get("/withdraw-history", auth, getWithdrawHistory);
 
-module.exports = router;
+export default router;

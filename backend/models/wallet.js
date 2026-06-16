@@ -1,4 +1,4 @@
-const mongoose = require("mongoose");
+import mongoose from "mongoose";
 
 const walletSchema = new mongoose.Schema({
   userId: {
@@ -41,4 +41,4 @@ referralBalance: {
 
 }, { timestamps: true });
 
-module.exports = mongoose.models.Wallet || mongoose.model("Wallet", walletSchema);
+export default mongoose.models.Wallet || mongoose.model("Wallet", walletSchema);

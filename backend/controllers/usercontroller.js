@@ -1,8 +1,8 @@
-const User = require("../models/user");
-const Wallet = require("../models/wallet");
-const Battle = require("../models/battle");
-const generateToken = require("../utils/generateToken");
-const axios = require("axios");
+import User from "../models/user.js";
+import Wallet from "../models/wallet.js";
+import Battle from "../models/battle.js";
+import generateToken from "../utils/generateToken.js";
+import axios from "axios";
 
 const otpStore = {};
 
@@ -40,7 +40,7 @@ async function sendFast2SMS(phone, otp) {
   }
 }
 
-exports.sendOtp = async (req, res) => {
+export const sendOtp = async (req, res) => {
   try {
     let { phone } = req.body;
 
@@ -84,7 +84,7 @@ setTimeout(() => {
   }
 };
 
-exports.verifyOtp = async (req, res) => {
+export const verifyOtp = async (req, res) => {
   try {
     let { phone, otp, referralCode } = req.body;
 
@@ -205,7 +205,7 @@ exports.verifyOtp = async (req, res) => {
   }
 };
 
-exports.register = async (req, res) => {
+export const register = async (req, res) => {
   try {
     let { phone, name, referralCode } = req.body;
 
@@ -271,7 +271,7 @@ exports.register = async (req, res) => {
   }
 };
 
-exports.login = async (req, res) => {
+export const login = async (req, res) => {
   try {
     let { phone } = req.body;
 
@@ -330,7 +330,7 @@ exports.login = async (req, res) => {
   }
 };
 
-exports.profile = async (req, res) => {
+export const profile = async (req, res) => {
   try {
     const userId = req.user?.id || req.user;
 
@@ -375,7 +375,7 @@ exports.profile = async (req, res) => {
   }
 };
 
-exports.submitKyc = async (req, res) => {
+export const submitKyc = async (req, res) => {
   try {
     const userId = req.user?.id || req.user;
     const { name, dob, docType, docNumber } = req.body;
@@ -442,7 +442,7 @@ exports.submitKyc = async (req, res) => {
 };
 
 
-exports.updateName = async (req, res) => {
+export const updateName = async (req, res) => {
   try {
     const userId = req.user?.id || req.user;
     let { name } = req.body;

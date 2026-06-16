@@ -1,4 +1,4 @@
-const PaymentSetting = require("../models/paymentSetting");
+import PaymentSetting from "../models/paymentSetting.js";
 
 const getOrCreateSetting = async () => {
   let setting = await PaymentSetting.findOne();
@@ -15,7 +15,7 @@ const normalizeSetting = (setting) => ({
   bank: setting.bank || { name: "", accountNumber: "", ifsc: "" },
 });
 
-exports.getPaymentSettings = async (req, res) => {
+export const getPaymentSettings = async (req, res) => {
   try {
     const setting = await getOrCreateSetting();
     res.json(normalizeSetting(setting));
@@ -24,7 +24,7 @@ exports.getPaymentSettings = async (req, res) => {
   }
 };
 
-exports.uploadScanner = async (req, res) => {
+export const uploadScanner = async (req, res) => {
   try {
     const setting = await getOrCreateSetting();
 
@@ -69,7 +69,7 @@ setting.scanner.max = Math.max(
   }
 };
 
-exports.saveUpi = async (req, res) => {
+export const saveUpi = async (req, res) => {
   try {
     const setting = await getOrCreateSetting();
 
@@ -101,8 +101,8 @@ exports.saveUpi = async (req, res) => {
     res.status(500).json({ msg: err.message });
   }
 };
-
-exports.saveBank = async (req, res) => {
+// export const saveBank
+export const saveBank = async (req, res) => {
   try {
     const setting = await getOrCreateSetting();
 

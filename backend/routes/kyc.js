@@ -1,17 +1,21 @@
-const express = require("express");
+import express from "express";
+import multer from "multer";
+import path from "path";
+import fs from "fs";
+import { fileURLToPath } from "url";
+
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
+
 const router = express.Router();
-const multer = require("multer");
-const path = require("path");
-const fs = require("fs");
 
-const auth = require("../middleware/auth");
+import auth from "../middleware/auth.js";
 
-const {
+import {
   submitKyc,
   getAllKyc,
   approveKyc,
   rejectKyc,
-} = require("../controllers/kycController");
+} from "../controllers/kycController.js";
 
 const uploadDir = path.join(__dirname, "../uploads/kyc");
 if (!fs.existsSync(uploadDir)) fs.mkdirSync(uploadDir, { recursive: true });
@@ -40,4 +44,4 @@ router.get("/admin/all", auth, getAllKyc);
 router.patch("/admin/approve/:id", auth, approveKyc);
 router.patch("/admin/reject/:id", auth, rejectKyc);
 
-module.exports = router;
+export default router;

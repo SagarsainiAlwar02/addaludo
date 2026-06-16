@@ -1,16 +1,16 @@
-const express = require("express");
+import express from "express";
 const router = express.Router();
-const multer = require("multer");
-const path = require("path");
+import multer from "multer";
+import path from "path";
 
-const auth = require("../middleware/auth");
-const {
+import auth from "../middleware/auth.js";
+import {
   createDepositRequest,
   myDeposits,
   adminGetDeposits,
   adminApproveDeposit,
   adminRejectDeposit,
-} = require("../controllers/depositController");
+} from "../controllers/depositController.js";
 
 const storage = multer.diskStorage({
   destination: function (req, file, cb) {
@@ -47,4 +47,4 @@ router.get("/admin/all", auth, adminGetDeposits);
 router.patch("/admin/approve/:id", auth, adminApproveDeposit);
 router.patch("/admin/reject/:id", auth, adminRejectDeposit);
 
-module.exports = router;
+export default router;

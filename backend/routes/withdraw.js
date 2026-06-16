@@ -1,13 +1,13 @@
-const express = require("express");
+import express from "express";
 const router = express.Router();
-const auth = require("../middleware/auth");
+import auth from "../middleware/auth.js";
 
-const {
+import {
   requestWithdraw,
   getWithdraws
-} = require("../controllers/withdrawController");
+} from "../controllers/withdrawcontroller.js";
 
 router.post("/request", auth, requestWithdraw);
 router.get("/", auth, getWithdraws);
 
-module.exports = router;
+export default router;

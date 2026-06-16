@@ -1,11 +1,11 @@
-const User = require("../models/user");
-const Transaction = require("../models/transaction");
-const Wallet = require("../models/wallet");
+import User from "../models/user.js";
+import Transaction from "../models/transaction.js";
+import Wallet from "../models/wallet.js";
 
 
 
 // ================= GET USERS =================
-exports.getUsers = async (req, res) => {
+export const getUsers = async (req, res) => {
   try {
     const limit = Math.min(Number(req.query.limit || 50), 100);
     const search = String(req.query.search || "").trim();
@@ -65,7 +65,7 @@ exports.getUsers = async (req, res) => {
   }
 };
 // ================= BLOCK / UNBLOCK USER =================
-exports.blockUser = async (req, res) => {
+export const blockUser = async (req, res) => {
   try {
     const user = await User.findById(req.params.id);
 
@@ -84,7 +84,7 @@ exports.blockUser = async (req, res) => {
 };
 
 // ================= TRANSACTIONS =================
-exports.getTransactions = async (req, res) => {
+export const getTransactions = async (req, res) => {
   try {
     const limit = Number(req.query.limit || 100);
 
@@ -101,7 +101,7 @@ exports.getTransactions = async (req, res) => {
 };
 
 // ================= APPROVE TRANSACTION =================
-exports.approveTransaction = async (req, res) => {
+export const approveTransaction = async (req, res) => {
   try {
    const tx = await Transaction.findOneAndUpdate(
   {
@@ -153,7 +153,7 @@ if (!tx) {
 };
 
 // ================= REJECT TRANSACTION =================
-exports.rejectTransaction = async (req, res) => {
+export const rejectTransaction = async (req, res) => {
   try {
   const tx = await Transaction.findOneAndUpdate(
   {

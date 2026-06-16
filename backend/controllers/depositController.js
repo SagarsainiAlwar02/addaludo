@@ -1,7 +1,7 @@
-const mongoose = require("mongoose");
-const Deposit = require("../models/deposit");
-const Wallet = require("../models/wallet");
-const Transaction = require("../models/transaction");
+import mongoose from "mongoose";
+import Deposit from "../models/deposit.js";
+import Wallet from "../models/wallet.js";
+import Transaction from "../models/transaction.js";
 
 const getUserId = (req) => {
   let userId = req.user?._id || req.userData?._id || req.user?.id || req.user;
@@ -50,7 +50,7 @@ const getPaymentMethodByAmount = (amount) => {
 };
 
 // ================= USER CREATE DEPOSIT REQUEST =================
-exports.createDepositRequest = async (req, res) => {
+export const createDepositRequest = async (req, res) => {
   try {
     const userId = getUserId(req);
     const amount = Number(req.body.amount);
@@ -125,7 +125,7 @@ const utr = String(req.body.utr || "")
 };
 
 // ================= USER MY DEPOSITS =================
-exports.myDeposits = async (req, res) => {
+export const myDeposits = async (req, res) => {
   try {
     const userId = getUserId(req);
 
@@ -146,7 +146,7 @@ exports.myDeposits = async (req, res) => {
 };
 
 // ================= ADMIN GET ALL DEPOSITS =================
-exports.adminGetDeposits = async (req, res) => {
+export const adminGetDeposits = async (req, res) => {
   try {
     const status = req.query.status;
 
@@ -175,7 +175,7 @@ exports.adminGetDeposits = async (req, res) => {
 };
 
 // ================= ADMIN APPROVE DEPOSIT =================
-exports.adminApproveDeposit = async (req, res) => {
+export const adminApproveDeposit = async (req, res) => {
   try {
     const adminId = getAdminId(req);
    const deposit = await Deposit.findOneAndUpdate(
@@ -238,7 +238,7 @@ if (!deposit) {
 };
 
 // ================= ADMIN REJECT DEPOSIT =================
-exports.adminRejectDeposit = async (req, res) => {
+export const adminRejectDeposit = async (req, res) => {
   try {
     const adminId = getAdminId(req);
    const deposit = await Deposit.findOneAndUpdate(

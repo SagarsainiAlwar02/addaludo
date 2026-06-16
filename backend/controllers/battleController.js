@@ -1,7 +1,7 @@
-const Battle = require("../models/battle");
-const Wallet = require("../models/wallet");
-const Transaction = require("../models/transaction");
-const User = require("../models/user");
+import Battle from "../models/battle.js";
+import Wallet from "../models/wallet.js";
+import Transaction from "../models/transaction.js";
+import User from "../models/user.js";
 
 const OPEN_BATTLE_EXPIRE_MS = 5 * 60 * 1000;
 const MAX_SEARCHING_BATTLES = 2;
@@ -328,7 +328,7 @@ async function cancelOtherOpenBattles(userId, excludeBattleId) {
   }
 }
 
-exports.createBattle = async (req, res) => {
+export const createBattle = async (req, res) => {
   try {
     await expireOldOpenBattles();
 
@@ -403,7 +403,7 @@ exports.createBattle = async (req, res) => {
   }
 };
 
-exports.getOpenBattles = async (req, res) => {
+export const getOpenBattles = async (req, res) => {
   try {
     await expireOldOpenBattles();
 
@@ -420,7 +420,7 @@ exports.getOpenBattles = async (req, res) => {
   }
 };
 
-exports.getMyBattles = async (req, res) => {
+export const getMyBattles = async (req, res) => {
   try {
     await expireOldOpenBattles();
 
@@ -440,7 +440,7 @@ exports.getMyBattles = async (req, res) => {
   }
 };
 
-exports.getSingleBattle = async (req, res) => {
+export const getSingleBattle = async (req, res) => {
   try {
     await expireOldOpenBattles();
 
@@ -473,7 +473,7 @@ exports.getSingleBattle = async (req, res) => {
   }
 };
 
-exports.joinBattle = async (req, res) => {
+export const joinBattle = async (req, res) => {
   try {
     await expireOldOpenBattles();
 
@@ -538,7 +538,7 @@ exports.joinBattle = async (req, res) => {
 
 //
 
-exports.startBattle = async (req, res) => {
+export const startBattle = async (req, res) => {
   try {
     const userId = getUserId(req);
     const { battleId } = req.params;
@@ -635,7 +635,7 @@ exports.startBattle = async (req, res) => {
 
 
 
-exports.rejectBattleRequest = async (req, res) => {
+export const rejectBattleRequest = async (req, res) => {
   try {
     const userId = getUserId(req);
     const { battleId } = req.params;
@@ -676,7 +676,7 @@ exports.rejectBattleRequest = async (req, res) => {
   }
 };
 
-exports.submitRoomCode = async (req, res) => {
+export const submitRoomCode = async (req, res) => {
   try {
     const userId = getUserId(req);
     const { battleId } = req.params;
@@ -720,7 +720,7 @@ exports.submitRoomCode = async (req, res) => {
   }
 };
 
-exports.submitResult = async (req, res) => {
+export const submitResult = async (req, res) => {
   try {
     const userId = getUserId(req);
     const { battleId } = req.params;
@@ -895,7 +895,7 @@ return res.json({
 };
 
 
-exports.cancelBattle = async (req, res) => {
+export const cancelBattle = async (req, res) => {
   try {
     const userId = getUserId(req);
     const { battleId } = req.params;
@@ -972,7 +972,7 @@ exports.cancelBattle = async (req, res) => {
 
 
 // ====== ADMIN PANEL KE LIYE SARE MATCHES FETCH KARNE KA FUNCTION ======
-exports.getAdminBattles = async (req, res) => {
+export const getAdminBattles = async (req, res) => {
   try {
     // Database se saare battles uthao aur players/winner ka data populate karo
     const battles = await Battle.find({})
@@ -995,22 +995,22 @@ exports.getAdminBattles = async (req, res) => {
 
 
 // 1. Saare Matches Admin Panel me dikhane ke liye
-exports.getAdminBattles = async (req, res) => {
-  try {
-    const battles = await Battle.find({})
-      .populate("createdBy", "name phone mobile username")
-      .populate("opponent", "name phone mobile username")
-      .populate("winner", "name phone mobile username")
-      .sort({ createdAt: -1 });
-
-    return res.json({ success: true, battles: battles || [] });
-  } catch (err) {
-    return res.status(500).json({ success: false, msg: err.message });
-  }
-};
+// NOTE: Duplicate function - commented out to avoid export conflict
+// export const getAdminBattles = async (req, res) => {
+//   try {
+//     const battles = await Battle.find({})
+//       .populate("createdBy", "name phone mobile username")
+//       .populate("opponent", "name phone mobile username")
+//       .populate("winner", "name phone mobile username")
+//       .sort({ createdAt: -1 });
+//     return res.json({ success: true, battles: battles || [] });
+//   } catch (err) {
+//     return res.status(500).json({ success: false, msg: err.message });
+//   }
+// };
 
 // 2. Kisi Ek Match ki details modal me kholne ke liye
-exports.getAdminSingleBattle = async (req, res) => {
+export const getAdminSingleBattle = async (req, res) => {
   try {
     const battle = await Battle.findById(req.params.id)
       .populate("createdBy", "name phone mobile username")
@@ -1026,7 +1026,7 @@ exports.getAdminSingleBattle = async (req, res) => {
 };
 
 // 3. Admin dwara Winner Set karne ke liye (Win Button)
-exports.approveAdminBattle = async (req, res) => {
+export const approveAdminBattle = async (req, res) => {
   try {
     const { id } = req.params;
     const { winnerId, adminNote } = req.body;
@@ -1052,7 +1052,7 @@ exports.approveAdminBattle = async (req, res) => {
 };
 
 // 4. Admin dwara Full Match Cancel aur Refund karne ke liye (Cancel Button)
-exports.rejectAdminBattle = async (req, res) => {
+export const rejectAdminBattle = async (req, res) => {
   try {
     const { id } = req.params;
     const { adminNote } = req.body;

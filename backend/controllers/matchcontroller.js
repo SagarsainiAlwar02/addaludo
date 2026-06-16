@@ -1,9 +1,9 @@
-const Match = require("../models/match");
-const Wallet = require("../models/wallet");
-const Transaction = require("../models/transaction");
+import Match from "../models/match.js";
+import Wallet from "../models/wallet.js";
+import Transaction from "../models/transaction.js";
 
 // ================= CREATE MATCH =================
-exports.createMatch = async (req, res) => {
+export const createMatch = async (req, res) => {
   try {
     const { entryFee, playersLimit } = req.body;
 
@@ -47,7 +47,7 @@ await Transaction.create({
 };
 
 // ================= JOIN MATCH =================
-exports.joinMatch = async (req, res) => {
+export const joinMatch = async (req, res) => {
   try {
     const match = await Match.findOneAndUpdate(
   {
@@ -117,7 +117,7 @@ if (!match) {
 };
 
 // ================= DECLARE WINNER =================
-exports.declareWinner = async (req, res) => {
+export const declareWinner = async (req, res) => {
   try {
     const match = await Match.findById(req.params.id);
 

@@ -1,20 +1,24 @@
-const dns = require("dns");
+import dns from "dns";
+import dotenv from "dotenv";
+import express from "express";
+import mongoose from "mongoose";
 import cors from "cors";
+import http from "http";
+import axios from "axios";
+import jwt from "jsonwebtoken";
+import path from "path";
+import fs from "fs";
+import { fileURLToPath } from "url";
+
+import User from "./models/user.js";
+import Wallet from "./models/wallet.js";
+
+dotenv.config();
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
 dns.setDefaultResultOrder("ipv4first");
-
-require("dotenv").config();
-
-const express = require("express");
-const mongoose = require("mongoose");
-const cors = require("cors");
-const http = require("http");
-const axios = require("axios");
-const jwt = require("jsonwebtoken");
-const path = require("path");
-const fs = require("fs");
-
-const User = require("./models/user");
-const Wallet = require("./models/wallet");
 
 const app = express();
 
@@ -86,7 +90,8 @@ app.use("/uploads", express.static(uploadPath));
 
 const server = http.createServer(app);
 
-const { Server } = require("socket.io");
+import { Server } from "socket.io";
+import gameSocket from "./socket/gameSocket.js";
 
 const io = new Server(server, {
   cors: {
@@ -95,29 +100,44 @@ const io = new Server(server, {
   },
 });
 
-require("./socket/gameSocket")(io);
+gameSocket(io);
 
-app.use("/api/user", require("./routes/userAuth"));
-app.use("/api/admin-auth", require("./routes/adminAuth"));
-app.use("/api/admin", require("./routes/paymentRoutes"));
-app.use("/api/admin", require("./routes/admin"));
-app.use("/api/wallet", require("./routes/wallet"));
-app.use("/api/deposit", require("./routes/depositRoutes"));
-app.use("/api/redeem", require("./routes/redeemRoutes"));
+import userAuthRoutes from "./routes/userAuth.js";
+import adminAuthRoutes from "./routes/adminAuth.js";
+import paymentRoutes from "./routes/paymentRoutes.js";
+import adminRoutes from "./routes/admin.js";
+import walletRoutes from "./routes/wallet.js";
+import depositRoutes from "./routes/depositRoutes.js";
+import redeemRoutes from "./routes/redeemRoutes.js";
+import matchRoutes from "./routes/match.js";
+import battleRoutes from "./routes/battleRoutes.js";
+import adminBattleRoutes from "./routes/adminBattleRoutes.js";
+import matchProofRoutes from "./routes/matchProofRoutes.js";
+import kycRoutes from "./routes/kyc.js";
+import authMiddleware from "./middleware/auth.js";
+import { submitKyc } from "./controllers/kycController.js";
 
-app.use("/api/matches", require("./routes/match"));
-app.use("/api/match", require("./routes/match"));
+app.use("/api/user", userAuthRoutes);
+app.use("/api/admin-auth", adminAuthRoutes);
+app.use("/api/admin", paymentRoutes);
+app.use("/api/admin", adminRoutes);
+app.use("/api/wallet", walletRoutes);
+app.use("/api/deposit", depositRoutes);
+app.use("/api/redeem", redeemRoutes);
 
-app.use("/api/battle", require("./routes/battleRoutes"));
-app.use("/api/admin/battles", require("./routes/adminBattleRoutes"));
-app.use("/api/match-proof", require("./routes/matchProofRoutes"));
+app.use("/api/matches", matchRoutes);
+app.use("/api/match", matchRoutes);
 
-app.use("/api/kyc", require("./routes/kyc"));
+app.use("/api/battle", battleRoutes);
+app.use("/api/admin/battles", adminBattleRoutes);
+app.use("/api/match-proof", matchProofRoutes);
+
+app.use("/api/kyc", kycRoutes);
 
 app.post(
   "/api/user/kyc",
-  require("./middleware/auth"),
-  require("./controllers/kycController").submitKyc
+  authMiddleware,
+  submitKyc
 );
 
 const otpStore = {};

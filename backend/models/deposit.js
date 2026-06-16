@@ -1,4 +1,4 @@
-const mongoose = require("mongoose");
+import mongoose from "mongoose";
 
 const depositSchema = new mongoose.Schema(
   {
@@ -77,5 +77,4 @@ depositSchema.index({
   createdAt: -1,
 });
 
-module.exports =
-  mongoose.models.Deposit || mongoose.model("Deposit", depositSchema);
+export default mongoose.models.Deposit || mongoose.model("Deposit", depositSchema);

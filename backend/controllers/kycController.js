@@ -1,6 +1,6 @@
-const User = require("../models/user");
+import User from "../models/user.js";
 
-exports.submitKyc = async (req, res) => {
+export const submitKyc = async (req, res) => {
   try {
     const userId = req.user?.id || req.user?._id || req.user;
     const { name, dob, docType, docNumber } = req.body;
@@ -53,7 +53,7 @@ exports.submitKyc = async (req, res) => {
   }
 };
 
-exports.getAllKyc = async (req, res) => {
+export const getAllKyc = async (req, res) => {
   try {
     const users = await User.find({
       kycStatus: { $in: ["pending", "approved", "rejected"] },
@@ -68,7 +68,7 @@ exports.getAllKyc = async (req, res) => {
   }
 };
 
-exports.approveKyc = async (req, res) => {
+export const approveKyc = async (req, res) => {
   try {
   const user = await User.findOneAndUpdate(
   {
@@ -100,7 +100,7 @@ if (!user) {
   }
 };
 
-exports.rejectKyc = async (req, res) => {
+export const rejectKyc = async (req, res) => {
   try {
     const { reason } = req.body;
 

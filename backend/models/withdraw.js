@@ -1,4 +1,4 @@
-const mongoose = require("mongoose");
+import mongoose from "mongoose";
 
 const withdrawSchema = new mongoose.Schema(
   {
@@ -47,5 +47,4 @@ const withdrawSchema = new mongoose.Schema(
   { timestamps: true }
 );
 
-module.exports =
-  mongoose.models.Withdraw || mongoose.model("Withdraw", withdrawSchema);
+export default mongoose.models.Withdraw || mongoose.model("Withdraw", withdrawSchema);

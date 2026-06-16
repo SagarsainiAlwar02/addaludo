@@ -1,11 +1,11 @@
-const GameRoom = require("../models/GameRoom");
-const Wallet = require("../models/wallet");
-const Transaction = require("../models/transaction");
-const { v4: uuidv4 } = require("uuid");
+import GameRoom from "../models/GameRoom.js";
+import Wallet from "../models/wallet.js";
+import Transaction from "../models/transaction.js";
+import { v4 as uuidv4 } from "uuid";
 
 
 // ================= CREATE ROOM =================
-exports.createRoom = async (req, res) => {
+export const createRoom = async (req, res) => {
   try {
     const { amount } = req.body;
 
@@ -40,7 +40,7 @@ exports.createRoom = async (req, res) => {
 
 
 // ================= JOIN ROOM =================
-exports.joinRoom = async (req, res) => {
+export const joinRoom = async (req, res) => {
   try {
     const { roomId, socketId } = req.body;
 
@@ -99,7 +99,7 @@ exports.joinRoom = async (req, res) => {
 
 
 // ================= GET ROOM =================
-exports.getRoom = async (req, res) => {
+export const getRoom = async (req, res) => {
   try {
     const room = await GameRoom.findOne({ roomId: req.params.id });
 
@@ -116,7 +116,7 @@ exports.getRoom = async (req, res) => {
 
 
 // ================= END GAME =================
-exports.endGame = async (req, res) => {
+export const endGame = async (req, res) => {
   try {
     const { roomId, winnerId, winAmount } = req.body;
 

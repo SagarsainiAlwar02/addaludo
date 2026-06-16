@@ -1,8 +1,8 @@
-const express = require("express");
+import express from "express";
 const router = express.Router();
-const User = require("../models/user");
-const bcrypt = require("bcryptjs");
-const jwt = require("jsonwebtoken");
+import User from "../models/user.js";
+import bcrypt from "bcryptjs";
+import jwt from "jsonwebtoken";
 
 // CREATE ADMIN TEMP
 router.get("/create-admin", async (req, res) => {
@@ -110,4 +110,4 @@ const token = jwt.sign(
   }
 });
 
-module.exports = router;
+export default router;

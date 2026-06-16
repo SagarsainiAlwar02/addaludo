@@ -1,4 +1,4 @@
-const mongoose = require("mongoose");
+import mongoose from "mongoose";
 
 const matchSchema = new mongoose.Schema({
   roomId: {
@@ -97,4 +97,4 @@ const matchSchema = new mongoose.Schema({
 
 }, { timestamps: true });
 
-module.exports = mongoose.model("Match", matchSchema);
+export default mongoose.model("Match", matchSchema);

@@ -1,8 +1,8 @@
-const Battle = require("../models/battle");
+import Battle from "../models/battle.js";
 
-const MatchProof = require("../models/matchProof");
+import MatchProof from "../models/matchProof.js";
 
-exports.uploadMatchProof = async (req, res) => {
+export const uploadMatchProof = async (req, res) => {
   try {
     if (!req.user) {
       return res.status(401).json({
@@ -58,7 +58,7 @@ if (!battle) {
   }
 };
 
-exports.getMatchProofs = async (req, res) => {
+export const getMatchProofs = async (req, res) => {
   try {
     const proofs = await MatchProof.find()
       .populate("userId", "name phone")
@@ -77,7 +77,7 @@ exports.getMatchProofs = async (req, res) => {
   }
 };
 
-exports.updateMatchProofStatus = async (req, res) => {
+export const updateMatchProofStatus = async (req, res) => {
   try {
     const { status } = req.body;
 

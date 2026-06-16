@@ -1,4 +1,4 @@
-const mongoose = require("mongoose");
+import mongoose from "mongoose";
 
 const gameRoomSchema = new mongoose.Schema({
 
@@ -103,4 +103,4 @@ const gameRoomSchema = new mongoose.Schema({
 
 }, { timestamps: true });
 
-module.exports = mongoose.model("GameRoom", gameRoomSchema);
+export default mongoose.model("GameRoom", gameRoomSchema);

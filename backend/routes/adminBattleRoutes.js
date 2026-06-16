@@ -1,13 +1,13 @@
-const express = require("express");
-const adminBattleController = require("../controllers/adminBattleController");
-const auth = require("../middleware/auth");
+import express from "express";
+import { getAllBattles, getBattleById, approveBattle, rejectBattle } from "../controllers/adminBattleController.js";
+import auth from "../middleware/auth.js";
 
 const router = express.Router();
 
-router.get("/", auth, adminBattleController.getAllBattles);
-router.get("/:battleId", auth, adminBattleController.getBattleById);
+router.get("/", auth, getAllBattles);
+router.get("/:battleId", auth, getBattleById);
 
-router.patch("/approve/:battleId", auth, adminBattleController.approveBattle);
-router.patch("/reject/:battleId", auth, adminBattleController.rejectBattle);
+router.patch("/approve/:battleId", auth, approveBattle);
+router.patch("/reject/:battleId", auth, rejectBattle);
 
-module.exports = router;
+export default router;

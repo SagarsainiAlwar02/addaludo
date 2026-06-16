@@ -1,10 +1,10 @@
-const User = require("../models/user");
-const Wallet = require("../models/wallet");
-const Withdraw = require("../models/withdraw");
-const Transaction = require("../models/transaction");
+import User from "../models/user.js";
+import Wallet from "../models/wallet.js";
+import Withdraw from "../models/withdraw.js";
+import Transaction from "../models/transaction.js";
 
 // ================= GET REDEEM DATA =================
-exports.getRedeemData = async (req, res) => {
+export const getRedeemData = async (req, res) => {
   try {
     const userId = req.user?.id || req.user?._id || req.user;
 
@@ -39,7 +39,7 @@ exports.getRedeemData = async (req, res) => {
 };
 
 // ================= REQUEST WITHDRAW =================
-exports.requestWithdraw = async (req, res) => {
+export const requestWithdraw = async (req, res) => {
   try {
     const userId = req.user?.id || req.user?._id || req.user;
 
@@ -215,7 +215,7 @@ if (!updatedWallet) {
 };
 
 // ================= GET WITHDRAW HISTORY =================
-exports.getWithdrawHistory = async (req, res) => {
+export const getWithdrawHistory = async (req, res) => {
   try {
     const userId = req.user?.id || req.user?._id || req.user;
 

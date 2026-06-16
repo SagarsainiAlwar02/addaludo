@@ -1,4 +1,4 @@
-const mongoose = require("mongoose");
+import mongoose from "mongoose";
 
 const battleSchema = new mongoose.Schema(
   {
@@ -149,7 +149,5 @@ battleSchema.index({ createdBy: 1, status: 1 });
 battleSchema.index({ opponent: 1, status: 1 });
 
 battleSchema.index({ battleId: 1, status: 1 });
-module.exports =
 
-
-  mongoose.models.Battle || mongoose.model("Battle", battleSchema);
+export default mongoose.models.Battle || mongoose.model("Battle", battleSchema);

@@ -1,7 +1,7 @@
-const express = require("express");
+import express from "express";
 const router = express.Router();
 
-const auth = require("../middleware/auth");
+import auth from "../middleware/auth.js";
 
 const {
   createMatch,
@@ -91,4 +91,4 @@ router.get("/user/history", auth, async (req, res) => {
   }
 });
 
-module.exports = router;
+export default router;

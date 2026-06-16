@@ -1,8 +1,8 @@
-const express = require("express");
+import express from "express";
 const router = express.Router();
 
-const auth = require("../middleware/auth");
-const Match = require("../models/match");
+import auth from "../middleware/auth.js";
+import Match from "../models/match.js";
 
 router.get("/", auth, async (req, res) => {
   try {
@@ -19,4 +19,4 @@ router.get("/", auth, async (req, res) => {
   }
 });
 
-module.exports = router;
+export default router;

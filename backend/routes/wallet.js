@@ -1,14 +1,14 @@
-const express = require("express");
+import express from "express";
 const router = express.Router();
-const auth = require("../middleware/auth");
+import auth from "../middleware/auth.js";
 
-const {
+import {
   getWallet,
   addMoney,
   deductMoney,
   getTransactions,
   withdrawRequest
-} = require("../controllers/walletController"); // ✅ FIXED (capital C)
+} from "../controllers/walletcontroller.js"; // ✅ FIXED (capital C)
 
 
 // ================== WALLET ==================
@@ -24,4 +24,4 @@ router.get("/transactions", auth, getTransactions);
 // ================== WITHDRAW ==================
 router.post("/withdraw", auth, withdrawRequest);
 
-module.exports = router;
+export default router;

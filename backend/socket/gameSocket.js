@@ -1,8 +1,8 @@
-const jwt = require("jsonwebtoken");
-const Wallet = require("../models/wallet");
-const Transaction = require("../models/Transaction");
-const User = require("../models/user");
-const Match = require("../models/match");
+import jwt from "jsonwebtoken";
+import Wallet from "../models/wallet.js";
+import Transaction from "../models/Transaction.js";
+import User from "../models/user.js";
+import Match from "../models/match.js";
 
 const BOARD_END = 57;
 const SAFE_CELLS = new Set([0, 8, 13, 21, 26, 34, 39, 47]);
@@ -526,7 +526,7 @@ function chooseBestBotToken(room, bot, movable, dice) {
   return best;
 }
 
-module.exports = (io) => {
+export default (io) => {
   io.on("connection", (socket) => {
     console.log("🎮 GAME SOCKET CONNECTED:", socket.id);
 
