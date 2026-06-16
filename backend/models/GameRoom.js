@@ -1,7 +1,6 @@
 import mongoose from "mongoose";
 
 const gameRoomSchema = new mongoose.Schema({
-
   // 🔑 unique room id
   roomId: {
     type: String,
@@ -11,51 +10,37 @@ const gameRoomSchema = new mongoose.Schema({
   },
 
   // 👥 players in room
- players: {
-  type: [
-    {
-      userId: {
-        type: String,
-        required: true,
+  players: {
+    type: [
+      {
+        userId: {
+          type: String,
+          required: true,
+        },
+        socketId: {
+          type: String,
+          required: true,
+        },
+        username: {
+          type: String,
+          default: "Player",
+          trim: true,
+          maxlength: 30,
+        },
+        amount: {
+          type: Number,
+          default: 0,
+          min: 0,
+        },
       },
-      socketId: {
-        type: String,
-        required: true,
+    ],
+    validate: {
+      validator(arr) {
+        return arr.length <= 2;
       },
-      username: {
-        type: String,
-        default: "Player",
-        trim: true,
-        maxlength: 30,
-      },
-      amount: {
-        type: Number,
-        default: 0,
-        min: 0,
-      },
+      message: "Maximum 2 players allowed",
     },
-  ],
-  validate: {
-    validator(arr) {
-      return arr.length <= 2;
-    },
-    message: "Maximum 2 players allowed",
   },
-},
-      socketId: {
-        type: String,
-        required: true
-      },
-      username: {
-        type: String,
-        default: "Player"
-      },
-      amount: {
-        type: Number,
-        default: 0
-      }
-    }
-  ],
 
   // 🎮 game state (tokens position etc)
   state: {
@@ -100,7 +85,6 @@ const gameRoomSchema = new mongoose.Schema({
     default: Date.now,
     expires: 60 * 60 * 24
   }
-
 }, { timestamps: true });
 
 export default mongoose.model("GameRoom", gameRoomSchema);
