@@ -1062,17 +1062,59 @@ await wallet.save();
 // ================= ADMIN BATTLES / MATCHES =================
 router.get("/battles", auth, async (req, res) => {
   try {
-    const battles = await Battle.find()
-      .populate("createdBy", "name phone mobile username")
-      .populate("opponent", "name phone mobile username")
-      .populate("winner", "name phone mobile username")
-      .populate("roomCodeSetBy", "name phone mobile username")
-      .populate("resultSubmittedBy", "name phone mobile username")
-      .populate("results.user", "name phone mobile username")
-      .sort({ createdAt: -1 })
+    const limit = Math.min(Math.max(Number(req.query.limit || 100), 1), 100);
+    const page = Math.max(Number(req.query.page || 1), 1);
+    const skip = (page - 1) * limit;
+
+    const [total, battles] = await Promise.all([
+      Battle.countDocuments({}),
+      Battle.find()
+        .select(
+          "battleId amount prize status createdAt updatedAt createdBy opponent winner ludoKingRoomCode"
+        )
+        .sort({ _id: -1 })
+        .skip(skip)
+        .limit(limit)
+        .lean(),
+    ]);
+
+    const userIds = [
+      ...new Set(
+        battles
+          .flatMap((battle) => [battle.createdBy, battle.opponent, battle.winner])
+          .filter(Boolean)
+          .map(String)
+      ),
+    ];
+
+    const users = await User.find({ _id: { $in: userIds } })
+      .select("name phone mobile username")
       .lean();
 
-    res.json({ success: true, battles });
+    const userMap = users.reduce((map, user) => {
+      map[String(user._id)] = user;
+      return map;
+    }, {});
+
+    const battlesWithUsers = battles.map((battle) => ({
+      ...battle,
+      createdBy: battle.createdBy ? userMap[String(battle.createdBy)] || battle.createdBy : null,
+      opponent: battle.opponent ? userMap[String(battle.opponent)] || battle.opponent : null,
+      winner: battle.winner ? userMap[String(battle.winner)] || battle.winner : null,
+    }));
+
+    res.json({
+      success: true,
+      battles: battlesWithUsers,
+      pagination: {
+        page,
+        limit,
+        total,
+        totalPages: Math.max(Math.ceil(total / limit), 1),
+        hasPrevPage: page > 1,
+        hasNextPage: page * limit < total,
+      },
+    });
   } catch (err) {
     console.log("❌ ADMIN BATTLES ERROR:", err);
     res.status(500).json({ msg: err.message });

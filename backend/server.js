@@ -122,6 +122,7 @@ import { submitKyc } from "./controllers/kycController.js";
 app.use("/api/user", userAuthRoutes);
 app.use("/api/admin-auth", adminAuthRoutes);
 app.use("/api/admin", paymentRoutes);
+app.use("/api/admin/battles", adminBattleRoutes);
 app.use("/api/admin", adminRoutes);
 app.use("/api/wallet", walletRoutes);
 app.use("/api/deposit", depositRoutes);
@@ -131,7 +132,6 @@ app.use("/api/matches", matchRoutes);
 app.use("/api/match", matchRoutes);
 
 app.use("/api/battle", battleRoutes);
-app.use("/api/admin/battles", adminBattleRoutes);
 app.use("/api/match-proof", matchProofRoutes);
 
 app.use("/api/kyc", kycRoutes);

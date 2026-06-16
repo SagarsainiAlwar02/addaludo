@@ -31,7 +31,9 @@ if (!mongoose.Types.ObjectId.isValid(decoded.id)) {
     msg: "Invalid token",
   });
 }
-    const user = await User.findById(decoded.id);
+    const user = await User.findById(decoded.id)
+      .select("_id status role")
+      .lean();
 
     if (!user) {
       return res.status(401).json({
