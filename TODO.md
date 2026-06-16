@@ -1,19 +1,10 @@
 # TODO
 
-## Brainstorm / Validate
-- [x] Explore relevant files for admin Matches UI and backend battle/proof endpoints.
-- [x] Identify mismatch/logic issues between UI (expects /admin/battles) and backend controllers/routes.
-
-## Fixes to implement (pending your approval)
-- [] Remove/resolve obvious issues found in code:
-  - [] `matchProofController.js`: duplicated `if (!proof)` block and inconsistent status filters.
-  - [] `battleController.js`: potential logic issues (duplicate/unused functions, inconsistent admin approve/reject settling logic).
-  - [] `Matches.jsx`: ensure it calls correct admin endpoints and handles response shape robustly.
-
-## Testing
-- [] Run admin + backend lint/tests (or start server) and validate:
-  - [] matches list loads
-  - [] match details modal loads
-  - [] Win/Cancel actions work and don't double-pay/double-refund
-
+- [ ] Update `addaludo/backend/utils/2factorInSms.js` to support both 2Factor styles:
+  - [x] Keep existing POST `https://2factor.in/API/R1/` flow (module=TRANS_SMS, apikey, to, from, msg)
+  - [x] Add support for template-based V1 endpoint that requires `templatename`
+  - [x] Ensure correct URL string formatting (template name in URL; no raw message text)
+  - [x] Choose style via env `TWOFACTOR_USE_TEMPLATE` (preferred) and/or presence of `TWOFACTOR_TEMPLATE_NAME`
+- [ ] Restart backend and test `POST /api/otp/send`
+- [ ] Confirm the “Missing templatename value” error is gone
 

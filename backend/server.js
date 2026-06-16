@@ -182,9 +182,20 @@ app.post("/api/otp/send", async (req, res) => {
       createdAt: Date.now(),
     };
 
-    console.log("📲 OTP GENERATED:", phone, otp);
+    console.log("📲 OTP GENERATED FOR:", phone, "-> OTP:", otp);
 
-    // Call external 2factor utility function
+    // FIX: Agar 2Factor credentials nahi hain to error throw karne ke bajay dummy pass karein
+    if (!process.env.TWOFACTOR_API_KEY) {
+      console.log("⚠️ WARNING: TWOFACTOR_API_KEY missing in .env. Operating in Sandbox/Development mode.");
+      
+      return res.json({
+        success: true,
+        msg: `OTP generated (Sandbox): ${otp}`, // Frontend ke liye temporary fallback
+        developmentMode: true
+      });
+    }
+
+    // Call external 2factor utility function aur check karein ki ye properly resolve ho raha hai
     await sendSms2factor({
       phoneNumber: `+91${phone}`,
       message: `Your OTP is ${otp}.`,
@@ -195,16 +206,19 @@ app.post("/api/otp/send", async (req, res) => {
       success: true,
       msg: "OTP sent successfully",
     });
+
   } catch (err) {
     console.log("❌ 2FACTOR ERROR:", err.response?.data || err.message);
 
+    // Agar Gateway fail hota hai, to frontend ko success: false bhejein taaki "OTP sent successfully" na likha aaye
     return res.status(500).json({
       success: false,
-      msg: "Failed to send OTP",
+      msg: "SMS Gateway Error. Failed to send OTP.",
       error: err.response?.data || err.message,
     });
   }
 });
+
 
 // --- 2. VERIFY OTP & LOGIN/REGISTER API ---
 app.post("/api/otp/verify", async (req, res) => {

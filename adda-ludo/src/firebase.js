@@ -1,16 +1,16 @@
-import { initializeApp } from "firebase/app";
-import { getAuth } from "firebase/auth";
+// import { initializeApp } from "firebase/app";
+// import { getAuth } from "firebase/auth";
 
-const firebaseConfig = {
-  apiKey: "YOUR_API_KEY",
-  authDomain: "YOUR_PROJECT.firebaseapp.com",
-  projectId: "YOUR_PROJECT_ID",
-  storageBucket: "YOUR_PROJECT.appspot.com",
-  messagingSenderId: "XXXX",
-  appId: "XXXX"
-};
+// const firebaseConfig = {
+//   apiKey: "YOUR_API_KEY",
+//   authDomain: "YOUR_PROJECT.firebaseapp.com",
+//   projectId: "YOUR_PROJECT_ID",
+//   storageBucket: "YOUR_PROJECT.appspot.com",
+//   messagingSenderId: "XXXX",
+//   appId: "XXXX"
+// };
 
-const app = initializeApp(firebaseConfig);
+// const app = initializeApp(firebaseConfig);
 
-// 🔥 IMPORTANT
-export const auth = getAuth(app);
+// // 🔥 IMPORTANT
+// export const auth = getAuth(app);
