@@ -106,8 +106,8 @@ export default function Login({ onLogin }) {
 
       const res = await axios.post(`${API_URL}/otp/verify`, {
         verificationId,
-        code: otp,
-        mobileNumber: phone,
+        otp: otp,
+        phone: phone,
         referralCode: finalReferralCode,
       });
 
