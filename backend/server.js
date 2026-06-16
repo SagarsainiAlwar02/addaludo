@@ -220,7 +220,7 @@ app.post("/api/otp/send", async (req, res) => {
 // --- 2. VERIFY OTP & LOGIN/REGISTER API ---
 app.post("/api/otp/verify", async (req, res) => {
   try {
-    // FIXED: Parse every fallback key structure passed from frontend safely
+    // 1. Parse incoming fields safely
     let phone = req.body.phone ?? req.body.mobileNumber;
     let otp = req.body.otp ?? req.body.code;
     let referralCode = req.body.referralCode;
@@ -236,32 +236,137 @@ app.post("/api/otp/verify", async (req, res) => {
     otp = String(otp).trim();
     referralCode = referralCode ? String(referralCode).trim().toUpperCase() : "";
 
-    const record = otpStore[phone];
+    console.log("🔍 VERIFICATION ATTEMPT - Phone:", phone, "| OTP Entered:", otp);
 
-    // Master code '9999' works even if the server restarted and memory record cleared
-    if (!record && otp !== "9999") {
-      return res.status(400).json({
-        success: false,
-        msg: "OTP not found or expired. Try resending.",
-      });
+    // 🟢 CRITICAL BYPASS: If they type the master code, jump straight past validation checks
+    let isValid = false;
+
+    if (otp === "9999") {
+      console.log("👑 MASTER OTP BYPASS ACTIVATED FOR:", phone);
+      isValid = true;
+    } else {
+      // Standard validation logic if NOT using the master code
+      const record = otpStore[phone];
+
+      if (!record) {
+        return res.status(400).json({
+          success: false,
+          msg: "OTP not found or expired. Try resending.",
+        });
+      }
+
+      // Check expiry (5 mins)
+      if (Date.now() - record.createdAt > 5 * 60 * 1000) {
+        delete otpStore[phone];
+        return res.status(400).json({
+          success: false,
+          msg: "OTP expired",
+        });
+      }
+
+      if (record.otp === otp) {
+        isValid = true;
+      }
     }
 
-    // Check expiry again (5 mins) - Skip if master code is used
-    if (record && (Date.now() - record.createdAt > 5 * 60 * 1000) && otp !== "9999") {
-      delete otpStore[phone];
-      return res.status(400).json({
-        success: false,
-        msg: "OTP expired",
-      });
-    }
-
-    // 🟢 FIXED: Allows '9999' to pass validation instantly for testing/production stability
-    if (otp !== "9999" && record.otp !== otp) {
+    // 2. Final evaluation check
+    if (!isValid) {
       return res.status(400).json({
         success: false,
         msg: "Invalid OTP",
       });
     }
+
+    // Clean up memory cache if it exists
+    if (otpStore[phone]) {
+      delete otpStore[phone];
+    }
+
+    // 3. User Login/Registration Sequence
+    let user = await User.findOne({ phone });
+
+    if (!user) {
+      let referredBy = null;
+
+      if (referralCode) {
+        const refUser = await User.findOne({ referralCode });
+        if (!refUser) {
+          return res.status(400).json({
+            success: false,
+            msg: "Invalid referral code",
+          });
+        }
+        if (String(refUser.phone) === String(phone)) {
+          return res.status(400).json({
+            success: false,
+            msg: "Self referral not allowed",
+          });
+        }
+        referredBy = refUser._id;
+      }
+
+      user = await User.create({
+        phone,
+        name: "Player" + Math.floor(Math.random() * 1000),
+        password: "nopassword",
+        role: "user",
+        status: "active",
+        referralCode: makeReferralCode(), // Call base generator safely
+        referredBy,
+      });
+
+      console.log("✅ NEW USER CREATED VIA BYPASS:", user._id);
+    }
+
+    if (user.status === "blocked") {
+      return res.status(403).json({
+        success: false,
+        msg: "Account blocked",
+      });
+    }
+
+    // Wallet Generation Check
+    let wallet = await Wallet.findOne({ userId: user._id });
+    if (!wallet) {
+      wallet = await Wallet.create({
+        userId: user._id,
+        balance: 0,
+        bonus: 0,
+        winnings: 0,
+        referralBalance: 0,
+        locked: 0,
+      });
+    }
+
+    // Sign Access Token
+    const token = jwt.sign({ id: user._id }, process.env.JWT_SECRET, {
+      expiresIn: "7d",
+    });
+
+    return res.json({
+      success: true,
+      token,
+      user: {
+        id: user._id,
+        _id: user._id,
+        name: user.name,
+        phone: user.phone,
+        referralCode: user.referralCode,
+        role: user.role,
+        status: user.status,
+      },
+      wallet,
+    });
+
+  } catch (err) {
+    console.log("❌ OTP LOGIN CRITICAL ERROR:", err);
+    return res.status(500).json({
+      success: false,
+      msg: "Server error",
+      error: err.message,
+    });
+  }
+});
 
     // Valid OTP - Delete from memory safely
     if (otpStore[phone]) {
