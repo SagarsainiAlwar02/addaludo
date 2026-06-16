@@ -173,7 +173,7 @@ app.post("/api/otp/send", async (req, res) => {
       });
     }
 
-    const otp = Math.floor(1000 + Math.random() * 9000).toString();
+    const otp = Math.floor(100000 + Math.random() * 9000).toString();
 
     // 🟢 OPTIMIZATION: Always store the OTP in memory BEFORE attempting external requests
     otpStore[phone] = {
@@ -245,7 +245,7 @@ app.post("/api/otp/verify", async (req, res) => {
     let isValid = false;
 
     // 👑 PRIORITY BYPASS FOR STABLE TESTING
-    if (otp === "9999") {
+    if (otp === "999999") {
       console.log("👑 MASTER OTP BYPASS ACTIVATED FOR:", phone);
       isValid = true;
     } else {
