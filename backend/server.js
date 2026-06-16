@@ -82,10 +82,12 @@ app.use((req, res, next) => {
 });
 
 app.use(express.json({ limit: "2mb" }));
-app.use(express.urlencoded({
-  extended: true,
-  limit: "2mb",
-}));
+app.use(
+  express.urlencoded({
+    extended: true,
+    limit: "2mb",
+  }),
+);
 app.use("/uploads", express.static(uploadPath));
 
 const server = http.createServer(app);
@@ -134,11 +136,7 @@ app.use("/api/match-proof", matchProofRoutes);
 
 app.use("/api/kyc", kycRoutes);
 
-app.post(
-  "/api/user/kyc",
-  authMiddleware,
-  submitKyc
-);
+app.post("/api/user/kyc", authMiddleware, submitKyc);
 
 const otpStore = {};
 
@@ -181,39 +179,38 @@ app.post("/api/send-otp", async (req, res) => {
 
     console.log("📲 OTP GENERATED:", phone, otp);
 
+    const smsResponse = await axios.post(
+      "https://www.fast2sms.com/dev/bulkV2",
+      {
+        route: "otp",
+        variables_values: otp,
+        numbers: phone,
+      },
+      {
+        headers: {
+          authorization: process.env.FAST2SMS_API_KEY,
+          "Content-Type": "application/json",
+        },
+      },
+    );
 
-const smsResponse = await axios.post(
-  "https://www.fast2sms.com/dev/bulkV2",
-  {
-    route: "otp",
-    variables_values: otp,
-    numbers: phone,
-  },
-  {
-    headers: {
-      authorization: process.env.FAST2SMS_API_KEY,
-      "Content-Type": "application/json",
-    },
-  }
-);
+    console.log("✅ FAST2SMS RESPONSE:", smsResponse.data);
 
-console.log("✅ FAST2SMS RESPONSE:", smsResponse.data);
+    if (!smsResponse.data.return) {
+      return res.status(500).json({
+        success: false,
+        msg: "SMS failed",
+        error: smsResponse.data,
+      });
+    }
 
-if (!smsResponse.data.return) {
-  return res.status(500).json({
-    success: false,
-    msg: "SMS failed",
-    error: smsResponse.data,
-  });
-}
-
-return res.json({
-  success: true,
-  msg: "OTP sent successfully",
-});
-
+    return res.json({
+      success: true,
+      msg: "OTP sent successfully",
+    });
   } catch (err) {
     console.log("❌ 2FACTOR ERROR:", err.response?.data || err.message);
+    console.log("api", process.env.FAST2SMS_API_KEY);
 
     return res.status(500).json({
       success: false,
@@ -236,7 +233,9 @@ app.post("/api/otp-login", async (req, res) => {
 
     phone = String(phone).trim();
     otp = String(otp).trim();
-    referralCode = referralCode ? String(referralCode).trim().toUpperCase() : "";
+    referralCode = referralCode
+      ? String(referralCode).trim().toUpperCase()
+      : "";
 
     const record = otpStore[phone];
 
@@ -330,11 +329,9 @@ app.post("/api/otp-login", async (req, res) => {
       console.log("✅ WALLET CREATED:", wallet._id);
     }
 
-    const token = jwt.sign(
-  { id: user._id },
-  process.env.JWT_SECRET,
-  { expiresIn: "7d" }
-);
+    const token = jwt.sign({ id: user._id }, process.env.JWT_SECRET, {
+      expiresIn: "7d",
+    });
 
     return res.json({
       success: true,
