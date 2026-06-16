@@ -11,6 +11,7 @@ const API_URL =
 export default function Login({ onLogin }) {
   const [phone, setPhone] = useState("");
   const [otp, setOtp] = useState("");
+  const [verificationId, setVerificationId] = useState("");
   const [referralCode, setReferralCode] = useState("");
   const [step, setStep] = useState(1);
   const [loading, setLoading] = useState(false);
@@ -49,18 +50,25 @@ export default function Login({ onLogin }) {
     try {
       setLoading(true);
       setError("");
+      setOtp("");
+      setVerificationId("");
 
-      const res = await axios.post(`${API_URL}/send-otp`, { phone });
+      const res = await axios.post(`${API_URL}/otp/send`, {
+        countryCode: "91",
+        mobileNumber: phone,
+        messageText: "Your verification code is ##var1##",
+      });
 
-      if (res.data?.success) {
+      if (res.data?.success && res.data?.verificationId) {
+        setVerificationId(res.data.verificationId);
         setStep(2);
         setTimer(30);
       } else {
-        setError(res.data?.msg || "Failed to send OTP");
+        setError(res.data?.error || res.data?.msg || "Failed to send OTP");
       }
     } catch (err) {
       console.log("OTP SEND ERROR:", err.response?.data || err.message);
-      setError(err.response?.data?.msg || err.message || "Failed to send OTP");
+      setError(err.response?.data?.error || err.response?.data?.msg || err.message || "Failed to send OTP");
     } finally {
       setLoading(false);
     }
@@ -69,6 +77,11 @@ export default function Login({ onLogin }) {
   const verifyOTP = async () => {
     if (!otp) {
       setError("Enter OTP");
+      return;
+    }
+
+    if (!verificationId) {
+      setError("Verification ID missing. Please send OTP again");
       return;
     }
 
@@ -81,14 +94,15 @@ export default function Login({ onLogin }) {
       setLoading(true);
       setError("");
 
-      const res = await axios.post(`${API_URL}/otp-login`, {
-        phone,
-        otp,
+      const res = await axios.post(`${API_URL}/otp/verify`, {
+        verificationId,
+        code: otp,
+        mobileNumber: phone,
         referralCode: finalReferralCode,
       });
 
       if (!res.data?.success) {
-        setError(res.data?.msg || "Invalid OTP");
+        setError(res.data?.error || res.data?.msg || "Invalid OTP");
         return;
       }
 
@@ -101,7 +115,7 @@ export default function Login({ onLogin }) {
       navigate("/");
     } catch (err) {
       console.log("OTP VERIFY ERROR:", err.response?.data || err.message);
-      setError(err.response?.data?.msg || err.message || "Invalid OTP");
+      setError(err.response?.data?.error || err.response?.data?.msg || err.message || "Invalid OTP");
     } finally {
       setLoading(false);
     }

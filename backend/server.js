@@ -4,8 +4,9 @@ import express from "express";
 import mongoose from "mongoose";
 import cors from "cors";
 import http from "http";
-import axios from "axios";
+
 import jwt from "jsonwebtoken";
+import { sendSms2factor } from "./utils/2factorInSms.js";
 import path from "path";
 import fs from "fs";
 import { fileURLToPath } from "url";
@@ -138,11 +139,12 @@ app.use("/api/kyc", kycRoutes);
 
 app.post("/api/user/kyc", authMiddleware, submitKyc);
 
+// --- OTP Memory Storage ---
 const otpStore = {};
 
+// Clean up expired OTPs every 1 minute
 setInterval(() => {
   const now = Date.now();
-
   Object.keys(otpStore).forEach((phone) => {
     if (now - otpStore[phone].createdAt > 5 * 60 * 1000) {
       delete otpStore[phone];
@@ -150,9 +152,10 @@ setInterval(() => {
   });
 }, 60000);
 
-app.post("/api/send-otp", async (req, res) => {
+// --- 1. SEND OTP API ---
+app.post("/api/otp/send", async (req, res) => {
   try {
-    let { phone } = req.body;
+    let phone = req.body?.phone ?? req.body?.mobileNumber ?? req.body?.number;
 
     if (!phone) {
       return res.status(400).json({
@@ -163,6 +166,7 @@ app.post("/api/send-otp", async (req, res) => {
 
     phone = String(phone).trim();
 
+    // Indian Mobile Number validation (10 digits starting with 6-9)
     if (!/^[6-9]\d{9}$/.test(phone)) {
       return res.status(400).json({
         success: false,
@@ -170,6 +174,7 @@ app.post("/api/send-otp", async (req, res) => {
       });
     }
 
+    // 4 digit Random OTP generation
     const otp = Math.floor(1000 + Math.random() * 9000).toString();
 
     otpStore[phone] = {
@@ -179,30 +184,12 @@ app.post("/api/send-otp", async (req, res) => {
 
     console.log("📲 OTP GENERATED:", phone, otp);
 
-    const smsResponse = await axios.post(
-      "https://www.fast2sms.com/dev/bulkV2",
-      {
-        route: "otp",
-        variables_values: otp,
-        numbers: phone,
-      },
-      {
-        headers: {
-          authorization: process.env.FAST2SMS_API_KEY,
-          "Content-Type": "application/json",
-        },
-      },
-    );
-
-    console.log("✅ FAST2SMS RESPONSE:", smsResponse.data);
-
-    if (!smsResponse.data.return) {
-      return res.status(500).json({
-        success: false,
-        msg: "SMS failed",
-        error: smsResponse.data,
-      });
-    }
+    // Call external 2factor utility function
+    await sendSms2factor({
+      phoneNumber: `+91${phone}`,
+      message: `Your OTP is ${otp}.`,
+      templateName: process.env.TWOFACTOR_TEMPLATE_NAME || undefined,
+    });
 
     return res.json({
       success: true,
@@ -210,7 +197,6 @@ app.post("/api/send-otp", async (req, res) => {
     });
   } catch (err) {
     console.log("❌ 2FACTOR ERROR:", err.response?.data || err.message);
-    console.log("api", process.env.FAST2SMS_API_KEY);
 
     return res.status(500).json({
       success: false,
@@ -220,7 +206,8 @@ app.post("/api/send-otp", async (req, res) => {
   }
 });
 
-app.post("/api/otp-login", async (req, res) => {
+// --- 2. VERIFY OTP & LOGIN/REGISTER API ---
+app.post("/api/otp/verify", async (req, res) => {
   try {
     let { phone, otp, referralCode } = req.body;
 
@@ -233,9 +220,7 @@ app.post("/api/otp-login", async (req, res) => {
 
     phone = String(phone).trim();
     otp = String(otp).trim();
-    referralCode = referralCode
-      ? String(referralCode).trim().toUpperCase()
-      : "";
+    referralCode = referralCode ? String(referralCode).trim().toUpperCase() : "";
 
     const record = otpStore[phone];
 
@@ -246,9 +231,9 @@ app.post("/api/otp-login", async (req, res) => {
       });
     }
 
+    // Check expiry again (5 mins)
     if (Date.now() - record.createdAt > 5 * 60 * 1000) {
       delete otpStore[phone];
-
       return res.status(400).json({
         success: false,
         msg: "OTP expired",
@@ -262,10 +247,12 @@ app.post("/api/otp-login", async (req, res) => {
       });
     }
 
+    // Valid OTP - Delete from memory
     delete otpStore[phone];
 
     let user = await User.findOne({ phone });
 
+    // Create user if not exists (Registration)
     if (!user) {
       let referredBy = null;
 
@@ -314,6 +301,7 @@ app.post("/api/otp-login", async (req, res) => {
       await user.save();
     }
 
+    // Handle Wallet Creation
     let wallet = await Wallet.findOne({ userId: user._id });
 
     if (!wallet) {
@@ -329,6 +317,7 @@ app.post("/api/otp-login", async (req, res) => {
       console.log("✅ WALLET CREATED:", wallet._id);
     }
 
+    // JWT Token creation
     const token = jwt.sign({ id: user._id }, process.env.JWT_SECRET, {
       expiresIn: "7d",
     });
