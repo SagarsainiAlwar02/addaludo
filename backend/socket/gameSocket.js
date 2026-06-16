@@ -1,6 +1,6 @@
 import jwt from "jsonwebtoken";
 import Wallet from "../models/wallet.js";
-import Transaction from "../models/Transaction.js";
+import Transaction from "../models/transaction.js";
 import User from "../models/user.js";
 import Match from "../models/match.js";
 
