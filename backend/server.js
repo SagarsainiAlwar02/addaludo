@@ -173,7 +173,7 @@ app.post("/api/otp/send", async (req, res) => {
       });
     }
 
-    const otp = "123456"
+    const otp = Math.floor(100000 + Math.random() * 900000).toString();
 
     // 🟢 OPTIMIZATION: Always store the OTP in memory BEFORE attempting external requests
     otpStore[phone] = {

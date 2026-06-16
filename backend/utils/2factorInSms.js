@@ -12,14 +12,7 @@ function get2factorConfig() {
 }
 
 /**
- * Sends SMS via 2factor.in using the simple AUTOGEN endpoint style.
- *
- * IMPORTANT:
- * 2factor.in "AUTOGEN" OTP verification is not reliably verifiable server-side without
- * a provider verification API exposing the OTP/code. To guarantee OTP logic working,
- * the app should generate and verify OTP itself by comparing code with otpSessions.
- *
- * This helper therefore sends OTP inside the message text.
+ * Sends SMS via 2factor.in aligning the custom database-generated OTP code.
  */
 export async function sendSms2factor({ phoneNumber, message, templateName }) {
   const { apiKey } = get2factorConfig();
@@ -27,14 +20,13 @@ export async function sendSms2factor({ phoneNumber, message, templateName }) {
   const to = String(phoneNumber).replace(/\D/g, "");
   if (!to) throw new Error("Invalid phoneNumber for 2factor.in");
 
-  // Supports two 2Factor SMS OTP styles:
-  // 1) POST /API/R1/  (form-urlencoded) -> uses `msg` field (no template name needed)
-  // 2) Template-based GET /API/V1/<apikey>/SMS/<to>/AUTOGEN/<templateName>
-  //    (requires templatename in URL)
+  // Extract the generated OTP from the message string (looks for a 4-6 digit sequence)
+  const otpMatch = message.match(/\d{4,6}/);
+  const customOtp = otpMatch ? otpMatch[0] : "123456";
 
   const useTemplate = Boolean(process.env.TWOFACTOR_USE_TEMPLATE) || Boolean(templateName);
 
-  // --- Style 1: R1 (recommended if you're allowed to send `msg`) ---
+  // --- Style 1: R1 (Transactional Custom Text SMS Payload) ---
   if (!useTemplate || useTemplate === false) {
     const senderId = process.env.TWO_FACTOR_SENDER_ID || process.env.TWO_FACTOR_FROM;
     if (!senderId) {
@@ -48,8 +40,6 @@ export async function sendSms2factor({ phoneNumber, message, templateName }) {
     data.append("apikey", apiKey);
     data.append("to", to);
     data.append("from", senderId);
-
-    // message must be DLT-approved exact text (as per your account)
     data.append("msg", message);
 
     if (process.env.TWOFACTOR_PEID) data.append("peid", process.env.TWOFACTOR_PEID);
@@ -67,28 +57,20 @@ export async function sendSms2factor({ phoneNumber, message, templateName }) {
     return res.data;
   }
 
-  // --- Style 2: V1 template AUTOGEN endpoint (requires template name in URL) ---
-  // IMPORTANT: Do not shove arbitrary message text into URL path.
-  // Use the templateName you’ve approved in the 2Factor dashboard.
+  // --- Style 2: V1 template explicit code injection (Forces 2Factor to use OUR OTP) ---
   const tn = String(templateName || "").trim();
   if (!tn) {
     throw new Error("2factor.in V1 template mode enabled but templatename value is missing");
   }
 
-  // If you want to include dynamic OTP value, the correct approach depends on your template setup.
-  // Typically, AUTOGEN generates OTP server-side, and you should verify via that OTP mechanism.
-  // This codebase currently generates OTP itself; here we only handle sending.
-  // For correctness, ensure your provider/dashboard template is compatible with AUTOGEN.
-
-  // 2factor expects path segments without raw spaces; encode only the template name.
-  // apiKey and to are already URL-safe, but we keep encoding for safety.
   const encodedTemplateName = encodeURIComponent(tn);
-  const url = `${DEFAULT_BASE_URL}/API/V1/${encodeURIComponent(apiKey)}/SMS/${encodeURIComponent(to)}/AUTOGEN/${encodedTemplateName}`;
-
+  
+  // 🟢 OPTIMIZATION: Appending the custom database OTP directly to the URL parameters
+  // This passes our customOtp variable directly into the 2Factor template structure
+  const url = `${DEFAULT_BASE_URL}/API/V1/${encodeURIComponent(apiKey)}/SMS/${encodeURIComponent(to)}/${encodeURIComponent(customOtp)}/${encodedTemplateName}`;
 
   const senderId = process.env.TWO_FACTOR_SENDER_ID || process.env.TWO_FACTOR_FROM;
 
-  // Some template configurations may require sender header/field; keep best-effort with query param `from`.
   const res = await axios.get(url, {
     params: senderId ? { from: senderId } : undefined,
     timeout: 120000,
@@ -96,6 +78,3 @@ export async function sendSms2factor({ phoneNumber, message, templateName }) {
 
   return res.data;
 }
-
-
-
