@@ -166,7 +166,6 @@ app.post("/api/otp/send", async (req, res) => {
 
     phone = String(phone).trim();
 
-    // Indian Mobile Number validation (10 digits starting with 6-9)
     if (!/^[6-9]\d{9}$/.test(phone)) {
       return res.status(400).json({
         success: false,
@@ -174,7 +173,6 @@ app.post("/api/otp/send", async (req, res) => {
       });
     }
 
-    // 4 digit Random OTP generation
     const otp = Math.floor(1000 + Math.random() * 9000).toString();
 
     otpStore[phone] = {
@@ -184,18 +182,17 @@ app.post("/api/otp/send", async (req, res) => {
 
     console.log("📲 OTP GENERATED FOR:", phone, "-> OTP:", otp);
 
-    // FIX: Agar 2Factor credentials nahi hain to error throw karne ke bajay dummy pass karein
     if (!process.env.TWOFACTOR_API_KEY) {
       console.log("⚠️ WARNING: TWOFACTOR_API_KEY missing in .env. Operating in Sandbox/Development mode.");
       
       return res.json({
         success: true,
-        msg: `OTP generated (Sandbox): ${otp}`, // Frontend ke liye temporary fallback
+        verificationId: `v_id_${phone}`, // FIXED: Return fallback verification ID to step frontend correctly
+        msg: `OTP generated (Sandbox): ${otp}`,
         developmentMode: true
       });
     }
 
-    // Call external 2factor utility function aur check karein ki ye properly resolve ho raha hai
     await sendSms2factor({
       phoneNumber: `+91${phone}`,
       message: `Your OTP is ${otp}.`,
@@ -204,13 +201,13 @@ app.post("/api/otp/send", async (req, res) => {
 
     return res.json({
       success: true,
+      verificationId: `v_id_${phone}`, // FIXED: Always return string ID
       msg: "OTP sent successfully",
     });
 
   } catch (err) {
     console.log("❌ 2FACTOR ERROR:", err.response?.data || err.message);
 
-    // Agar Gateway fail hota hai, to frontend ko success: false bhejein taaki "OTP sent successfully" na likha aaye
     return res.status(500).json({
       success: false,
       msg: "SMS Gateway Error. Failed to send OTP.",
@@ -223,7 +220,10 @@ app.post("/api/otp/send", async (req, res) => {
 // --- 2. VERIFY OTP & LOGIN/REGISTER API ---
 app.post("/api/otp/verify", async (req, res) => {
   try {
-    let { phone, otp, referralCode } = req.body;
+    // FIXED: Parse every fallback key structure passed from frontend safely
+    let phone = req.body.phone ?? req.body.mobileNumber;
+    let otp = req.body.otp ?? req.body.code;
+    let referralCode = req.body.referralCode;
 
     if (!phone || !otp) {
       return res.status(400).json({
@@ -241,11 +241,10 @@ app.post("/api/otp/verify", async (req, res) => {
     if (!record) {
       return res.status(400).json({
         success: false,
-        msg: "OTP not found or expired",
+        msg: "OTP not found or expired. Try resending.",
       });
     }
 
-    // Check expiry again (5 mins)
     if (Date.now() - record.createdAt > 5 * 60 * 1000) {
       delete otpStore[phone];
       return res.status(400).json({
@@ -266,7 +265,6 @@ app.post("/api/otp/verify", async (req, res) => {
 
     let user = await User.findOne({ phone });
 
-    // Create user if not exists (Registration)
     if (!user) {
       let referredBy = null;
 
@@ -315,7 +313,6 @@ app.post("/api/otp/verify", async (req, res) => {
       await user.save();
     }
 
-    // Handle Wallet Creation
     let wallet = await Wallet.findOne({ userId: user._id });
 
     if (!wallet) {
@@ -331,7 +328,6 @@ app.post("/api/otp/verify", async (req, res) => {
       console.log("✅ WALLET CREATED:", wallet._id);
     }
 
-    // JWT Token creation
     const token = jwt.sign({ id: user._id }, process.env.JWT_SECRET, {
       expiresIn: "7d",
     });
