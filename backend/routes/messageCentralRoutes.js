@@ -15,27 +15,17 @@ function getRequiredEnv(name) {
 }
 
 function normalizeBaseUrl() {
-  // Provider says host + path:
-  // https://cpaas.messagecentral.com/verification/v3/send
-  // We keep default exactly as that host/path; if MC_BASE_URL is set, we use it with trimming.
   const fallback = "https://cpaas.messagecentral.com/verification/v3/send";
   const mcBase = process.env.MC_BASE_URL || fallback;
   return String(mcBase).trim().split(/\s+/)[0].replace(/\/$/, "");
 }
 
 function getAuthToken() {
-  // Provider expects header key: authToken
-  // Prefer MC_AUTH_TOKEN; allow MC_PASSWORD fallback via OAuth if needed in future.
-  // For this router integration, we require MC_AUTH_TOKEN (production safe).
   if (process.env.MC_AUTH_TOKEN) return process.env.MC_AUTH_TOKEN;
-  // Keep backward compatibility: if token isn't present but password is, fail loudly.
-  // The existing OTP util supports OAuth, but this router is specifically for "Message Now".
   throw new Error("Message Central authToken missing: set MC_AUTH_TOKEN");
 }
 
 function getMessageNowSendUrl(baseUrl) {
-  // baseUrl might be provided as ".../verification/v3/send"
-  // Ensure it ends with /send
   return baseUrl;
 }
 
@@ -46,13 +36,80 @@ function safeErrorResponse(err) {
 }
 
 /**
+ * 🟢 ADDED: POST /verify
+ * Matches your frontend's dynamic payload keys perfectly
+ * Validates the OTP pin directly against the Message Central infrastructure
+ */
+router.post("/verify", async (req, res) => {
+  try {
+    // Read every possible frontend variant safely
+    const verificationId = req.body.verificationId;
+    const otpCode = req.body.code || req.body.otp;
+    const mobileNumber = req.body.mobileNumber || req.body.phone;
+
+    if (!verificationId || !otpCode || !mobileNumber) {
+      return res.status(200).json({ 
+        success: false, 
+        msg: "Phone and OTP required" 
+      });
+    }
+
+    const authToken = getAuthToken();
+    
+    // Message Central validation URL structure: 
+    // https://cpaas.messagecentral.com/verification/v3/validateOtp
+    const validateUrl = "https://cpaas.messagecentral.com/verification/v3/validateOtp";
+
+    console.log("FORWARDING TO MESSAGE CENTRAL VALIDATION:", {
+      verificationId,
+      mobileNumber,
+      code: otpCode
+    });
+
+    const response = await axios.get(validateUrl, {
+      headers: { authToken },
+      params: {
+        customerId: process.env.MC_CUSTOMER_ID,
+        countryCode: "91",
+        mobileNumber: mobileNumber,
+        verificationId: verificationId,
+        code: otpCode
+      }
+    });
+
+    console.log("MESSAGE CENTRAL RESPONSE:", response.data);
+
+    // If Message Central validates successfully
+    if (response.data?.status === "VALIDATED" || response.data?.success === true) {
+      
+      // 💡 NOTE: If you need to generate a JWT login token or create a user in your 
+      // database, that logic should be executed here before returning success.
+      
+      return res.status(200).json({ 
+        success: true, 
+        msg: "OTP Verified successfully",
+        token: "mock-session-token-replace-with-your-jwt", // Swap with a real signing token if needed
+        user: { mobileNumber }
+      });
+    } else {
+      return res.status(200).json({ 
+        success: false, 
+        msg: response.data?.message || response.data?.msg || "Invalid OTP" 
+      });
+    }
+
+  } catch (err) {
+    console.error("BACKEND OTP VERIFY EXCEPTION:", err.response?.data || err.message);
+    const { status, data } = safeErrorResponse(err);
+    return res.status(200).json({
+      success: false,
+      msg: data?.message || data?.msg || "Invalid OTP"
+    });
+  }
+});
+
+/**
  * POST /send-single
- * Body (typical - provider may ignore extras):
- * {
- *   "mobileNumber": "9999999999" | "919999999999",
- *   "countryCode": "91",
- *   "messageText": "..."
- * }
  */
 router.post("/send-single", async (req, res) => {
   try {
@@ -69,12 +126,6 @@ router.post("/send-single", async (req, res) => {
     const baseUrl = normalizeBaseUrl();
     const url = getMessageNowSendUrl(baseUrl);
 
-    // Provider quirk: "config fields" must be query params, not JSON body.
-    // We send message content as form fields? For non-file endpoints, we can still use
-    // application/json but ensure provider-required config is query params.
-    // Since we don't have the exact "Message Now" schema here, we implement:
-    // - query params: countryCode, mobileNumber, messageText
-    // - empty body: null (provider often accepts null when params drive config)
     const response = await axios.post(
       url,
       null,
@@ -103,17 +154,6 @@ router.post("/send-single", async (req, res) => {
 
 /**
  * POST /send-bulk-strings
- * Body:
- * {
- *   "countryCode": "91",
- *   "recipients": [
- *     { "mobileNumber": "9999999999", "messageText": "..." },
- *     ...
- *   ]
- * }
- *
- * Note: provider schema unknown; this implementation follows the same "query params only"
- * requirement by sending each recipient as a query-based config.
  */
 router.post("/send-bulk-strings", async (req, res) => {
   try {
@@ -130,9 +170,6 @@ router.post("/send-bulk-strings", async (req, res) => {
     const baseUrl = normalizeBaseUrl();
     const url = getMessageNowSendUrl(baseUrl);
 
-    // Provider often expects multiple recipients in one request; absent exact schema,
-    // we iterate and dispatch sequentially to keep behavior predictable.
-    // If your provider accepts batch in one call, we can refactor later.
     const results = [];
     for (const r of recipients) {
       const mobileNumber = r?.mobileNumber;
@@ -173,16 +210,6 @@ router.post("/send-bulk-strings", async (req, res) => {
 
 /**
  * POST /send-bulk-file
- * multipart/form-data:
- *   - file: excel file (field name: "file")
- *   - query params/config fields via body -> converted to query params
- *
- * Expected body fields (best-effort defaults):
- * {
- *   "countryCode": "91",
- *   "templateId": "...",   // if provider supports
- *   "messageType": "SMS"   // optional
- * }
  */
 router.post("/send-bulk-file", upload.single("file"), async (req, res) => {
   try {
@@ -195,22 +222,15 @@ router.post("/send-bulk-file", upload.single("file"), async (req, res) => {
       return res.status(400).json({ success: false, error: "Missing file (multipart field: file)" });
     }
 
-    // Convert config from body to query params (provider quirk)
     const countryCode = req.body?.countryCode || "91";
     const templateId = req.body?.templateId;
     const messageType = req.body?.messageType || "SMS";
 
-    // "All config fields must be query params, not JSON body"
-    // We'll put config in params and still attach file via multipart.
     const form = new FormData();
-    // Append Excel in memory
     form.append("file", file.buffer, {
       filename: file.originalname || "bulk.xlsx",
       contentType: file.mimetype || "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
     });
-
-    // Provider may require specific form field name; "file" is most common.
-    // If your provider requires a different field (e.g., "excelFile"), update here.
 
     const response = await axios.post(url, form, {
       headers: {
@@ -238,12 +258,9 @@ router.post("/send-bulk-file", upload.single("file"), async (req, res) => {
 
 /**
  * POST /callback
- * Provider sends JSON payload; we just acknowledge with 200 OK.
  */
 router.post("/callback", async (req, res) => {
   try {
-    // Optionally log minimal info
-    // console.log("Message Central callback:", req.body);
     return res.status(200).json({ received: true });
   } catch (err) {
     return res.status(500).json({ received: false, error: err.message || "Callback failed" });
