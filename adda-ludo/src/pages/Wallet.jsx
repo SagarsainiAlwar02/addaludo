@@ -251,6 +251,8 @@ export default function Wallet() {
 
         {error && <div style={styles.error}>{error}</div>}
 
+
+
         <div style={styles.card}>
           <div style={styles.cardMain}>
             <div
@@ -261,6 +263,29 @@ export default function Wallet() {
             >
               💰
             </div>
+
+<div style={styles.card}>
+          <div style={styles.cardMain}>
+            <div
+              style={{
+                ...styles.iconBox,
+                background: "linear-gradient(135deg,#f59e0b,#fcd34d)",
+              }}
+            >
+              🎁
+            </div>
+            <div style={styles.info}>
+              <p style={styles.label}>Bonus Coin</p>
+              <h1 style={styles.amount}>
+                ₹ {Number(wallet.bonus || 0).toFixed(2)}
+              </h1>
+            </div>
+          </div>
+          <p style={styles.desc}>
+            Bonus coins can be used to play battles only.
+          </p>
+        </div>
+
 
             <div style={styles.info}>
               <p style={styles.label}>Deposit Coin</p>
