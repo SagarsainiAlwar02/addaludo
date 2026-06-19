@@ -25,9 +25,10 @@ export default function HeaderMain() {
 
         // ✅ FIX: bonus ko dobara add nahi karna
         // wallet.balance me admin bonus already add ho chuka hota hai
-        const total =
-          Number(res.data.balance || 0) +
-          Number(res.data.winnings || 0);
+       const total =
+  Number(res.data.balance || 0) +
+  Number(res.data.winnings || 0) +
+  Number(res.data.bonus || 0);
 
         setBalance(total.toFixed(2));
       } catch (err) {
