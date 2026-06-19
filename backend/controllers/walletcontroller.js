@@ -6,11 +6,7 @@ import mongoose from "mongoose";
 // ================== USER ID SAFE ==================
 const getUserId = (req) => {
   let userId = req.user?._id || req.userData?._id || req.user?.id || req.user;
-
-  if (Buffer.isBuffer(userId)) {
-    userId = userId.toString("hex");
-  }
-
+  if (Buffer.isBuffer(userId)) userId = userId.toString("hex");
   return new mongoose.Types.ObjectId(String(userId));
 };
 
@@ -25,12 +21,10 @@ const getOrCreateWallet = async (userId) => {
         bonus: 0,
         winnings: 0,
         locked: 0,
+        referralBalance: 0, // ✅ Fix 1: referralBalance bhi set karo
       },
     },
-    {
-      upsert: true,
-      new: true,
-    }
+    { upsert: true, new: true }
   );
 };
 
@@ -40,11 +34,19 @@ export const getWallet = async (req, res) => {
     const userId = getUserId(req);
     const wallet = await getOrCreateWallet(userId);
 
+    // ✅ Total usable balance frontend ko bhejo
+    const totalBalance =
+      Number(wallet.balance || 0) +
+      Number(wallet.bonus || 0) +
+      Number(wallet.winnings || 0);
+
     res.json({
       balance: wallet.balance,
       bonus: wallet.bonus,
       winnings: wallet.winnings,
       locked: wallet.locked,
+      referralBalance: wallet.referralBalance || 0,
+      totalBalance, // ✅ Frontend mein dikhane ke liye
     });
   } catch (err) {
     console.log("❌ GET WALLET ERROR:", err);
@@ -53,8 +55,6 @@ export const getWallet = async (req, res) => {
 };
 
 // ================== ADD MONEY DISABLED ==================
-// ✅ Direct wallet add unsafe hai.
-// ✅ Ab deposit request system use hoga: /api/deposit/create
 export const addMoney = async (req, res) => {
   return res.status(403).json({
     success: false,
@@ -74,30 +74,25 @@ export const deductMoney = async (req, res) => {
 
     const wallet = await getOrCreateWallet(userId);
 
-    if (wallet.balance < amount) {
+    // ✅ Fix 2: Total balance check (balance + bonus + winnings)
+    const totalBalance =
+      Number(wallet.balance || 0) +
+      Number(wallet.bonus || 0) +
+      Number(wallet.winnings || 0);
+
+    if (totalBalance < amount) {
       return res.status(400).json({ msg: "Insufficient balance" });
     }
 
-   const updatedWallet = await Wallet.findOneAndUpdate(
-  {
-    userId,
-    balance: { $gte: amount },
-  },
-  {
-    $inc: {
-      balance: -amount,
-    },
-  },
-  {
-    new: true,
-  }
-);
+    const updatedWallet = await Wallet.findOneAndUpdate(
+      { userId, balance: { $gte: amount } },
+      { $inc: { balance: -amount } },
+      { new: true }
+    );
 
-if (!updatedWallet) {
-  return res.status(400).json({
-    msg: "Insufficient balance",
-  });
-}
+    if (!updatedWallet) {
+      return res.status(400).json({ msg: "Insufficient balance" });
+    }
 
     await Transaction.create({
       userId,
@@ -105,7 +100,7 @@ if (!updatedWallet) {
       type: "admin_adjust",
       status: "success",
       note: "Manual deduction",
-    balanceAfter: updatedWallet.balance,
+      balanceAfter: updatedWallet.balance,
     });
 
     res.json({
@@ -123,11 +118,7 @@ if (!updatedWallet) {
 export const getTransactions = async (req, res) => {
   try {
     const userId = getUserId(req);
-
-    const txns = await Transaction.find({ userId })
-      .sort({ createdAt: -1 })
-      .lean();
-
+    const txns = await Transaction.find({ userId }).sort({ createdAt: -1 }).lean();
     res.json(txns);
   } catch (err) {
     console.log("❌ TRANSACTIONS ERROR:", err);
@@ -147,47 +138,32 @@ export const withdrawRequest = async (req, res) => {
 
     const wallet = await getOrCreateWallet(userId);
 
-    const pendingWithdraw = await Withdraw.findOne({
-  userId,
-  status: "pending",
-});
+    const pendingWithdraw = await Withdraw.findOne({ userId, status: "pending" });
+    if (pendingWithdraw) {
+      return res.status(400).json({ msg: "Withdraw request already pending" });
+    }
 
-if (pendingWithdraw) {
-  return res.status(400).json({
-    msg: "Withdraw request already pending",
-  });
-}
+    // ✅ Withdraw sirf winnings se hoga (deposit wapas nahi jaata)
+    if (Number(wallet.winnings || 0) < amount) {
+      return res.status(400).json({ msg: "Not enough winnings balance for withdraw" });
+    }
 
-    if (wallet.balance < amount) {
+    const updatedWallet = await Wallet.findOneAndUpdate(
+      { userId, winnings: { $gte: amount } },
+      {
+        $inc: {
+          winnings: -amount,
+          locked: amount,
+        },
+      },
+      { new: true }
+    );
+
+    if (!updatedWallet) {
       return res.status(400).json({ msg: "Not enough balance" });
     }
 
-const updatedWallet = await Wallet.findOneAndUpdate(
-  {
-    userId,
-    balance: { $gte: amount },
-  },
-  {
-    $inc: {
-      balance: -amount,
-      locked: amount,
-    },
-  },
-  {
-    new: true,
-  }
-);
-
-if (!updatedWallet) {
-  return res.status(400).json({
-    msg: "Not enough balance",
-  });
-}
-    const withdraw = await Withdraw.create({
-      userId,
-      amount,
-      status: "pending",
-    });
+    const withdraw = await Withdraw.create({ userId, amount, status: "pending" });
 
     await Transaction.create({
       userId,
@@ -195,15 +171,15 @@ if (!updatedWallet) {
       type: "withdraw",
       status: "pending",
       note: "Withdraw request",
-      balanceAfter: updatedWallet.balance,
+      balanceAfter: updatedWallet.winnings,
     });
 
     res.json({
       success: true,
       msg: "Withdraw request sent successfully",
       withdraw,
-  balance: updatedWallet.balance,
-locked: updatedWallet.locked,
+      winnings: updatedWallet.winnings,
+      locked: updatedWallet.locked,
     });
   } catch (err) {
     console.log("❌ WITHDRAW ERROR:", err);
