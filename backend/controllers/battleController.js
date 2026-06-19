@@ -30,7 +30,7 @@ function getUserId(req) {
 }
 
 function getPlayableBalance(wallet) {
-  return Number(wallet.balance || 0) + Number(wallet.winnings || 0);
+  return Number(wallet.balance || 0) + Number(wallet.winnings || 0) + Number(wallet.bonus || 0);
 }
 
 function validateBattleAmount(amount) {
