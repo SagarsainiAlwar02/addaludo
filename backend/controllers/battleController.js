@@ -122,14 +122,16 @@ async function lockAmount(userId, amount, roomId) {
   wallet.locked = Number(wallet.locked || 0) + amount;
   await wallet.save();
 
+
+
   await Transaction.create({
     userId,
     amount,
-    type: "game_entry",
+    type: "refund",
     status: "success",
     roomId,
-    uniqueTransactionKey: `${roomId}_game_entry_${userId}`,
-    note: `Battle entry amount locked. Used wallet ₹${useBalance}, winnings ₹${useWinnings}`,
+    note,
+    uniqueTransactionKey: `${roomId}_refund_${userId}`,
     balanceAfter: getPlayableBalance(wallet),
   });
 
@@ -256,7 +258,7 @@ try {
     type: "game_win",
     status: "success",
     roomId: lockedBattle.battleId,
-    uniqueTransactionKey: `${lockedBattle.battleId}_game_win`,
+   uniqueTransactionKey: `${lockedBattle.battleId}_game_win_${winnerId}`,
     note: "Battle winning prize",
     balanceAfter: 0,
   });
@@ -1093,7 +1095,7 @@ export const rejectAdminBattle = async (req, res) => {
     }
 
     // Agar match running tha toh dono players ko refund karo
-    if (battle.entryLocked || ["running", "room_submitted", "result_submitted", "cancel_requested"].includes(battle.status)) {
+      if (battle.entryLocked && !battle.resultSettled && ["running", "room_submitted", "result_submitted", "cancel_requested"].includes(battle.status)) {
       if (battle.createdBy) {
         await refundAmount(battle.createdBy, battle.amount, battle.battleId, adminNote || "Cancelled by admin");
       }
