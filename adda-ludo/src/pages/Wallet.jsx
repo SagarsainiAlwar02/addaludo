@@ -1261,19 +1261,12 @@ export default function Wallet() {
               💰
             </div>
 
+
             {/* Center: Bonus Coin */}
-            <div style={styles.bonusSection}>
-              <div style={styles.bonusIconRow}>
-                <div style={{ ...styles.giftIconBox, background: "linear-gradient(135deg,#f59e0b,#fcd34d)" }}>
-                  🎁
-                </div>
-                <div>
-                  <p style={styles.label}>Bonus Coin</p>
-                  <h1 style={styles.amount}>₹ {Number(wallet.bonus || 0).toFixed(2)}</h1>
-                </div>
-              </div>
-              <p style={styles.bonusDesc}>Bonus coins can be used to play battles only.</p>
-            </div>
+          <div style={styles.info}>
+  <p style={styles.label}>Deposit Coin</p>
+  <h1 style={styles.amount}>₹ {Number(wallet.balance || 0).toFixed(2)}</h1>
+</div>
 
             {/* Right: Deposit Coin */}
             <div style={styles.depositSection}>
