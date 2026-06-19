@@ -1039,8 +1039,6 @@
 
 
 
-
-
 import React, { useEffect, useState } from "react";
 import axios from "axios";
 import { useNavigate } from "react-router-dom";
@@ -1239,6 +1237,9 @@ export default function Wallet() {
   const upiId = payment?.upiList?.[0] || "";
   const bank = payment?.bank || {};
 
+  // Bonus + Deposit combined
+  const depositTotal = Number(wallet.balance || 0) + Number(wallet.bonus || 0);
+
   return (
     <div style={styles.page}>
       <div style={styles.container}>
@@ -1252,32 +1253,18 @@ export default function Wallet() {
 
         {error && <div style={styles.error}>{error}</div>}
 
-        {/* ── CARD 1: Bonus Coin + Deposit Coin side-by-side ── */}
+        {/* ── CARD 1: Deposit Coin (balance + bonus combined) ── */}
         <div style={styles.card}>
           <div style={styles.cardMain}>
-
-            {/* Left wallet icon */}
             <div style={{ ...styles.iconBox, background: "linear-gradient(135deg,#2563eb,#06b6d4)" }}>
               💰
             </div>
-
-
-            {/* Center: Bonus Coin */}
-          <div style={styles.info}>
-  <p style={styles.label}>Deposit Coin</p>
-  <h1 style={styles.amount}>₹ {Number(wallet.balance || 0).toFixed(2)}</h1>
-</div>
-
-            {/* Right: Deposit Coin */}
-            <div style={styles.depositSection}>
-              <p style={styles.depositLabel}>Deposit{"\n"}Coin</p>
-              <p style={styles.depositRupee}>₹</p>
-              <h2 style={styles.depositAmount}>{Number(wallet.balance || 0).toFixed(2)}</h2>
+            <div style={styles.info}>
+              <p style={styles.label}>Deposit Coin</p>
+              <h1 style={styles.amount}>₹ {depositTotal.toFixed(2)}</h1>
             </div>
-
           </div>
 
-          {/* Add Cash button - right aligned */}
           <div style={styles.btnRow}>
             <button style={styles.addBtn} onClick={openAddCash}>
               Add Cash <span style={styles.plus}>+</span>
@@ -1471,21 +1458,9 @@ const styles = {
   online: { color: "#64748b", fontSize: 13, fontWeight: 700 },
 
   card: { background: "#fff", borderRadius: 22, padding: 18, marginBottom: 16, boxShadow: "0 18px 45px rgba(15,23,42,.07)" },
-
-  /* ── Bonus+Deposit row ── */
-  cardMain: { display: "flex", alignItems: "flex-start", gap: 12 },
+  cardMain: { display: "flex", alignItems: "center", gap: 14 },
 
   iconBox: { width: 62, height: 62, borderRadius: 18, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 28, flexShrink: 0 },
-
-  bonusSection: { flex: 1, minWidth: 0 },
-  bonusIconRow: { display: "flex", alignItems: "center", gap: 10 },
-  giftIconBox: { width: 50, height: 50, borderRadius: 14, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 24, flexShrink: 0 },
-  bonusDesc: { margin: "8px 0 0", color: "#64748b", fontSize: 12, lineHeight: 1.4 },
-
-  depositSection: { flexShrink: 0, textAlign: "right", paddingLeft: 8 },
-  depositLabel: { margin: 0, color: "#64748b", fontSize: 13, fontWeight: 800, whiteSpace: "pre-line", lineHeight: 1.3 },
-  depositRupee: { margin: "6px 0 0", fontSize: 22, fontWeight: 900, color: "#0f172a" },
-  depositAmount: { margin: "2px 0 0", fontSize: 22, fontWeight: 900, color: "#0f172a" },
 
   info: { flex: 1 },
   label: { margin: "0 0 6px", color: "#64748b", fontSize: 15, fontWeight: 800 },
