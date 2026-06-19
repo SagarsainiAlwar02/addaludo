@@ -32,9 +32,7 @@ export default function Refer() {
         headers: { Authorization: `Bearer ${token}` },
       });
 
-      const res = await axios.get(`${API}/user/profile`, {
-  headers: { Authorization: `Bearer ${token}` },
-});
+  
 
 // ✅ YAHAN ADD KARO
 console.log("FULL PROFILE DATA:", res.data);
