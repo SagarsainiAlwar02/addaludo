@@ -32,6 +32,14 @@ export default function Refer() {
         headers: { Authorization: `Bearer ${token}` },
       });
 
+      const res = await axios.get(`${API}/user/profile`, {
+  headers: { Authorization: `Bearer ${token}` },
+});
+
+// ✅ YAHAN ADD KARO
+console.log("FULL PROFILE DATA:", res.data);
+console.log("REFERRAL STATS:", res.data.referralStats);
+
       setRefCode(res.data.referralCode || "");
       setReferrals(res.data.referralStats?.referrals || 0);
       setEarned(res.data.referralStats?.earned || 0);
