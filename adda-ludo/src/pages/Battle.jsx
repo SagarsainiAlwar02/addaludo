@@ -438,7 +438,9 @@ const Battle = () => {
             </div>
 
             <div className="mt-4 rounded-2xl bg-black/20 px-4 py-3 text-center text-sm font-bold leading-6 text-white ring-1 ring-white/10">
-              अगर कोई Popular में Code देता है तो I&apos;D Block कर दी जाएगी ! 
+             ADDA LUDO में आपका स्वागत है ,सबसे Fast ⏩ विथड्रॉ है ,👉मात्र 2-3 Min में,
+
+                    👉आपका विश्वास बनाये रखे 🙏
             </div>
           </div>
         </div>
