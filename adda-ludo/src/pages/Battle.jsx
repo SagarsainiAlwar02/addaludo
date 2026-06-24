@@ -71,24 +71,24 @@ const FAKE_OPPONENT_NAMES = [
 ];
 
 const FAKE_BATTLE_AMOUNTS = [
-  50,
-  100,
-  150,
-  1050,
-  300,
-  450,
-  600,
-  2050,
-  950,
-  1150,
-  2000,
-  2250,
-  3000,
   4500,
-  7000,
-  10000,
+  3000,
+  300,
+  1150,
+  450,
+  2050,
   15000,
+  600,
+  2000,
+  10000,
+  100,
+  2250,
+  150,
+  7000,
   5500,
+  950,
+  50,
+  1050
 ];
 
 const randomFrom = (arr) => arr[Math.floor(Math.random() * arr.length)];
@@ -442,7 +442,7 @@ const Battle = () => {
         <button
           disabled={actionLoading}
           onClick={() => joinMatch(battle.battleId)}
-          className="rounded-2xl bg-gradient-to-r from-emerald-500 to-green-600 px-6 py-3 text-sm font-black text-white shadow-lg shadow-green-500/30 active:scale-95 disabled:opacity-50"
+          className="rounded-2xl bg-gradient-to-r from-emerald-500 to-green-600 px-5 py-2.5 text-xs font-black text-white shadow-lg shadow-green-500/30 active:scale-95 disabled:opacity-50"
         >
           PLAY
         </button>
