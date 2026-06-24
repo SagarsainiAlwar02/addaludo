@@ -430,7 +430,7 @@ const Battle = () => {
         <button
           disabled={actionLoading}
           onClick={() => cancelBattle(battle.battleId)}
-          className="rounded-2xl bg-red-500/10 px-4 py-2 text-xs font-black text-red-600 ring-1 ring-red-200 disabled:opacity-50"
+          className="rounded-2xl bg-red-500/10 px-5 py-2.5 text-xs font-black text-red-600 ring-1 ring-red-200 disabled:opacity-50"
         >
           Cancel
         </button>
