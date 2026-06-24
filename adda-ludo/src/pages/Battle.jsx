@@ -92,9 +92,9 @@ const FAKE_BATTLE_AMOUNTS = [
 ];
 
 const randomFrom = (arr) => arr[Math.floor(Math.random() * arr.length)];
+const FAKE_RUNNING_AMOUNTS = FAKE_BATTLE_AMOUNTS.slice(0, 15);
 
-const FAKE_RUNNING_BATTLES = Array.from({ length: 15 }, (_, index) => {
-  const amount = randomFrom(FAKE_BATTLE_AMOUNTS);
+const FAKE_RUNNING_BATTLES = FAKE_RUNNING_AMOUNTS.map((amount, index) => {
   const creatorName = randomFrom(FAKE_PLAYER_NAMES);
   let opponentName = randomFrom(FAKE_OPPONENT_NAMES);
 
