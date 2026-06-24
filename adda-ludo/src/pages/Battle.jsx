@@ -23,25 +23,76 @@ const calculatePrizeAmount = (amount) => {
 
   return Math.floor(totalPool - platformFee);
 };
-const FAKE_RUNNING_BATTLES = [
-  { battleId: "fake_run_1", amount: 3000, prize: calculatePrizeAmount(3000), status: "running", isFake: true, createdBy: { name: "vishal" }, opponent: { name: "Player 901" } },
 
-  { battleId: "fake_run_2", amount: 2500, prize: calculatePrizeAmount(2500), status: "running", isFake: true, createdBy: { name: "anirudh" }, opponent: { name: "Player 654" } },
-
-  { battleId: "fake_run_3", amount: 100, prize: calculatePrizeAmount(100), status: "running", isFake: true, createdBy: { name: "mohan" }, opponent: { name: "Player 777" } },
-
-  { battleId: "fake_run_4", amount: 550, prize: calculatePrizeAmount(550), status: "running", isFake: true, createdBy: { name: "Player 333" }, opponent: { name: "Player 444" } },
-
-  { battleId: "fake_run_5", amount: 50, prize: calculatePrizeAmount(50), status: "running", isFake: true, createdBy: { name: "Player 555" }, opponent: { name: "Player 666" } },
-
-  { battleId: "fake_run_6", amount: 5500, prize: calculatePrizeAmount(5500), status: "running", isFake: true, createdBy: { name: "Player 777" }, opponent: { name: "Player 888" } },
-
-  { battleId: "fake_run_7", amount: 3250, prize: calculatePrizeAmount(3250), status: "running", isFake: true, createdBy: { name: "Player 999" }, opponent: { name: "Player 121" } },
-
-  { battleId: "fake_run_8", amount: 1750, prize: calculatePrizeAmount(1750), status: "running", isFake: true, createdBy: { name: "Player 232" }, opponent: { name: "Player 343" } },
-
-  { battleId: "fake_run_9", amount: 1500, prize: calculatePrizeAmount(1500), status: "running", isFake: true, createdBy: { name: "Player 512" }, opponent: { name: "Player 624" } },
+const FAKE_PLAYER_NAMES = [
+  "Raju",
+  "Mintu",
+  "Bunny",
+  "Lucky",
+  "Sonia",
+  "Vikas",
+  "Amit",
+  "Neha",
+  "Priya",
+  "Rahul",
+  "Karan",
+  "Anjali",
+  "Deepak",
+  "Riya",
+  "Aakash",
+  "Simran",
+  "Pooja",
+  "Arjun",
+  "Kajal",
+  "Nikhil",
 ];
+
+const FAKE_OPPONENT_NAMES = [
+  "Player 101",
+  "Player 202",
+  "Player 303",
+  "Player 404",
+  "Player 505",
+  "Player 606",
+  "Player 707",
+  "Player 808",
+  "Player 909",
+  "Player 111",
+  "Player 222",
+  "Player 333",
+  "Player 444",
+  "Player 555",
+  "Player 666",
+  "Player 777",
+  "Player 888",
+  "Player 999",
+  "Player 121",
+  "Player 343",
+];
+
+const FAKE_BATTLE_AMOUNTS = [50, 100, 150, 200, 250, 300, 500, 750, 1000, 1500, 2000, 2500, 3000, 4000, 5000];
+
+const randomFrom = (arr) => arr[Math.floor(Math.random() * arr.length)];
+
+const FAKE_RUNNING_BATTLES = Array.from({ length: 15 }, (_, index) => {
+  const amount = randomFrom(FAKE_BATTLE_AMOUNTS);
+  const creatorName = randomFrom(FAKE_PLAYER_NAMES);
+  let opponentName = randomFrom(FAKE_OPPONENT_NAMES);
+
+  if (opponentName === creatorName) {
+    opponentName = `${opponentName} Jr.`;
+  }
+
+  return {
+    battleId: `fake_run_${index + 1}`,
+    amount,
+    prize: calculatePrizeAmount(amount),
+    status: "running",
+    isFake: true,
+    createdBy: { name: creatorName },
+    opponent: { name: opponentName },
+  };
+});
 
 const getCreatorId = (battle) =>
   String(battle?.createdBy?._id || battle?.createdBy?.id || battle?.createdBy || "");
