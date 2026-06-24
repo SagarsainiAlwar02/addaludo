@@ -7,39 +7,51 @@ const API_BASE = import.meta.env.VITE_API_URL || "http://localhost:5000/api";
 export default function HeaderMain() {
   const navigate = useNavigate();
   const [balance, setBalance] = useState("0.00");
+  const [referBalance, setReferBalance] = useState("0.00");
 
   useEffect(() => {
-    const fetchWallet = async () => {
+    const fetchBalances = async () => {
       try {
         const token = localStorage.getItem("token");
         if (!token) {
           setBalance("0.00");
+          setReferBalance("0.00");
           return;
         }
 
-        const res = await axios.get(`${API_BASE}/wallet`, {
+        const headers = {
           headers: {
             Authorization: `Bearer ${token}`,
           },
-        });
+        };
+
+        const [walletRes, redeemRes] = await Promise.all([
+          axios.get(`${API_BASE}/wallet`, headers),
+          axios.get(`${API_BASE}/redeem`, headers),
+        ]);
 
         // ✅ FIX: bonus ko dobara add nahi karna
         // wallet.balance me admin bonus already add ho chuka hota hai
-       const total =
-  Number(res.data.balance || 0) +
-  Number(res.data.winnings || 0) +
-  Number(res.data.bonus || 0);
+        const total =
+          Number(walletRes.data.balance || 0) +
+          Number(walletRes.data.winnings || 0) +
+          Number(walletRes.data.bonus || 0);
+
+        const referralAmount =
+          Number(redeemRes.data?.referralBalance ?? redeemRes.data?.referBalance ?? 0);
 
         setBalance(total.toFixed(2));
+        setReferBalance(referralAmount.toFixed(2));
       } catch (err) {
         console.log("HEADER WALLET ERROR:", err.response?.data || err.message);
         setBalance("0.00");
+        setReferBalance("0.00");
       }
     };
 
-    fetchWallet();
+    fetchBalances();
 
-    const refreshWallet = () => fetchWallet();
+    const refreshWallet = () => fetchBalances();
     window.addEventListener("walletUpdated", refreshWallet);
 
     return () => {
@@ -78,7 +90,7 @@ export default function HeaderMain() {
           >
             <i className="fa-solid fa-list text-sm text-cyan-400 sm:text-base"></i>
             <span className="text-sm font-extrabold text-white sm:text-base">
-              0
+              ₹ {referBalance}
             </span>
           </button>
         </div>
