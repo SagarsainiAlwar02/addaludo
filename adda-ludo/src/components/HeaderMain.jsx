@@ -76,20 +76,20 @@ export default function HeaderMain() {
         <div className="flex items-center gap-2">
           <button
             onClick={() => navigate("/wallet")}
-            className="flex items-center gap-1.5 rounded-full border border-slate-600 bg-slate-800 px-3 py-2 shadow-md active:scale-95 sm:gap-2 sm:px-4"
+            className="flex items-center gap-1 rounded-full border border-slate-600 bg-slate-800 px-2.5 py-1.5 shadow-md active:scale-95 sm:gap-1.5 sm:px-3.5"
           >
-            <i className="fa-solid fa-wallet text-sm text-green-400 sm:text-base"></i>
-            <span className="text-sm font-extrabold text-white sm:text-base">
+            <i className="fa-solid fa-wallet text-xs text-green-400 sm:text-sm"></i>
+            <span className="text-xs font-extrabold text-white sm:text-sm">
               ₹ {balance}
             </span>
           </button>
 
           <button
             onClick={() => navigate("/redeem")}
-            className="flex items-center gap-1.5 rounded-full border border-slate-600 bg-slate-800 px-3 py-2 shadow-md active:scale-95 sm:gap-2 sm:px-4"
+            className="flex items-center gap-1 rounded-full border border-slate-600 bg-slate-800 px-2.5 py-1.5 shadow-md active:scale-95 sm:gap-1.5 sm:px-3.5"
           >
-            <i className="fa-solid fa-list text-sm text-cyan-400 sm:text-base"></i>
-            <span className="text-sm font-extrabold text-white sm:text-base">
+            <i className="fa-solid fa-list text-xs text-cyan-400 sm:text-sm"></i>
+            <span className="text-xs font-extrabold text-white sm:text-sm">
               ₹ {referBalance}
             </span>
           </button>
