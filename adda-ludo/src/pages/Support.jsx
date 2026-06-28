@@ -37,7 +37,7 @@ export default function Support() {
           <div className="w-full text-left mt-2">
             <h3 className="text-2xl font-black text-slate-800 tracking-tight">We're here to help</h3>
             <p className="text-sm font-semibold text-slate-500 mt-2 mb-6 leading-relaxed">
-              Quick answers, friendly support. Reach out over WhatsApp and our team will get back to you within a few hours.
+              Click on Whatsapp and Describe your problem and take solution quickly.
             </p>
           </div>
 
