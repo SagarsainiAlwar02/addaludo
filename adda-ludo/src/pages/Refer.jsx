@@ -80,16 +80,10 @@ export default function Refer() {
         {/* Main Central White Box Wrapper */}
         <div className="bg-white rounded-2xl border border-slate-200/60 shadow-sm p-4">
           
-          {/* Top Custom Embedded SVG Graphics (Fixed & Checked) */}
-          <div className="w-full overflow-hidden flex justify-center items-center py-4 bg-amber-50/40 rounded-xl mb-4">
-            <svg width="160" height="160" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" className="w-auto h-[160px]">
-              <path d="M20 12V20C20 20.5523 19.5523 21 19 21H5C4.44772 21 4 20.5523 4 20V12" stroke="#f59e0b" strokeWidth="2" strokeLinecap="round"/>
-              <path d="M22 8C22 7.44772 21.5523 7 21 7H3C2.44772 7 2 7.44772 2 8V11C2 11.5523 2.44772 12 3 12H21C21.5523 12 22 11.5523 22 11V8Z" fill="#ffb020" stroke="#f59e0b" strokeWidth="2"/>
-              <path d="M12 7V21" stroke="#ef4444" strokeWidth="2.5" strokeLinecap="round"/>
-              <path d="M12 7C12 4 10 2 8.5 2C7 2 6 3 6 4.5C6 7 10 7 12 7Z" fill="#fee2e2" stroke="#ef4444" strokeWidth="2"/>
-              <path d="M12 7C12 4 14 2 15.5 2C17 2 18 3 18 4.5C18 7 14 7 12 7Z" fill="#fee2e2" stroke="#ef4444" strokeWidth="2"/>
-              <circle cx="12" cy="12" r="2" fill="#ef4444"/>
-            </svg>
+          {/* Top Clean Minimal Box Gradient Text Layout instead of SVG/Images to prevent build fails */}
+          <div className="w-full overflow-hidden flex flex-col justify-center items-center py-8 bg-gradient-to-br from-amber-50 to-orange-50/60 rounded-xl mb-4 border border-amber-100">
+            <span className="text-4xl mb-1">🎁</span>
+            <span className="text-sm font-black text-amber-600 tracking-wider uppercase">Referral Rewards</span>
           </div>
 
           {/* Subtitle Directive Text Description */}
@@ -130,3 +124,54 @@ export default function Refer() {
           {/* Full Width WhatsApp Share Action Trigger */}
           <div className="mt-4">
             <a
+              href={`https://wa.me/?text=${encodeURIComponent(shareText)}`}
+              target="_blank"
+              rel="noreferrer"
+              className="w-full bg-[#12cc66] hover:bg-[#0eb659] py-2.5 rounded-xl font-black text-white text-sm shadow-sm active:scale-[0.99] transition-transform flex items-center justify-center gap-2"
+            >
+              <span className="text-base">💬</span> WhatsApp
+            </a>
+          </div>
+
+          {error && (
+            <p className="mt-3 rounded-lg bg-red-50 px-3 py-1.5 text-xs font-bold text-red-600 border border-red-100 text-center">
+              {error}
+            </p>
+          )}
+        </div>
+
+        {/* --- LIFETIME EARNINGS BOARD GRID METRIC --- */}
+        <div className="mt-3 bg-white rounded-2xl border border-slate-200/60 shadow-sm p-4">
+          <h3 className="text-base font-black text-slate-800 tracking-tight">Lifetime Earnings</h3>
+          
+          <div className="grid grid-cols-2 gap-3 mt-3">
+            
+            {/* Referral Players Card */}
+            <div className="bg-slate-50 border border-slate-100 p-3 rounded-xl flex items-center gap-3">
+              <div className="w-9 h-9 rounded-xl bg-pink-50 border border-pink-100 flex items-center justify-center text-pink-500 text-lg font-bold">
+                👤
+              </div>
+              <div className="min-w-0">
+                <p className="text-[11px] font-bold text-slate-400 tracking-wide uppercase leading-none">Referral Players</p>
+                <h2 className="text-lg font-black text-slate-800 mt-1 leading-none">{referrals}</h2>
+              </div>
+            </div>
+
+            {/* Referral Earnings Card */}
+            <div className="bg-slate-50 border border-slate-100 p-3 rounded-xl flex items-center gap-3">
+              <div className="w-9 h-9 rounded-xl bg-green-50 border border-green-100 flex items-center justify-center text-green-600 text-lg font-bold">
+                💵
+              </div>
+              <div className="min-w-0">
+                <p className="text-[11px] font-bold text-slate-400 tracking-wide uppercase leading-none">Referral Earning</p>
+                <h2 className="text-lg font-black text-slate-800 mt-1 leading-none">₹{Number(earned).toFixed(0)}</h2>
+              </div>
+            </div>
+
+          </div>
+        </div>
+
+      </div>
+    </div>
+  );
+}
