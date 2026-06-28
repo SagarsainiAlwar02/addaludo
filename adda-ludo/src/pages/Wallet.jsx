@@ -169,10 +169,10 @@ export default function Wallet() {
 
   const submitDeposit = async () => {
     const addAmount = Number(amount);
-    if (!addAmount || addAmount < MIN_AMOUNT) return setError("Minimum deposit ₹100 hai");
+    if (!addAmount || addAmount < MIN_AMOUNT) return setError("Minimum deposit ₹100 ");
     if (addAmount > MAX_AMOUNT) return setError("Maximum deposit ₹1,0,0,000 hai");
-    if (!utr.trim()) return setError("UTR / Transaction ID enter karo");
-    if (!screenshot) return setError("Payment screenshot upload karo");
+    if (!utr.trim()) return setError("Enter UTR no.");
+    if (!screenshot) return setError("Upload Payment Screenshot");
 
     try {
       setLoading(true);
@@ -295,229 +295,40 @@ export default function Wallet() {
               style={styles.input}
             />
             <div style={styles.depositNoteBox}>
-              <p style={styles.depositNoteLine}><b>NOTE :-</b> Kripya details dhyan se padhein.</p>
-              <p style={styles.depositNoteLine}>Sahi se UTR enter karein taaki transactions turant approve ho sakein.</p>
+              <p style={styles.depositNoteLine}><b>NOTE :-</b>Please Enter UTR no Correctly.</p>
+              <p style={styles.depositNoteLine}>Sahi se UTR enter kare Galt UTR fill karne par Payment add nhi hoga</p>
             </div>
-            <button style={styles.payBtn} onClick={goToPayment}>Next Step</button>
+            <button style={styles.payBtn} onClick={goToPayment}>Next </button>
           </div>
         </div>
       )}
 
-      {/* MODAL 2: DYNAMIC GATEWAY PANEL */}
+      {/* MODAL 2: DYNAMIC GATEWAY PANEL (100% RECOLORED MATCHING HEADERS & CARDS) */}
       {showPayment && (
         <div style={styles.paymentPage}>
           <div style={styles.paymentCard}>
-            <div style={styles.paymentHeader}>
-              <button style={styles.paymentBack} onClick={() => { setShowPayment(false); setShowAddCash(true); }}>←</button>
-              <div style={styles.logo}>⚔️ AddaLudo</div>
-              <h2 style={styles.paymentTitle}>Complete Payment</h2>
+            
+            {/* Color Marked Premium Header Panel Box */}
+            <div style={styles.headerContainer}>
+              <button style={styles.backArrowStyle} onClick={() => { setShowPayment(false); setShowAddCash(true); }}>←</button>
+              <div style={styles.brandGroupStyle}>
+                <span style={{ fontSize: "18px" }}>⚔️</span> 
+                <span style={styles.logoTextStyle}>AddaLudo</span>
+              </div>
+              <span style={styles.completePaymentTextStyle}>Complete Payment</span>
             </div>
 
             <div style={styles.paymentBody}>
-              <div style={styles.paymentTopCard}>
-                <p style={styles.scanText}>Pay ₹{numericAmount.toFixed(2)}</p>
-                <div style={styles.timerBox}>⏱ Time remaining: <b>{formatTime(timeLeft)}</b></div>
+              
+              {/* Premium Attractive Styled Amount Box Dashboard */}
+              <div style={styles.amountCardBox}>
+                <p style={styles.payTextStyle}>Pay Amount</p>
+                <h1 style={styles.amountTextStyle}>₹{numericAmount.toFixed(2)}</h1>
+                <div style={styles.timerBoxStyle}>
+                  <span>⏱️</span> Time remaining: <b>{formatTime(timeLeft)}</b>
+                </div>
               </div>
 
               {/* DYNAMIC SELECTION MODES WITH COLOR ACTIVE LOOK */}
-              <div style={{ marginBottom: 16 }}>
+              <div style={{ marginBottom: 16, marginTop: 18 }}>
                 <p style={{ fontSize: 13, color: "#64748b", marginBottom: 10, fontWeight: 'bold' }}>Select Payment Mode:</p>
-                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
-                  
-                  {/* UPI Gateway */}
-                  <button 
-                    type="button" 
-                    onClick={() => setSelectedMethod("upi")}
-                    style={selectedMethod === "upi" ? styles.methodBtnActive : styles.methodBtn}
-                  >
-                    UPI ID
-                  </button>
-
-                  {/* QR SCANNER (100 to 2000) */}
-                  {numericAmount >= 100 && numericAmount <= 2000 && (
-                    <button 
-                      type="button" 
-                      onClick={() => setSelectedMethod("qr")}
-                      style={selectedMethod === "qr" ? styles.methodBtnActive : styles.methodBtn}
-                    >
-                      QR Scanner
-                    </button>
-                  )}
-
-                  {/* BANK DETAILS (> 2000) */}
-                  {numericAmount > 2000 && (
-                    <button 
-                      type="button" 
-                      onClick={() => setSelectedMethod("bank")}
-                      style={selectedMethod === "bank" ? styles.methodBtnActive : styles.methodBtn}
-                    >
-                      Bank Details
-                    </button>
-                  )}
-                </div>
-              </div>
-
-              {/* DETAILS DISPLAYER STRUCTURE */}
-              {selectedMethod === "upi" && (
-                upiId ? <CopyRow label="UPI ID" value={upiId} onCopy={copyText} /> : <div style={styles.noPaymentBox}>UPI ID not available</div>
-              )}
-
-              {selectedMethod === "qr" && (
-                scannerImage ? (
-                  <div style={styles.qrBox}>
-                    <img src={scannerImage} alt="Payment QR" style={styles.qrImg} />
-                  </div>
-                ) : <div style={styles.noPaymentBox}>QR scanner not available</div>
-              )}
-
-              {selectedMethod === "bank" && (
-                <div style={styles.bankDetailContainer}>
-                  {bank?.name && <CopyRow label="Bank Name" value={bank.name} onCopy={copyText} />}
-                  {bank?.accountNumber && <CopyRow label="Account Number" value={bank.accountNumber} onCopy={copyText} />}
-                  {bank?.ifsc && <CopyRow label="IFSC Code" value={bank.ifsc} onCopy={copyText} />}
-                </div>
-              )}
-
-              {/* PROOF UPLOADER FLOW */}
-              {selectedMethod && (
-                <div style={{ marginTop: 15 }}>
-                  <div style={styles.noteBox}>
-                    NOTE :- कृपया UPI और ACCOUNT details सही से भरे , गलत details भरने पर हमारी जिम्मेदारी नहीं होगी !
-                  </div>
-
-                  <input
-                    type="text"
-                    value={utr}
-                    placeholder="Enter UTR / Transaction ID"
-                    onChange={(e) => setUtr(e.target.value)}
-                    style={styles.input}
-                  />
-
-                  <input
-                    type="file"
-                    accept="image/*"
-                    onChange={(e) => setScreenshot(e.target.files?.[0] || null)}
-                    style={styles.fileInput}
-                  />
-
-                  {screenshot && <p style={styles.small}>Selected: {screenshot.name}</p>}
-
-                  <button style={styles.submitBtn} onClick={submitDeposit} disabled={loading}>
-                    {loading ? "Verifying Proof..." : "Submit Payment Proof"}
-                  </button>
-                </div>
-              )}
-
-              <button style={styles.cancelBtn} onClick={() => { setShowPayment(false); setSelectedMethod(""); }}>Cancel</button>
-            </div>
-          </div>
-        </div>
-      )}
-    </div>
-  );
-}
-
-function CopyRow({ label, value, onCopy }) {
-  return (
-    <div style={styles.copyRow}>
-      <div style={{ minWidth: 0 }}>
-        <p style={styles.copyLabel}>{label}</p>
-        <p style={styles.copyValue}>{value}</p>
-      </div>
-      <button style={styles.copyBtn} onClick={() => onCopy(value)}>Copy</button>
-    </div>
-  );
-}
-
-function HistoryBox({ empty, items, getStatusStyle, type }) {
-  return (
-    <div>
-      {items.length === 0 ? (
-        <p style={styles.desc}>{empty}</p>
-      ) : (
-        items.slice(0, 10).map((item) => (
-          <div key={item._id} style={styles.depositItem}>
-            <div>
-              <b style={{ color: "#0f172a" }}>₹{item.amount}</b>
-              <p style={styles.small}>{type === "deposit" ? `UTR: ${item.utr || "-"}` : `Method: ${item.method || "-"}`}</p>
-              <p style={styles.small}>{item.createdAt ? new Date(item.createdAt).toLocaleString("en-IN") : "-"}</p>
-            </div>
-            <span style={{ ...styles.status, ...getStatusStyle(item.status) }}>{item.status || "pending"}</span>
-          </div>
-        ))
-      )}
-    </div>
-  );
-}
-
-// Line 453 se lekar poora niche tak mita kar ye complete styles paste karein:
-// 100% CORRECTED TRUE DARK-WHITE WEBSITE RENDERING DICTIONARY
-const styles = {
-  page: { minHeight: "100vh", background: "#f1f5f9", color: "#0f172a" },
-  container: { padding: "72px 14px 105px", maxWidth: "480px", margin: "0 auto" },
-  headerRow: { display: "flex", alignItems: "center", gap: "12px", marginBottom: "20px" },
-  backBtn: { width: 42, height: 42, borderRadius: 14, border: "none", background: "#fff", fontSize: 24, fontWeight: 900, boxShadow: "0 4px 12px rgba(0,0,0,0.05)", cursor: "pointer" },
-  title: { flex: 1, margin: 0, fontSize: 27, fontWeight: 900, color: "#0f172a" },
-  online: { color: "#64748b", fontSize: 13, fontWeight: 700 },
-  
-  cardRectangle: { background: "#fff", borderRadius: "12px", padding: "16px", marginBottom: "16px", boxShadow: "0 10px 30px rgba(15,23,42,.03)", border: "1px solid #e2e8f0" },
-  cardMainInline: { display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12 },
-  iconBoxSmall: { width: 50, height: 50, borderRadius: 14, display: "flex", alignItems: "center", justifyContent: "center", color: "#fff", fontSize: 24, flexShrink: 0 },
-  infoFlex: { flex: 1, minWidth: 0 },
-  
-  label: { margin: "0 0 2px", color: "#64748b", fontSize: 13, fontWeight: 800 },
-  amountText: { margin: 0, color: "#0f172a", fontSize: 20, fontWeight: 900 },
-  
-  addBtnInline: { border: "none", background: "linear-gradient(135deg,#2563eb,#06b6d4)", color: "#fff", borderRadius: 10, padding: "10px 14px", fontSize: 14, fontWeight: 900, cursor: "pointer", whiteSpace: "nowrap" },
-  withdrawBtnInline: { border: "1px solid #bbf7d0", background: "#f0fdf4", color: "#166534", borderRadius: 10, padding: "10px 14px", fontSize: 14, fontWeight: 900, cursor: "pointer", whiteSpace: "nowrap" },
-  plus: { marginLeft: 3, fontSize: 15 },
-  desc: { margin: "10px 0 0", color: "#64748b", fontSize: 12, lineHeight: 1.4 },
-  
-  error: { background: "#fee2e2", color: "#991b1b", padding: 10, borderRadius: 12, marginBottom: 12, fontWeight: 800, fontSize: 13 },
-  loading: { minHeight: "70vh", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 16, color: "#475569" },
-  
-  historyCard: { background: "#fff", borderRadius: 12, padding: 18, boxShadow: "0 18px 45px rgba(15,23,42,.07)", border: "1px solid #e2e8f0" },
-  historyTabs: { display: "flex", gap: "8px", marginBottom: "12px" },
-  historyTab: { flex: 1, border: "none", background: "#f1f5f9", padding: "6px 10px", borderRadius: 8, fontWeight: 800, color: "#64748b", fontSize: "12px", cursor: "pointer", whiteSpace: "nowrap" },
-  activeHistoryTab: { background: "#2563eb", color: "#fff", boxShadow: "0 4px 10px rgba(37,99,235,0.15)" },
-  depositItem: { display: "flex", justifyContent: "space-between", alignItems: "center", padding: "10px 0", borderBottom: "1px solid #f1f5f9" },
-  status: { padding: "4px 8px", borderRadius: 8, fontSize: 12, fontWeight: 900 },
-  small: { fontSize: 11, color: "#94a3b8", margin: "2px 0 0" },
-
-  modalOverlay: { position: "fixed", top: 0, left: 0, right: 0, bottom: 0, background: "rgba(15,23,42,0.3)", backdropFilter: "blur(4px)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 100 },
-  modal: { background: "#fff", width: "100%", maxWidth: "400px", padding: 24, borderRadius: 22, boxShadow: "0 25px 50px -12px rgba(0,0,0,0.1)", position: "relative", margin: "0 12px", border: "1px solid #e2e8f0" },
-  closeBtn: { position: "absolute", top: 12, right: 16, background: "none", border: "none", fontSize: 24, fontWeight: "bold", color: "#94a3b8", cursor: "pointer" },
-  modalTitle: { margin: "0 0 4px", fontSize: 22, fontWeight: 900, color: "#0f172a" },
-  modalSub: { margin: "0 0 16px", color: "#64748b", fontSize: 13, fontWeight: 600 },
-  input: { width: "100%", boxSizing: "border-box", padding: 14, borderRadius: 14, border: "1px solid #cbd5e1", fontSize: 15, fontWeight: 700, outline: "none", marginBottom: 14, color: "#0f172a", background: "#fff" },
-  fileInput: { width: "100%", boxSizing: "border-box", fontSize: 13, color: "#64748b", marginBottom: 14 },
-  depositNoteBox: { background: "#fffbeb", border: "1px solid #fde68a", padding: 12, borderRadius: 14, marginBottom: 14 },
-  depositNoteLine: { margin: "0 0 4px", fontSize: 12, color: "#b45309", lineHeight: 1.4, fontWeight: 600 },
-  payBtn: { width: "100%", border: "none", background: "linear-gradient(135deg,#2563eb,#06b6d4)", color: "#fff", padding: 14, borderRadius: 14, fontSize: 16, fontWeight: 900, cursor: "pointer" },
-
-  paymentPage: { position: "fixed", inset: 0, background: "#f1f5f9", overflowY: "auto", zIndex: 200, padding: "24px 12px" },
-  paymentCard: { maxWidth: "440px", margin: "0 auto", background: "#fff", borderRadius: 24, padding: 20, boxShadow: "0 20px 40px rgba(0,0,0,0.04)", border: "1px solid #e2e8f0" },
-  paymentHeader: { display: "flex", alignItems: "center", gap: 12, borderBottom: "1px solid #f1f5f9", paddingBottom: 12, marginBottom: 14 },
-  paymentBack: { background: "none", border: "none", fontSize: 22, fontWeight: 900, cursor: "pointer", color: "#0f172a" },
-  logo: { flex: 1, fontWeight: 900, color: "#2563eb", fontSize: 20 },
-  paymentTitle: { fontSize: 14, margin: 0, color: "#64748b", fontWeight: 800 },
-  paymentBody: { display: "flex", flexDirection: "column" },
-  paymentTopCard: { background: "#fff", borderRadius: 16, padding: 16, textAlign: "center", marginBottom: 14, border: "1px solid #e2e8f0" },
-  scanText: { margin: "0 0 4px", fontSize: 20, fontWeight: 900, color: "#0f172a" },
-  timerBox: { fontSize: 13, color: "#64748b", fontWeight: 600 },
-  noPaymentBox: { padding: 14, textAlign: "center", color: "#b91c1c", background: "#fef2f2", borderRadius: 12, fontSize: 13, fontWeight: 700 },
-  qrBox: { display: "flex", justifyContent: "center", background: "#fff", padding: 10, borderRadius: 16, border: "1px solid #e2e8f0", maxWidth: "180px", margin: "0 auto 14px" },
-  qrImg: { width: "100%", height: "auto" },
-  noteBox: { padding: 12, fontSize: 12, background: "#fff1f2", color: "#be123c", borderRadius: 12, marginBottom: 14, fontWeight: 600, border: "1px solid #ffe4e6", lineHeight: 1.45 },
-  submitBtn: { width: "100%", border: "none", background: "linear-gradient(135deg,#16a34a,#22c55e)", color: "#fff", padding: 14, borderRadius: 14, fontSize: 16, fontWeight: 900, cursor: "pointer" },
-  cancelBtn: { width: "100%", border: "none", background: "#f1f5f9", color: "#64748b", padding: 12, borderRadius: 14, fontSize: 14, fontWeight: 800, cursor: "pointer" },
-
-  methodBtn: { background: "#fff", border: "1px solid #cbd5e1", color: "#64748b", padding: "12px", borderRadius: 12, fontSize: 14, fontWeight: "800", cursor: "pointer", transition: "all 0.15s ease" },
-  methodBtnActive: { background: "linear-gradient(135deg,#2563eb,#06b6d4)", border: "none", color: "#fff", padding: "12px", borderRadius: 12, fontSize: 14, fontWeight: "900", cursor: "pointer", boxShadow: "0 4px 14px rgba(37,99,235,0.25)" },
-
-  bankDetailContainer: { background: "#f8fafc", padding: "6px 10px", borderRadius: 14, border: "1px solid #e2e8f0", marginBottom: 12 },
-  copyRow: { display: "flex", justifyContent: "space-between", alignItems: "center", background: "#f8fafc", padding: "10px 14px", borderRadius: 14, marginBottom: 10, border: "1px solid #e2e8f0" },
-  copyLabel: { margin: 0, fontSize: 12, color: "#64748b", fontWeight: 700 },
-  copyValue: { margin: "2px 0 0", fontSize: 14, color: "#0f172a", fontWeight: "900" },
-  copyBtn: { background: "#e2e8f0", border: "none", color: "#2563eb", padding: "6px 12px", borderRadius: 8, fontSize: 12, fontWeight: 900, cursor: "pointer" }
-};
