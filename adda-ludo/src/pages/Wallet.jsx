@@ -387,36 +387,37 @@ export default function Wallet() {
                 </div>
               )}
 
-              {/* PROOF UPLOADER FLOW */}
-              {selectedMethod && (
-                <div style={{ marginTop: 15 }}>
- 
-         
-               </div>
+             {/* /* PROOF UPLOADER FLOW */ */}
+{selectedMethod && (
+  <div style={{ marginTop: 15 }}>
+    
+    <div style={styles.noteBox}>
+      NOTE :- UPI और Scanner पर पेमेंट न होने पर सपोर्ट और Contact करे !
+    </div>
 
-                  <input
-                    type="text"
-                    value={utr}
-                    placeholder="Enter UTR / Transaction ID"
-                    onChange={(e) => setUtr(e.target.value)}
-                    style={styles.input}
-                  />
+    <input
+      type="text"
+      value={utr}
+      placeholder="Enter UTR / Transaction ID"
+      onChange={(e) => setUtr(e.target.value)}
+      style={styles.input}
+    />
 
-                  <input
-                    type="file"
-                    accept="image/*"
-                    onChange={(e) => setScreenshot(e.target.files?.[0] || null)}
-                    style={styles.fileInput}
-                  />
+    <input
+      type="file"
+      accept="image/*"
+      onChange={(e) => setScreenshot(e.target.files?.[0] || null)}
+      style={styles.fileInput}
+    />
 
-                  {screenshot && <p style={styles.small}>Selected: {screenshot.name}</p>}
+    {screenshot && <p style={styles.small}>Selected: {screenshot.name}</p>}
 
-                  <button style={styles.submitBtn} onClick={submitDeposit} disabled={loading}>
-                    {loading ? "Verifying Proof..." : "Submit Payment Proof"}
-                  </button>
-                </div>
-              )}
-
+    <button style={styles.submitBtn} onClick={submitDeposit} disabled={loading}>
+      {loading ? "Verifying Proof..." : "Submit Payment Proof"}
+    </button>
+    
+  </div>
+)}
               {/* Cancel Button */}
               <button style={styles.cancelBtn} onClick={() => { setShowPayment(false); setSelectedMethod(""); }}>Cancel</button>
             </div>
