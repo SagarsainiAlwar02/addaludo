@@ -135,7 +135,7 @@ export default function History() {
         <div className="mb-3 rounded-2xl bg-gradient-to-br from-slate-50 to-slate-100/80 p-4 text-slate-800 border border-slate-200/60 shadow-sm">
           <h1 className="text-xl font-black tracking-tight text-slate-900">Match History</h1>
           <p className="mt-0.5 text-xs font-semibold text-slate-500">
-            Your recent battlefield logs and performance metrics.
+            Your all recent played battle .
           </p>
         </div>
 
