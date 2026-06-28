@@ -222,49 +222,61 @@ export default function Wallet() {
         <div style={styles.headerRow}>
           <button style={styles.backBtn} onClick={() => navigate(-1)}>←</button>
           <h2 style={styles.title}>Wallet</h2>
-          <span style={styles.online}>Adda Ludo Portal</span>
+          <span style={styles.online}>online</span>
         </div>
 
         {error && <div style={styles.error}>{error}</div>}
 
-        {/* Deposit Card */}
-<div style={styles.card}>
-  <div style={styles.cardMain}>
-    <div style={{ ...styles.iconBox, background: "linear-gradient(135deg,#2563eb,#06b6d4)" }}>💰</div>
-    <div style={styles.info}>
+       {/* --- DEPOSIT CARD (REACT FLEX INLINE) --- */}
+<div style={styles.cardRectangle}>
+  <div style={styles.cardMainInline}>
+    
+    {/* Left Part: Icon */}
+    <div style={{ ...styles.iconBoxSmall, background: "linear-gradient(135deg,#2563eb,#06b6d4)" }}>💰</div>
+    
+    {/* Middle Part: Text & Balance */}
+    <div style={styles.infoFlex}>
       <p style={styles.label}>Deposit Coin</p>
-      <h1 style={styles.amount}>₹ {Number(wallet.balance || 0).toFixed(2)}</h1>
-      
-      {/* Nayi Line: Jo Deposit ke andar hi Bonus Amount dikhayegi */}
-      <p style={{ margin: "4px 0 0", fontSize: "14px", color: "#f59e0b", fontWeight: "700" }}>
+      <h1 style={styles.amountText}>₹ {Number(wallet.balance || 0).toFixed(2)}</h1>
+      <p style={{ margin: "2px 0 0", fontSize: "12px", color: "#f59e0b", fontWeight: "700" }}>
         🎁 Bonus: ₹ {Number(wallet.bonus || 0).toFixed(2)}
       </p>
     </div>
-  </div>
-  <div style={styles.btnRow}>
-    <button style={styles.addBtn} onClick={openAddCash}>
-      Add Cash <span style={styles.plus}>+</span>
-    </button>
+
+    {/* Right Part: Button (Amount ke thik aage row me) */}
+    <div>
+      <button style={styles.addBtnInline} onClick={openAddCash}>
+        Add Cash <span style={styles.plus}>+</span>
+      </button>
+    </div>
+    
   </div>
   <p style={styles.desc}>Use to play Tournaments & Battles. Cannot be withdrawn.</p>
 </div>
 
-      
-        {/* Winning Card */}
-        <div style={styles.card}>
-          <div style={styles.cardMain}>
-            <div style={{ ...styles.iconBox, background: "linear-gradient(135deg,#16a34a,#86efac)" }}>🏆</div>
-            <div style={styles.info}>
-              <p style={styles.label}>Winning Coin</p>
-              <h1 style={styles.amount}>₹ {Number(wallet.winnings || 0).toFixed(2)}</h1>
-            </div>
-          </div>
-          <div style={styles.btnRow}>
-            <button style={styles.withdrawBtn} onClick={() => navigate("/withdraw")}>Withdraw 🏦</button>
-          </div>
-          <p style={styles.desc}>Withdrawable to UPI or Bank. Also usable for play.</p>
-        </div>
+{/* --- WINNING CARD (REACT FLEX INLINE) --- */}
+<div style={styles.cardRectangle}>
+  <div style={styles.cardMainInline}>
+    
+    {/* Left Part: Icon */}
+    <div style={{ ...styles.iconBoxSmall, background: "linear-gradient(135deg,#16a34a,#86efac)" }}>🏆</div>
+    
+    {/* Middle Part: Text & Balance */}
+    <div style={styles.infoFlex}>
+      <p style={styles.label}>Winning Coin</p>
+      <h1 style={styles.amountText}>₹ {Number(wallet.winnings || 0).toFixed(2)}</h1>
+    </div>
 
+    {/* Right Part: Button (Amount ke thik aage row me) */}
+    <div>
+      <button style={styles.withdrawBtnInline} onClick={() => navigate("/withdraw")}>
+        Withdraw 🏦
+      </button>
+    </div>
+    
+  </div>
+  <p style={styles.desc}>Withdrawable to UPI or Bank. Also usable for play.</p>
+</div>
         {/* History Box Card */}
         <div style={styles.historyCard}>
           <div style={styles.historyTabs}>
@@ -462,17 +474,24 @@ const styles = {
   backBtn: { width: 42, height: 42, borderRadius: 14, border: "none", background: "#fff", fontSize: 24, fontWeight: 900, boxShadow: "0 4px 12px rgba(0,0,0,0.05)", cursor: "pointer" },
   title: { flex: 1, margin: 0, fontSize: 27, fontWeight: 900, color: "#0f172a" },
   online: { color: "#64748b", fontSize: 13, fontWeight: 700 },
-  card: { background: "#fff", borderRadius: 22, padding: 18, marginBottom: 16, boxShadow: "0 18px 45px rgba(15,23,42,.07)" },
-  cardMain: { display: "flex", alignItems: "center", gap: 15 },
-  iconBox: { width: 70, height: 70, borderRadius: 20, display: "flex", alignItems: "center", justifyContent: "center", color: "#fff", fontSize: 32 },
-  info: { flex: 1 },
-  label: { margin: "0 0 6px", color: "#64748b", fontSize: 15, fontWeight: 800 },
-  amount: { margin: 0, color: "#0f172a", fontSize: 27, fontWeight: 900 },
-  btnRow: { display: "flex", justifyContent: "flex-end", marginTop: 12 },
-  addBtn: { border: "none", background: "linear-gradient(135deg,#2563eb,#06b6d4)", color: "#fff", borderRadius: 14, padding: "11px 15px", fontSize: 16, fontWeight: 900, cursor: "pointer" },
-  withdrawBtn: { border: "1px solid #bbf7d0", background: "#f0fdf4", color: "#166534", borderRadius: 14, padding: "11px 15px", fontSize: 16, fontWeight: 900, cursor: "pointer" },
-  plus: { marginLeft: 7, fontSize: 20 },
-  desc: { margin: "12px 0 0", color: "#64748b", fontSize: 13, lineHeight: 1.45 },
+  
+  // Clean Sharp Rectangle Box Layout
+  cardRectangle: { background: "#fff", borderRadius: "12px", padding: "16px", marginBottom: "16px", boxShadow: "0 10px 30px rgba(15,23,42,.05)", border: "1px solid #e2e8f0" },
+  
+  // Row alignment architecture matrix
+  cardMainInline: { display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12 },
+  iconBoxSmall: { width: 50, height: 50, borderRadius: 14, display: "flex", alignItems: "center", justifyContent: "center", color: "#fff", fontSize: 24, flexShrink: 0 },
+  infoFlex: { flex: 1, minWidth: 0 },
+  
+  label: { margin: "0 0 2px", color: "#64748b", fontSize: 13, fontWeight: 800 },
+  amountText: { margin: 0, color: "#0f172a", fontSize: 20, fontWeight: 900 },
+  
+  // Right aligned button layouts
+  addBtnInline: { border: "none", background: "linear-gradient(135deg,#2563eb,#06b6d4)", color: "#fff", borderRadius: 10, padding: "10px 14px", fontSize: 14, fontWeight: 900, cursor: "pointer", whiteSpace: "nowrap" },
+  withdrawBtnInline: { border: "1px solid #bbf7d0", background: "#f0fdf4", color: "#166534", borderRadius: 10, padding: "10px 14px", fontSize: 14, fontWeight: 900, cursor: "pointer", whiteSpace: "nowrap" },
+  plus: { marginLeft: 3, fontSize: 15 },
+  desc: { margin: "10px 0 0", color: "#64748b", fontSize: 12, lineHeight: 1.4 },
+  
   error: { background: "#fee2e2", color: "#991b1b", padding: 10, borderRadius: 12, marginBottom: 12, fontWeight: 800, fontSize: 13 },
   loading: { minHeight: "70vh", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 16, color: "#475569" },
   
@@ -484,7 +503,7 @@ const styles = {
   status: { padding: "4px 8px", borderRadius: 8, fontSize: 12, fontWeight: 900 },
   small: { fontSize: 11, color: "#94a3b8", margin: "2px 0 0" },
 
-  modalOverlay: { position: "fixed", top: 0, left: 0, right: 0, bottom: 0, background: "rgba(15,23,42,0.3)", backdropFilter: "blur(4px)", display: "flex", alignItems: "center", justifyInference: "center", zIndex: 100 },
+  modalOverlay: { position: "fixed", top: 0, left: 0, right: 0, bottom: 0, background: "rgba(15,23,42,0.3)", backdropFilter: "blur(4px)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 100 },
   modal: { background: "#fff", width: "100%", maxWidth: "400px", padding: 24, borderRadius: 22, boxShadow: "0 25px 50px -12px rgba(0,0,0,0.1)", position: "relative", margin: "0 12px" },
   closeBtn: { position: "absolute", top: 12, right: 16, background: "none", border: "none", fontSize: 24, fontWeight: "bold", color: "#94a3b8", cursor: "pointer" },
   modalTitle: { margin: "0 0 4px", fontSize: 22, fontWeight: 900, color: "#0f172a" },
