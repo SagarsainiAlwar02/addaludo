@@ -132,10 +132,7 @@ export default function Redeem() {
           </p>
         </div>
 
-        <p className="mt-8 text-[20px] leading-8 font-medium text-black">
-          Referral earning ₹200 hone ke baad redeem karke main wallet me add kar sakte ho.
-        </p>
-
+       
         <p className="mt-4 text-[16px] leading-7 font-semibold text-gray-700">
           TDS (5%) Will Be Deducted After Annual Referral Earning Of 🪙 15,000.
         </p>
