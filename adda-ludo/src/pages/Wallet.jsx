@@ -333,14 +333,7 @@ export default function Wallet() {
                 <p style={{ fontSize: 13, color: "#64748b", marginBottom: 10, fontWeight: 'bold' }}>Select Payment Mode:</p>
                 <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
                   
-                  {/* UPI Gateway */}
-                  <button 
-                    type="button" 
-                    onClick={() => setSelectedMethod("upi")}
-                    style={selectedMethod === "upi" ? styles.methodBtnActive : styles.methodBtn}
-                  >
-                    UPI ID
-                  </button>
+                 
 
                   {/* QR SCANNER (100 to 2000) */}
                   {numericAmount >= 100 && numericAmount <= 2000 && (
@@ -351,6 +344,15 @@ export default function Wallet() {
                     >
                       QR Scanner
                     </button>
+
+                    {/* UPI Gateway */}
+                  <button 
+                    type="button" 
+                    onClick={() => setSelectedMethod("upi")}
+                    style={selectedMethod === "upi" ? styles.methodBtnActive : styles.methodBtn}
+                  >
+                    UPI ID
+                  </button>
                   )}
 
                   {/* BANK DETAILS (> 2000) */}
