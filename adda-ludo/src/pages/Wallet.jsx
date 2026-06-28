@@ -182,41 +182,285 @@ export default function Wallet() {
       formData.append("utr", utr.trim());
       formData.append("screenshot", screenshot);
 
-      const res = await axios.
+      const res = await axios.post(`${API_BASE}/deposit/create`, formData, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "multipart/form-data",
+        },
+      });
 
-// Full JavaScript Layout Styling Sheets
-const styles = {
-  page: { minHeight: "100vh", background: "#f1f5f9", color: "#0f172a" },
-  container: { padding: "72px 14px 105px", maxWidth: "480px", margin: "0 auto" },
-  headerRow: { display: "flex", alignItems: "center", gap: "12px", marginBottom: "20px" },
-  backBtn: { width: 42, height: 42, borderRadius: 14, border: "none", background: "#fff", fontSize: 24, fontWeight: 900, boxShadow: "0 4px 12px rgba(0,0,0,0.05)", cursor: "pointer" },
-  title: { flex: 1, margin: 0, fontSize: 27, fontWeight: 900, color: "#0f172a" },
-  online: { color: "#64748b", fontSize: 13, fontWeight: 700 },
-  
-  cardRectangle: { background: "#fff", borderRadius: "12px", padding: "16px", marginBottom: "16px", boxShadow: "0 10px 30px rgba(15,23,42,.03)", border: "1px solid #e2e8f0" },
-  cardMainInline: { display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12 },
-  iconBoxSmall: { width: 50, height: 50, borderRadius: 14, display: "flex", alignItems: "center", justifyContent: "center", color: "#fff", fontSize: 24, flexShrink: 0 },
-  infoFlex: { flex: 1, minWidth: 0 },
-  
-  label: { margin: "0 0 2px", color: "#64748b", fontSize: 13, fontWeight: 800 },
-  amountText: { margin: 0, color: "#0f172a", fontSize: 20, fontWeight: 900 },
-  
-  addBtnInline: { border: "none", background: "linear-gradient(135deg,#2563eb,#06b6d4)", color: "#fff", borderRadius: 10, padding: "10px 14px", fontSize: 14, fontWeight: 900, cursor: "pointer", whiteSpace: "nowrap" },
-  withdrawBtnInline: { border: "1px solid #bbf7d0", background: "#f0fdf4", color: "#166534", borderRadius: 10, padding: "10px 14px", fontSize: 14, fontWeight: 900, cursor: "pointer", whiteSpace: "nowrap" },
-  plus: { marginLeft: 3, fontSize: 15 },
-  desc: { margin: "10px 0 0", color: "#64748b", fontSize: 12, lineHeight: 1.4 },
-  
-  error: { background: "#fee2e2", color: "#991b1b", padding: 10, borderRadius: 12, marginBottom: 12, fontWeight: 800, fontSize: 13 },
-  loading: { minHeight: "70vh", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 16, color: "#475569" },
-  
-  historyCard: { background: "#fff", borderRadius: 12, padding: 18, boxShadow: "0 18px 45px rgba(15,23,42,.07)", border: "1px solid #e2e8f0" },
-  historyTabs: { display: "flex", gap: "8px", marginBottom: "12px" },
-  historyTab: { flex: 1, border: "none", background: "#f1f5f9", padding: "6px 10px", borderRadius: 8, fontWeight: 800, color: "#64748b", fontSize: "12px", cursor: "pointer", whiteSpace: "nowrap" },
-  activeHistoryTab: { background: "#2563eb", color: "#fff", boxShadow: "0 4px 10px rgba(37,99,235,0.15)" },
-  depositItem: { display: "flex", justifyContent: "space-between", alignItems: "center", padding: "10px 0", borderBottom: "1px solid #f1f5f9" },
-  status: { padding: "4px 8px", borderRadius: 8, fontSize: 12, fontWeight: 900 },
-  small: { fontSize: 11, color: "#94a3b8", margin: "2px 0 0
+      alert(res.data.msg || "Deposit request submitted");
+      setShowPayment(false);
+      setAmount("");
+      setUtr("");
+      setScreenshot(null);
+      setSelectedMethod("");
+      await Promise.all([loadDeposits(), loadWallet()]);
+    } catch (err) {
+      setError(err.response?.data?.msg || "Deposit request failed");
+    } finally {
+      setLoading(false);
+    }
+  };
 
+  if (pageLoading) {
+    return <div style={styles.loading}>⏳ Loading Wallet...</div>;
+  }
+
+  const scannerPath = payment?.scannerImage || payment?.scanner?.image || "";
+  const scannerImage = scannerPath ? `${SERVER_BASE}${scannerPath}` : "";
+  const upiId = payment?.upiList?.[0] || "";
+  const bank = payment?.bank || {};
+  const numericAmount = Number(amount || 0);
+
+  return (
+    <div style={styles.page}>
+      <div style={styles.container}>
+        {/* Header Row */}
+        <div style={styles.headerRow}>
+          <button style={styles.backBtn} onClick={() => navigate(-1)}>←</button>
+          <h2 style={styles.title}>Wallet</h2>
+          <span style={styles.online}>0 online</span>
+        </div>
+
+        {error && <div style={styles.error}>{error}</div>}
+
+        {/* --- DEPOSIT CARD --- */}
+        <div style={styles.cardRectangle}>
+          <div style={styles.cardMainInline}>
+            <div style={{ ...styles.iconBoxSmall, background: "linear-gradient(135deg,#2563eb,#06b6d4)" }}>💰</div>
+            <div style={styles.infoFlex}>
+              <p style={styles.label}>Deposit Coin</p>
+              <h1 style={styles.amountText}>₹ {Number(wallet.balance || 0).toFixed(2)}</h1>
+              <p style={{ margin: "2px 0 0", fontSize: "12px", color: "#f59e0b", fontWeight: "700" }}>
+                🎁 Bonus: ₹ {Number(wallet.bonus || 0).toFixed(2)}
+              </p>
+            </div>
+            <div>
+              <button style={styles.addBtnInline} onClick={openAddCash}>
+                Add Cash <span style={styles.plus}>+</span>
+              </button>
+            </div>
+          </div>
+          <p style={styles.desc}>Use to play Tournaments & Battles. Cannot be withdrawn.</p>
+        </div>
+
+        {/* --- WINNING CARD --- */}
+        <div style={styles.cardRectangle}>
+          <div style={styles.cardMainInline}>
+            <div style={{ ...styles.iconBoxSmall, background: "linear-gradient(135deg,#16a34a,#86efac)" }}>🏆</div>
+            <div style={styles.infoFlex}>
+              <p style={styles.label}>Winning Coin</p>
+              <h1 style={styles.amountText}>₹ {Number(wallet.winnings || 0).toFixed(2)}</h1>
+            </div>
+            <div>
+              <button style={styles.withdrawBtnInline} onClick={() => navigate("/withdraw")}>
+                Withdraw 🏦
+              </button>
+            </div>
+          </div>
+          <p style={styles.desc}>Withdrawable to UPI or Bank. Also usable for play.</p>
+        </div>
+
+        {/* History Box Card */}
+        <div style={styles.historyCard}>
+          <div style={styles.historyTabs}>
+            <button onClick={() => setActiveHistory("deposit")} style={{ ...styles.historyTab, ...(activeHistory === "deposit" ? styles.activeHistoryTab : {}) }}>Deposit History</button>
+            <button onClick={() => setActiveHistory("withdraw")} style={{ ...styles.historyTab, ...(activeHistory === "withdraw" ? styles.activeHistoryTab : {}) }}>Withdraw History</button>
+          </div>
+          <HistoryBox
+            empty={activeHistory === "deposit" ? "No deposit request yet." : "No withdraw request yet."}
+            items={activeHistory === "deposit" ? deposits : withdraws}
+            getStatusStyle={getStatusStyle}
+            type={activeHistory === "deposit" ? "deposit" : "withdraw"}
+          />
+        </div>
+      </div>
+
+      {/* MODAL 1: ENTER AMOUNT INPUT */}
+      {showAddCash && (
+        <div style={styles.modalOverlay}>
+          <div style={styles.modal}>
+            <button style={styles.closeBtn} onClick={() => setShowAddCash(false)}>×</button>
+            <h2 style={styles.modalTitle}>Add Money</h2>
+            <p style={styles.modalSub}>Minimum ₹100 To Maximum ₹1,0,000</p>
+            <input
+              type="number"
+              value={amount}
+              min={MIN_AMOUNT}
+              max={MAX_AMOUNT}
+              placeholder="Enter Amount"
+              onChange={(e) => setAmount(e.target.value)}
+              style={styles.input}
+            />
+            <div style={styles.depositNoteBox}>
+              <p style={styles.depositNoteLine}><b>NOTE :-</b>Please Enter UTR no Correctly.</p>
+              <p style={styles.depositNoteLine}>Sahi se UTR enter kare Galt UTR fill karne par Payment add nhi hoga</p>
+            </div>
+            <button style={styles.payBtn} onClick={goToPayment}>Next </button>
+          </div>
+        </div>
+      )}
+
+      {/* MODAL 2: DYNAMIC GATEWAY PANEL */}
+      {showPayment && (
+        <div style={styles.paymentPage}>
+          <div style={styles.paymentCard}>
+            
+            {/* Color Marked Premium Header Panel Box */}
+            <div style={styles.headerContainer}>
+              <button style={styles.backArrowStyle} onClick={() => { setShowPayment(false); setShowAddCash(true); }}>←</button>
+              <div style={styles.brandGroupStyle}>
+                <span style={{ fontSize: "18px" }}>⚔️</span> 
+                <span style={styles.logoTextStyle}>AddaLudo</span>
+              </div>
+              <span style={styles.completePaymentTextStyle}>Complete Payment</span>
+            </div>
+
+            <div style={styles.paymentBody}>
+              
+              {/* Premium Attractive Styled Amount Box Dashboard */}
+              <div style={styles.amountCardBox}>
+                <p style={styles.payTextStyle}>Pay Amount</p>
+                <h1 style={styles.amountTextStyle}>₹{numericAmount.toFixed(2)}</h1>
+                <div style={styles.timerBoxStyle}>
+                  <span>⏱️</span> Time remaining: <b>{formatTime(timeLeft)}</b>
+                </div>
+              </div>
+
+              {/* DYNAMIC SELECTION MODES WITH COLOR ACTIVE LOOK */}
+              <div style={{ marginBottom: 16, marginTop: 18 }}>
+                <p style={{ fontSize: 13, color: "#64748b", marginBottom: 10, fontWeight: 'bold' }}>Select Payment Mode:</p>
+                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
+                  
+                  {/* UPI Gateway */}
+                  <button 
+                    type="button" 
+                    onClick={() => setSelectedMethod("upi")}
+                    style={selectedMethod === "upi" ? styles.methodBtnActive : styles.methodBtn}
+                  >
+                    UPI ID
+                  </button>
+
+                  {/* QR SCANNER (100 to 2000) */}
+                  {numericAmount >= 100 && numericAmount <= 2000 && (
+                    <button 
+                      type="button" 
+                      onClick={() => setSelectedMethod("qr")}
+                      style={selectedMethod === "qr" ? styles.methodBtnActive : styles.methodBtn}
+                    >
+                      QR Scanner
+                    </button>
+                  )}
+
+                  {/* BANK DETAILS (> 2000) */}
+                  {numericAmount > 2000 && (
+                    <button 
+                      type="button" 
+                      onClick={() => setSelectedMethod("bank")}
+                      style={selectedMethod === "bank" ? styles.methodBtnActive : styles.methodBtn}
+                    >
+                      Bank Details
+                    </button>
+                  )}
+                </div>
+              </div>
+
+              {/* DETAILS DISPLAYER STRUCTURE */}
+              {selectedMethod === "upi" && (
+                upiId ? <CopyRow label="UPI ID" value={upiId} onCopy={copyText} /> : <div style={styles.noPaymentBox}>UPI ID not available</div>
+              )}
+
+              {selectedMethod === "qr" && (
+                scannerImage ? (
+                  <div style={styles.qrBox}>
+                    <img src={scannerImage} alt="Payment QR" style={styles.qrImg} />
+                  </div>
+                ) : <div style={styles.noPaymentBox}>QR scanner not available</div>
+              )}
+
+              {selectedMethod === "bank" && (
+                <div style={styles.bankDetailContainer}>
+                  {bank?.name && <CopyRow label="Bank Name" value={bank.name} onCopy={copyText} />}
+                  {bank?.accountNumber && <CopyRow label="Account Number" value={bank.accountNumber} onCopy={copyText} />}
+                  {bank?.ifsc && <CopyRow label="IFSC Code" value={bank.ifsc} onCopy={copyText} />}
+                </div>
+              )}
+
+              {/* PROOF UPLOADER FLOW */}
+              {selectedMethod && (
+                <div style={{ marginTop: 15 }}>
+                  
+                  {/* Updated Text Note Box As Requested */}
+                  <div style={styles.noteBox}>
+                    UPI और Scanner पर पेमेंट न होने पर सपोर्ट और Contact करे !
+                  </div>
+
+                  <input
+                    type="text"
+                    value={utr}
+                    placeholder="Enter UTR / Transaction ID"
+                    onChange={(e) => setUtr(e.target.value)}
+                    style={styles.input}
+                  />
+
+                  <input
+                    type="file"
+                    accept="image/*"
+                    onChange={(e) => setScreenshot(e.target.files?.[0] || null)}
+                    style={styles.fileInput}
+                  />
+
+                  {screenshot && <p style={styles.small}>Selected: {screenshot.name}</p>}
+
+                  <button style={styles.submitBtn} onClick={submitDeposit} disabled={loading}>
+                    {loading ? "Verifying Proof..." : "Submit Payment Proof"}
+                  </button>
+                </div>
+              )}
+
+              {/* Cancel Button */}
+              <button style={styles.cancelBtn} onClick={() => { setShowPayment(false); setSelectedMethod(""); }}>Cancel</button>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+function CopyRow({ label, value, onCopy }) {
+  return (
+    <div style={styles.copyRow}>
+      <div style={{ minWidth: 0 }}>
+        <p style={styles.copyLabel}>{label}</p>
+        <p style={styles.copyValue}>{value}</p>
+      </div>
+      <button style={styles.copyBtn} onClick={() => onCopy(value)}>Copy</button>
+    </div>
+  );
+}
+
+function HistoryBox({ empty, items, getStatusStyle, type }) {
+  return (
+    <div>
+      {items.length === 0 ? (
+        <p style={styles.desc}>{empty}</p>
+      ) : (
+        items.slice(0, 10).map((item) => (
+          <div key={item._id} style={styles.depositItem}>
+            <div>
+              <b style={{ color: "#0f172a" }}>₹{item.amount}</b>
+              <p style={styles.small}>{type === "deposit" ? `UTR: ${item.utr || "-"}` : `Method: ${item.method || "-"}`}</p>
+              <p style={styles.small}>{item.createdAt ? new Date(item.createdAt).toLocaleString("en-IN") : "-"}</p>
+            </div>
+            <span style={{ ...styles.status, ...getStatusStyle(item.status) }}>{item.status || "pending"}</span>
+          </div>
+        ))
+      )}
+    </div>
+  );
+}
 // 100% BALANCED JAVASCRIPT STYLE DICTIONARY
 const styles = {page: { 
 minHeight: "100vh", background: "#f1f5f9", color: "#0f172a" },container: { padding: "72px 14px 105px", maxWidth: "480px", margin: "0 auto" },headerRow: { display: "flex", alignItems: "center", gap: "12px", marginBottom: "20px" },backBtn: { width: 42, height: 42, borderRadius: 14, border: "none", background: "#fff", fontSize: 24, fontWeight: 900, boxShadow: "0 4px 12px rgba(0,0,0,0.05)", cursor: "pointer" },title: { flex: 1, margin: 0, fontSize: 27, fontWeight: 900, color: "#0f172a" },online: { color: "#64748b", fontSize: 13, fontWeight: 700 },
