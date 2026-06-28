@@ -194,7 +194,8 @@ export default function Profile({ onLogout }) {
   ];
 
   return (
-    <div className="min-h-screen bg-[#f1f5f9] px-3 pb-24 pt-3 font-sans">
+    // Yahan pt-16 add kiya hai taaki black header ke neeche space ban jaye aur card poora dikhe
+    <div className="min-h-screen bg-[#f1f5f9] px-3 pb-24 pt-16 font-sans">
       <div className="mx-auto max-w-[480px]">
         
         {/* Profile Card Header */}
