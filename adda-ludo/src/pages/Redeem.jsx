@@ -64,7 +64,7 @@ export default function Redeem() {
   const handleRedeem = async () => {
     const redeemAmount = Number(amount);
 
-    if (!redeemAmount) return setMessage("Amount enter karo");
+    if (!redeemAmount) return setMessage("Enter Amount");
     if (redeemAmount < MIN_AMOUNT) return setMessage("Minimum redeem ₹200 hai");
     if (redeemAmount > MAX_AMOUNT) return setMessage("Maximum redeem ₹10000 hai");
     if (redeemAmount > referBalance) {
