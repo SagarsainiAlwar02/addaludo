@@ -488,6 +488,40 @@ const styles = {
   status: { padding: "4px 8px", borderRadius: 8, fontSize: 12, fontWeight: 900 },
   small: { fontSize: 11, color: "#94a3b8", margin: "2px 0 0" },
 
-  modalOverlay: { position: "fixed", top: 0, left: 0, right: 0, bottom: 0, background: "rgba(15,23,42,0.3)", backdropFilter: "blur(4px)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 100 },
+  modalOverlay: { position: "fixed", top: 0, left: 0, right: 0, bottom: 0, background: "rgba(15,23,42,0.3)", backdropFilter: "blur(4px)", display: "flex", alignItems: "center", justifyInference: "center", zIndex: 100 },
   modal: { background: "#fff", width: "100%", maxWidth: "400px", padding: 24, borderRadius: 22, boxShadow: "0 25px 50px -12px rgba(0,0,0,0.1)", position: "relative", margin: "0 12px" },
-  closeBtn: { position: "absolute", top: 12, right: 16, bac
+  closeBtn: { position: "absolute", top: 12, right: 16, background: "none", border: "none", fontSize: 24, fontWeight: "bold", color: "#94a3b8", cursor: "pointer" },
+  modalTitle: { margin: "0 0 4px", fontSize: 22, fontWeight: 900, color: "#0f172a" },
+  modalSub: { margin: "0 0 16px", color: "#64748b", fontSize: 13, fontWeight: 600 },
+  input: { width: "100%", boxSizing: "border-box", padding: 14, borderRadius: 14, border: "1px solid #cbd5e1", fontSize: 15, fontWeight: 700, outline: "none", marginBottom: 14, color: "#0f172a" },
+  fileInput: { width: "100%", boxSizing: "border-box", fontSize: 13, color: "#64748b", marginBottom: 14 },
+  depositNoteBox: { background: "#fffbeb", border: "1px solid #fde68a", padding: 12, borderRadius: 14, marginBottom: 14 },
+  depositNoteLine: { margin: "0 0 4px", fontSize: 12, color: "#b45309", lineHeight: 1.4, fontWeight: 600 },
+  payBtn: { width: "100%", border: "none", background: "linear-gradient(135deg,#2563eb,#06b6d4)", color: "#fff", padding: 14, borderRadius: 14, fontSize: 16, fontWeight: 900, cursor: "pointer" },
+
+  paymentPage: { position: "fixed", inset: 0, background: "linear-gradient(135deg,#f8fafc,#eef2ff)", overflowY: "auto", zIndex: 200, padding: "24px 12px" },
+  paymentCard: { maxWidth: "440px", margin: "0 auto", background: "#fff", borderRadius: 24, padding: 20, boxShadow: "0 20px 40px rgba(0,0,0,0.04)", border: "1px solid #e2e8f0" },
+  paymentHeader: { display: "flex", alignItems: "center", gap: 12, borderBottom: "1px solid #f1f5f9", paddingBottom: 12, marginBottom: 14 },
+  paymentBack: { background: "none", border: "none", fontSize: 22, fontWeight: 900, cursor: "pointer", color: "#0f172a" },
+  logo: { flex: 1, fontWeight: 900, color: "#2563eb", fontSize: 20 },
+  paymentTitle: { fontSize: 14, margin: 0, color: "#64748b", fontWeight: 800 },
+  paymentBody: { display: "flex", flexDirection: "column" },
+  paymentTopCard: { background: "#f8fafc", borderRadius: 16, padding: 16, textAlign: "center", marginBottom: 14, border: "1px solid #e2e8f0" },
+  scanText: { margin: "0 0 4px", fontSize: 20, fontWeight: 900, color: "#0f172a" },
+  timerBox: { fontSize: 13, color: "#64748b", fontWeight: 600 },
+  noPaymentBox: { padding: 14, textAlign: "center", color: "#b91c1c", background: "#fef2f2", borderRadius: 12, fontSize: 13, fontWeight: 700 },
+  qrBox: { display: "flex", justifyContent: "center", background: "#fff", padding: 10, borderRadius: 16, border: "1px solid #e2e8f0", maxWidth: "180px", margin: "0 auto 14px" },
+  qrImg: { width: "100%", height: "auto" },
+  noteBox: { padding: 12, fontSize: 12, background: "#fff1f2", color: "#be123c", borderRadius: 12, marginBottom: 14, fontWeight: 600, border: "1px solid #ffe4e6", lineHeight: 1.45 },
+  submitBtn: { width: "100%", border: "none", background: "linear-gradient(135deg,#16a34a,#22c55e)", color: "#fff", padding: 14, borderRadius: 14, fontSize: 16, fontWeight: 900, cursor: "pointer" },
+  cancelBtn: { width: "100%", border: "none", background: "#f1f5f9", color: "#64748b", padding: 12, borderRadius: 14, fontSize: 14, fontWeight: 800, cursor: "pointer" },
+
+  methodBtn: { background: "#f8fafc", border: "1px solid #e2e8f0", color: "#64748b", padding: "12px", borderRadius: 12, fontSize: 13, fontWeight: "800", cursor: "pointer" },
+  methodBtnActive: { background: "linear-gradient(135deg,#2563eb,#06b6d4)", border: "none", color: "#fff", padding: "12px", borderRadius: 12, fontSize: 13, fontWeight: "900", cursor: "pointer", boxShadow: "0 4px 12px rgba(37,99,235,0.2)" },
+
+  bankDetailContainer: { background: "#f8fafc", padding: "6px 10px", borderRadius: 14, border: "1px solid #e2e8f0", marginBottom: 12 },
+  copyRow: { display: "flex", justifyContent: "space-between", alignItems: "center", background: "#f8fafc", padding: "10px 14px", borderRadius: 14, marginBottom: 10, border: "1px solid #e2e8f0" },
+  copyLabel: { margin: 0, fontSize: 12, color: "#64748b", fontWeight: 700 },
+  copyValue: { margin: "2px 0 0", fontSize: 14, color: "#0f172a", fontWeight: "900" },
+  copyBtn: { background: "#e2e8f0", border: "none", color: "#2563eb", padding: "6px 12px", borderRadius: 8, fontSize: 12, fontWeight: 900, cursor: "pointer" }
+};
