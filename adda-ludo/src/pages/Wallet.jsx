@@ -228,32 +228,28 @@ export default function Wallet() {
         {error && <div style={styles.error}>{error}</div>}
 
         {/* Deposit Card */}
-        <div style={styles.card}>
-          <div style={styles.cardMain}>
-            <div style={{ ...styles.iconBox, background: "linear-gradient(135deg,#2563eb,#06b6d4)" }}>💰</div>
-            <div style={styles.info}>
-              <p style={styles.label}>Deposit Coin</p>
-              <h1 style={styles.amount}>₹ {Number(wallet.balance || 0).toFixed(2)}</h1>
-            </div>
-          </div>
-          <div style={styles.btnRow}>
-            <button style={styles.addBtn} onClick={openAddCash}>Add Cash <span style={styles.plus}>+</span></button>
-          </div>
-          <p style={styles.desc}>Use to play Tournaments & Battles. Cannot be withdrawn.</p>
-        </div>
+<div style={styles.card}>
+  <div style={styles.cardMain}>
+    <div style={{ ...styles.iconBox, background: "linear-gradient(135deg,#2563eb,#06b6d4)" }}>💰</div>
+    <div style={styles.info}>
+      <p style={styles.label}>Deposit Coin</p>
+      <h1 style={styles.amount}>₹ {Number(wallet.balance || 0).toFixed(2)}</h1>
+      
+      {/* Nayi Line: Jo Deposit ke andar hi Bonus Amount dikhayegi */}
+      <p style={{ margin: "4px 0 0", fontSize: "14px", color: "#f59e0b", fontWeight: "700" }}>
+        🎁 Bonus: ₹ {Number(wallet.bonus || 0).toFixed(2)}
+      </p>
+    </div>
+  </div>
+  <div style={styles.btnRow}>
+    <button style={styles.addBtn} onClick={openAddCash}>
+      Add Cash <span style={styles.plus}>+</span>
+    </button>
+  </div>
+  <p style={styles.desc}>Use to play Tournaments & Battles. Cannot be withdrawn.</p>
+</div>
 
-        {/* Bonus Card */}
-        <div style={styles.card}>
-          <div style={styles.cardMain}>
-            <div style={{ ...styles.iconBox, background: "linear-gradient(135deg,#f59e0b,#fcd34d)" }}>🎁</div>
-            <div style={styles.info}>
-              <p style={styles.label}>Bonus Coin</p>
-              <h1 style={styles.amount}>₹ {Number(wallet.bonus || 0).toFixed(2)}</h1>
-            </div>
-          </div>
-          <p style={styles.desc}>Bonus coins can be used to play battles only.</p>
-        </div>
-
+      
         {/* Winning Card */}
         <div style={styles.card}>
           <div style={styles.cardMain}>
