@@ -393,7 +393,7 @@ export default function Wallet() {
                   
                   {/* Updated Text Note Box As Requested */}
                   <div style={styles.noteBox}>
-                    UPI और Scanner पर पेमेंट न होने पर सपोर्ट और Contact करे !
+                   Note:- UPI और Scanner पर पेमेंट न होने पर सपोर्ट पर Contact करे !
                   </div>
 
                   <input
