@@ -153,7 +153,7 @@ export default function Redeem() {
             className="mt-7 h-[58px] w-full rounded-lg border border-gray-300 bg-white px-4 text-[18px] font-bold outline-none shadow-sm"
           />
 
-          <div className="mt-8 flex justify-between text-[16px] font-bold text-gray-800">
+          <div className="mt-4 flex justify-between text-[14px] font-bold text-gray-700">
             <span>Balance: ₹{referBalance.toFixed(2)}</span>
             <span>Min: 200, Max: 10000</span>
           </div>
@@ -165,11 +165,11 @@ export default function Redeem() {
           </div>
         )}
 
-        <div className="mt-20 flex justify-center">
+        <div className="mt-10 flex justify-center">
           <button
             onClick={handleRedeem}
             disabled={loading || referBalance < MIN_AMOUNT}
-            className="rounded-lg bg-purple-500 px-14 py-4 text-[24px] font-extrabold text-white shadow-md active:scale-95 disabled:opacity-50"
+            className="rounded-lg bg-purple-500 px-10 py-2.5 text-[18px] font-extrabold text-white shadow-md active:scale-95 disabled:opacity-50"
           >
             {loading ? "Please wait..." : "Redeem"}
           </button>
