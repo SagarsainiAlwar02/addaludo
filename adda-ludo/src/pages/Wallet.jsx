@@ -283,7 +283,7 @@ export default function Wallet() {
           <div style={styles.modal}>
             <button style={styles.closeBtn} onClick={() => setShowAddCash(false)}>×</button>
             <h2 style={styles.modalTitle}>Add Money</h2>
-            <p style={styles.modalSub}>Minimum ₹100 और Maximum ₹1,0,000</p>
+            <p style={styles.modalSub}>Minimum ₹100 To Maximum ₹1,0,000</p>
             <input
               type="number"
               value={amount}
@@ -390,9 +390,9 @@ export default function Wallet() {
               {/* PROOF UPLOADER FLOW */}
               {selectedMethod && (
                 <div style={{ marginTop: 15 }}>
-                  <div style={styles.noteBox}>
-                    NOTE :- कृपया UPI और ACCOUNT details सही से भरे , गलत details भरने पर हमारी जिम्मेदारी नहीं होगी !
-                  </div>
+ 
+         
+               </div>
 
                   <input
                     type="text"
