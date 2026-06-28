@@ -80,7 +80,7 @@ export default function Refer() {
         {/* Main Central White Box Wrapper */}
         <div className="bg-white rounded-2xl border border-slate-200/60 shadow-sm p-4">
           
-          {/* Top Embedded Premium Illustration (New Beautiful Image) */}
+          {/* Top Embedded Premium Illustration */}
           <div className="w-full overflow-hidden flex justify-center items-center py-4 bg-amber-50/50 rounded-xl mb-4">
             <img
               src="https://illustrations.popsy.co/amber/gift.svg"
@@ -119,4 +119,50 @@ export default function Refer() {
             </div>
             
             <button
-              onClick={
+              onClick={copyFullLink}
+              disabled={!referralLink}
+              className="bg-[#2563eb] active:bg-[#1d4ed8] text-white px-4 py-2 rounded-lg font-black text-xs shadow-sm transition-all active:scale-95 disabled:bg-slate-300 whitespace-nowrap"
+            >
+              {copiedLink ? "Copied ✔" : "Copy Link"}
+            </button>
+          </div>
+
+          {/* Full Width WhatsApp Share Action Trigger */}
+          <div className="mt-4">
+            <a
+              href={`https://wa.me/?text=${encodeURIComponent(shareText)}`}
+              target="_blank"
+              rel="noreferrer"
+              className="w-full bg-[#12cc66] hover:bg-[#0eb659] py-2.5 rounded-xl font-black text-white text-sm shadow-sm active:scale-[0.99] transition-transform flex items-center justify-center gap-2"
+            >
+              <span className="text-base">💬</span> WhatsApp
+            </a>
+          </div>
+
+          {error && (
+            <p className="mt-3 rounded-lg bg-red-50 px-3 py-1.5 text-xs font-bold text-red-600 border border-red-100 text-center">
+              {error}
+            </p>
+          )}
+        </div>
+
+        {/* --- LIFETIME EARNINGS BOARD GRID METRIC --- */}
+        <div className="mt-3 bg-white rounded-2xl border border-slate-200/60 shadow-sm p-4">
+          <h3 className="text-base font-black text-slate-800 tracking-tight">Lifetime Earnings</h3>
+          
+          <div className="grid grid-cols-2 gap-3 mt-3">
+            
+            {/* Referral Players Card */}
+            <div className="bg-slate-50 border border-slate-100 p-3 rounded-xl flex items-center gap-3">
+              <div className="w-9 h-9 rounded-xl bg-pink-50 border border-pink-100 flex items-center justify-center text-pink-500 text-lg font-bold">
+                👤
+              </div>
+              <div className="min-w-0">
+                <p className="text-[11px] font-bold text-slate-400 tracking-wide uppercase leading-none">Referral Players</p>
+                <h2 className="text-lg font-black text-slate-800 mt-1 leading-none">{referrals}</h2>
+              </div>
+            </div>
+
+            {/* Referral Earnings Card */}
+            <div className="bg-slate-50 border border-slate-100 p-3 rounded-xl flex items-center gap-3">
+              <div className="w-9 h-9 rounded-xl bg-
