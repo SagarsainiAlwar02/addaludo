@@ -140,9 +140,9 @@ export default function Wallet() {
 
   const getStatusStyle = (status) => {
     const s = String(status || "").toLowerCase();
-    if (s === "success" || s === "approved") return { background: "#14532d", color: "#4ade80" };
-    if (s === "rejected" || s === "failed") return { background: "#7f1d1d", color: "#f87171" };
-    return { background: "#78350f", color: "#fbbf24" };
+    if (s === "success" || s === "approved") return { background: "#dcfce7", color: "#166534" };
+    if (s === "rejected" || s === "failed") return { background: "#fee2e2", color: "#991b1b" };
+    return { background: "#fef3c7", color: "#92400e" };
   };
 
   const openAddCash = () => {
@@ -160,7 +160,7 @@ export default function Wallet() {
     const addAmount = Number(amount);
     if (!addAmount) return setError("Please enter amount");
     if (addAmount < MIN_AMOUNT) return setError("Minimum add cash amount is ₹100");
-    if (addAmount > MAX_AMOUNT) return setError("Maximum add cash amount is ₹1,00,000");
+    if (addAmount > MAX_AMOUNT) return setError("Maximum add cash amount is ₹1,0,000");
 
     setError("");
     setShowAddCash(false);
@@ -170,7 +170,7 @@ export default function Wallet() {
   const submitDeposit = async () => {
     const addAmount = Number(amount);
     if (!addAmount || addAmount < MIN_AMOUNT) return setError("Minimum deposit ₹100 hai");
-    if (addAmount > MAX_AMOUNT) return setError("Maximum deposit ₹1,00,000 hai");
+    if (addAmount > MAX_AMOUNT) return setError("Maximum deposit ₹1,0,000 hai");
     if (!utr.trim()) return setError("UTR / Transaction ID enter karo");
     if (!screenshot) return setError("Payment screenshot upload karo");
 
@@ -229,7 +229,7 @@ export default function Wallet() {
         {/* Deposit Card */}
         <div style={styles.card}>
           <div style={styles.cardMain}>
-            <div style={{ ...styles.iconBox, background: "linear-gradient(135deg,#1e3a8a,#0284c7)" }}>💰</div>
+            <div style={{ ...styles.iconBox, background: "linear-gradient(135deg,#2563eb,#06b6d4)" }}>💰</div>
             <div style={styles.info}>
               <p style={styles.label}>Deposit Coin</p>
               <h1 style={styles.amount}>₹ {Number(wallet.balance || 0).toFixed(2)}</h1>
@@ -244,7 +244,7 @@ export default function Wallet() {
         {/* Bonus Card */}
         <div style={styles.card}>
           <div style={styles.cardMain}>
-            <div style={{ ...styles.iconBox, background: "linear-gradient(135deg,#78350f,#d97706)" }}>🎁</div>
+            <div style={{ ...styles.iconBox, background: "linear-gradient(135deg,#f59e0b,#fcd34d)" }}>🎁</div>
             <div style={styles.info}>
               <p style={styles.label}>Bonus Coin</p>
               <h1 style={styles.amount}>₹ {Number(wallet.bonus || 0).toFixed(2)}</h1>
@@ -256,7 +256,7 @@ export default function Wallet() {
         {/* Winning Card */}
         <div style={styles.card}>
           <div style={styles.cardMain}>
-            <div style={{ ...styles.iconBox, background: "linear-gradient(135deg,#064e3b,#059669)" }}>🏆</div>
+            <div style={{ ...styles.iconBox, background: "linear-gradient(135deg,#16a34a,#86efac)" }}>🏆</div>
             <div style={styles.info}>
               <p style={styles.label}>Winning Coin</p>
               <h1 style={styles.amount}>₹ {Number(wallet.winnings || 0).toFixed(2)}</h1>
@@ -289,7 +289,7 @@ export default function Wallet() {
           <div style={styles.modal}>
             <button style={styles.closeBtn} onClick={() => setShowAddCash(false)}>×</button>
             <h2 style={styles.modalTitle}>Add Money</h2>
-            <p style={styles.modalSub}>Minimum ₹100 और Maximum ₹1,0,000</p>
+            <p style={styles.modalSub}>Minimum ₹100 aur Maximum ₹1,00,000</p>
             <input
               type="number"
               value={amount}
@@ -300,8 +300,8 @@ export default function Wallet() {
               style={styles.input}
             />
             <div style={styles.depositNoteBox}>
-              <p style={styles.depositNoteLine}><b>NOTE :-</b> Kripya details dhyan se padhein.</p>
-              <p style={styles.depositNoteLine}>Sahi se UTR enter karein taaki transactions turant approve ho sakein.</p>
+              <p style={styles.depositNoteLine}><b>NOTE :-</b> कृपया UTR No. सही से भरे, गलत UTR No. भरने पर Payment Add नहीं होगा, उसकी जिम्मेदारी खुद की होगी।</p>
+              <p style={styles.depositNoteLine}>अगर UPI और Scanner पर Payment न हो तो Support से Contact करें।</p>
             </div>
             <button style={styles.payBtn} onClick={goToPayment}>Next Step</button>
           </div>
@@ -315,18 +315,18 @@ export default function Wallet() {
             <div style={styles.paymentHeader}>
               <button style={styles.paymentBack} onClick={() => { setShowPayment(false); setShowAddCash(true); }}>←</button>
               <div style={styles.logo}>⚔️ AddaLudo</div>
-              <h2 style={styles.paymentTitle}>Secure Gateway</h2>
+              <h2 style={styles.paymentTitle}>Complete Payment</h2>
             </div>
 
             <div style={styles.paymentBody}>
               <div style={styles.paymentTopCard}>
-                <p style={styles.scanText}>Amount to Pay: ₹{numericAmount.toFixed(2)}</p>
-                <div style={styles.timerBox}>⏱ Remaining Time: <b>{formatTime(timeLeft)}</b></div>
+                <p style={styles.scanText}>Pay ₹{numericAmount.toFixed(2)}</p>
+                <div style={styles.timerBox}>⏱ Time remaining: <b>{formatTime(timeLeft)}</b></div>
               </div>
 
               {/* DYNAMIC RULES STRATEGY CHOICE CHANGER */}
-              <div style={{ marginBottom: 15 }}>
-                <p style={{ fontSize: 13, color: "#94a3b8", marginBottom: 8, fontWeight: 'bold' }}>Choose Payment Mode:</p>
+              <div style={{ marginBottom: 16 }}>
+                <p style={{ fontSize: 13, color: "#64748b", marginBottom: 8, fontWeight: 'bold' }}>Select Payment Mode:</p>
                 <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
                   
                   {/* UPI Method is always available */}
@@ -335,7 +335,7 @@ export default function Wallet() {
                     onClick={() => setSelectedMethod("upi")}
                     style={selectedMethod === "upi" ? styles.methodBtnActive : styles.methodBtn}
                   >
-                    UPI Gateway
+                    UPI ID
                   </button>
 
                   {/* QR SCANNER Logic (100 to 2000) */}
@@ -356,7 +356,7 @@ export default function Wallet() {
                       onClick={() => setSelectedMethod("bank")}
                       style={selectedMethod === "bank" ? styles.methodBtnActive : styles.methodBtn}
                     >
-                      Bank Details
+                      Bank Transfer
                     </button>
                   )}
                 </div>
@@ -377,43 +377,45 @@ export default function Wallet() {
 
               {selectedMethod === "bank" && (
                 <div style={styles.bankDetailContainer}>
-                  {bank?.name && <CopyRow label="Bank Name" value={bank.name} onCopy={copyText} />}
-                  {bank?.accountNumber && <CopyRow label="Account Number" value={bank.accountNumber} onCopy={copyText} />}
-                  {bank?.ifsc && <CopyRow label="IFSC Code" value={bank.ifsc} onCopy={copyText} />}
+                  {bank?.name && <CopyRow label="A/C Name" value={bank.name} onCopy={copyText} />}
+                  {bank?.accountNumber && <CopyRow label="A/C No." value={bank.accountNumber} onCopy={copyText} />}
+                  {bank?.ifsc && <CopyRow label="IFSC" value={bank.ifsc} onCopy={copyText} />}
                 </div>
               )}
 
               {/* UPLOAD FORM CONTROLLER */}
               {selectedMethod && (
-                <div style={{ marginTop: 20 }}>
+                <div style={{ marginTop: 10 }}>
                   <div style={styles.noteBox}>
-                    ⚠️ NOTE :- Galat details / fake proof upload karne par account block kar diya jayega!
+                    NOTE :- कृपया UPI और ACCOUNT details सही से भरे , गलत details भरने पर हमारी जिम्मेदारी नहीं होगी !
                   </div>
 
                   <input
                     type="text"
                     value={utr}
-                    placeholder="Enter 12-Digit UTR / Ref No."
-                    onChange={(e) => setUtr(e.target.value.replace(/\D/g, ''))}
+                    placeholder="Enter UTR / Transaction ID"
+                    onChange={(e) => setUtr(e.target.value)}
                     style={styles.input}
                   />
 
                   <input
                     type="file"
-                    accept="image/*"
+                    accept="image/png,image/jpeg,image/jpg,image/webp"
                     onChange={(e) => setScreenshot(e.target.files?.[0] || null)}
                     style={styles.fileInput}
                   />
 
-                  {screenshot && <p style={styles.small}>Attached Proof: {screenshot.name}</p>}
+                  {screenshot && <p style={styles.small}>Selected: {screenshot.name}</p>}
+
+                  {error && <div style={{ ...styles.error, marginTop: 14 }}>{error}</div>}
 
                   <button style={styles.submitBtn} onClick={submitDeposit} disabled={loading}>
-                    {loading ? "Verifying Transaction..." : "Submit Details"}
+                    {loading ? "Submitting..." : "Submit Payment Proof"}
                   </button>
                 </div>
               )}
 
-              <button style={styles.cancelBtn} onClick={() => { setShowPayment(false); setSelectedMethod(""); }}>Cancel</button>
+              <button style={{ ...styles.cancelBtn, marginTop: 8 }} onClick={() => { setShowPayment(false); setSelectedMethod(""); }}>Cancel</button>
             </div>
           </div>
         </div>
@@ -443,7 +445,7 @@ function HistoryBox({ empty, items, getStatusStyle, type }) {
         items.slice(0, 10).map((item) => (
           <div key={item._id} style={styles.depositItem}>
             <div>
-              <b style={{ color: "#fff" }}>₹{item.amount}</b>
+              <b style={{ color: "#0f172a" }}>₹{item.amount}</b>
               <p style={styles.small}>{type === "deposit" ? `UTR: ${item.utr || "-"}` : `Method: ${item.method || "-"}`}</p>
               <p style={styles.small}>{item.createdAt ? new Date(item.createdAt).toLocaleString("en-IN") : "-"}</p>
             </div>
@@ -455,39 +457,36 @@ function HistoryBox({ empty, items, getStatusStyle, type }) {
   );
 }
 
-// PREMIUM DARK MODE CSS OBJECT MATRIX
+// 100% CORRECTED WHITE/LIGHT MODE STYLES DICTIONARY
 const styles = {
-  page: { minHeight: "100vh", background: "#090d16", color: "#f8fafc" },
-  container: { padding: "30px 14px 105px", maxWidth: "480px", margin: "0 auto" },
+  page: { minHeight: "100vh", background: "linear-gradient(135deg,#f8fafc,#eef2ff)", color: "#0f172a" },
+  container: { padding: "72px 14px 105px", maxWidth: "480px", margin: "0 auto" },
   headerRow: { display: "flex", alignItems: "center", gap: "12px", marginBottom: "20px" },
-  backBtn: { width: 42, height: 42, borderRadius: 14, border: "none", background: "#1e293b", fontSize: 20, color: "#fff", cursor: "pointer" },
-  title: { flex: 1, margin: 0, fontSize: 24, fontWeight: 900, color: "#f59e0b" },
+  backBtn: { width: 42, height: 42, borderRadius: 14, border: "none", background: "#fff", fontSize: 24, fontWeight: 900, boxShadow: "0 4px 12px rgba(0,0,0,0.05)", cursor: "pointer" },
+  title: { flex: 1, margin: 0, fontSize: 27, fontWeight: 900, color: "#0f172a" },
   online: { color: "#64748b", fontSize: 13, fontWeight: 700 },
-  card: { background: "#111827", borderRadius: 22, padding: 18, marginBottom: 16, border: "1px solid #1f2937" },
+  card: { background: "#fff", borderRadius: 22, padding: 18, marginBottom: 16, boxShadow: "0 18px 45px rgba(15,23,42,.07)" },
   cardMain: { display: "flex", alignItems: "center", gap: 15 },
-  iconBox: { width: 60, height: 60, borderRadius: 16, display: "flex", alignItems: "center", justify: "center", fontSize: 26 },
+  iconBox: { width: 70, height: 70, borderRadius: 20, display: "flex", alignItems: "center", justifyContent: "center", color: "#fff", fontSize: 32 },
   info: { flex: 1 },
-  label: { margin: "0 0 4px", color: "#94a3b8", fontSize: 14, fontWeight: 700 },
-  amount: { margin: 0, color: "#fff", fontSize: 24, fontWeight: 900 },
+  label: { margin: "0 0 6px", color: "#64748b", fontSize: 15, fontWeight: 800 },
+  amount: { margin: 0, color: "#0f172a", fontSize: 27, fontWeight: 900 },
   btnRow: { display: "flex", justifyContent: "flex-end", marginTop: 12 },
-  addBtn: { border: "none", background: "linear-gradient(135deg,#eab308,#ca8a04)", color: "#000", borderRadius: 12, padding: "10px 16px", fontSize: 14, fontWeight: 900, cursor: "pointer" },
-  withdrawBtn: { border: "1px solid #065f46", background: "#042f2e", color: "#34d399", borderRadius: 12, padding: "10px 16px", fontSize: 14, fontWeight: 900, cursor: "pointer" },
-  plus: { marginLeft: 5, fontSize: 16 },
-  desc: { margin: "12px 0 0", color: "#64748b", fontSize: 12, lineHeight: 1.45 },
-  error: { background: "#7f1d1d", color: "#fca5a5", padding: 12, borderRadius: 12, marginBottom: 12, fontWeight: 700, fontSize: 13, border: "1px solid #f87171" },
-  loading: { minHeight: "100vh", display: "flex", alignItems: "center", justifyContent: "center", background: "#090d16", color: "#f59e0b", fontSize: 18, fontWeight: "bold" },
+  addBtn: { border: "none", background: "linear-gradient(135deg,#2563eb,#06b6d4)", color: "#fff", borderRadius: 14, padding: "11px 15px", fontSize: 16, fontWeight: 900, cursor: "pointer" },
+  withdrawBtn: { border: "1px solid #bbf7d0", background: "#f0fdf4", color: "#166534", borderRadius: 14, padding: "11px 15px", fontSize: 16, fontWeight: 900, cursor: "pointer" },
+  plus: { marginLeft: 7, fontSize: 20 },
+  desc: { margin: "12px 0 0", color: "#64748b", fontSize: 13, lineHeight: 1.45 },
+  error: { background: "#fee2e2", color: "#991b1b", padding: 10, borderRadius: 12, marginBottom: 12, fontWeight: 800, fontSize: 13 },
+  loading: { minHeight: "70vh", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 16, color: "#475569" },
   
-  // Tabs History Styles
-  historyCard: { background: "#111827", borderRadius: 22, padding: 16, border: "1px solid #1f2937" },
-  historyTabs: { display: "flex", gap: 10, marginBottom: 15 },
-  historyTab: { flex: 1, background: "#1f2937", border: "none", color: "#94a3b8", padding: "10px 5px", borderRadius: 10, fontSize: 13, fontWeight: 700, cursor: "pointer" },
-  activeHistoryTab: { background: "#eab308", color: "#000" },
-  depositItem: { display: "flex", justifyContent: "space-between", alignItems: "center", padding: "12px 0", borderBottom: "1px solid #1f2937" },
-  status: { padding: "4px 10px", borderRadius: 8, fontSize: 11, fontWeight: 800, uppercase: "true" },
-  small: { fontSize: 11, color: "#64748b", margin: "2px 0 0" },
+  historyCard: { background: "#fff", borderRadius: 22, padding: 18, boxShadow: "0 18px 45px rgba(15,23,42,.07)" },
+  historyTabs: { display: "flex", gap: "10px", marginBottom: "14px" },
+  historyTab: { flex: 1, border: "none", background: "#f1f5f9", padding: "10px", borderRadius: 12, fontWeight: 800, color: "#64748b", cursor: "pointer" },
+  activeHistoryTab: { background: "#2563eb", color: "#fff" },
+  depositItem: { display: "flex", justifyContent: "space-between", alignItems: "center", padding: "10px 0", borderBottom: "1px solid #f1f5f9" },
+  status: { padding: "4px 8px", borderRadius: 8, fontSize: 12, fontWeight: 900 },
+  small: { fontSize: 11, color: "#94a3b8", margin: "2px 0 0" },
 
-  // Modals Core Architecture Layout
-  modalOverlay: { fixed: "position", inset: 0, position: "fixed", top: 0, left: 0, right: 0, bottom: 0, background: "rgba(0,0,0,0.8)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 100 },
-  modal: { background: "#111827", w: "100%", maxWidth: "400px", padding: 24, borderRadius: 24, border: "1px solid #374151", position: "relative", margin: "0 10px" },
-  closeBtn: { position: "absolute", top: 12, right: 16, background: "none", border: "none", color: "#94a3b8", fontSize: 24, cursor: "pointer" },
-  modalTitle: { margin: "0 0 4px", fontSize: 20, fontWeight: 900, color: "#
+  modalOverlay: { position: "fixed", top: 0, left: 0, right: 0, bottom: 0, background: "rgba(15,23,42,0.3)", backdropFilter: "blur(4px)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 100 },
+  modal: { background: "#fff", width: "100%", maxWidth: "400px", padding: 24, borderRadius: 22, boxShadow: "0 25px 50px -12px rgba(0,0,0,0.1)", position: "relative", margin: "0 12px" },
+  closeBtn: { position: "absolute", top: 12, right: 16, bac
