@@ -36,7 +36,6 @@ export default function Wallet() {
   const [timeLeft, setTimeLeft] = useState(300);
   const [activeHistory, setActiveHistory] = useState("deposit");
   
-  // Custom State to track user choice inside gateway
   const [selectedMethod, setSelectedMethod] = useState(""); 
 
   const authHeader = {
@@ -303,7 +302,7 @@ export default function Wallet() {
         </div>
       )}
 
-      {/* MODAL 2: DYNAMIC GATEWAY PANEL (100% RECOLORED MATCHING HEADERS & CARDS) */}
+      {/* MODAL 2: DYNAMIC GATEWAY PANEL */}
       {showPayment && (
         <div style={styles.paymentPage}>
           <div style={styles.paymentCard}>
@@ -332,3 +331,148 @@ export default function Wallet() {
               {/* DYNAMIC SELECTION MODES WITH COLOR ACTIVE LOOK */}
               <div style={{ marginBottom: 16, marginTop: 18 }}>
                 <p style={{ fontSize: 13, color: "#64748b", marginBottom: 10, fontWeight: 'bold' }}>Select Payment Mode:</p>
+                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
+                  
+                  {/* UPI Gateway */}
+                  <button 
+                    type="button" 
+                    onClick={() => setSelectedMethod("upi")}
+                    style={selectedMethod === "upi" ? styles.methodBtnActive : styles.methodBtn}
+                  >
+                    UPI ID
+                  </button>
+
+                  {/* QR SCANNER (100 to 2000) */}
+                  {numericAmount >= 100 && numericAmount <= 2000 && (
+                    <button 
+                      type="button" 
+                      onClick={() => setSelectedMethod("qr")}
+                      style={selectedMethod === "qr" ? styles.methodBtnActive : styles.methodBtn}
+                    >
+                      QR Scanner
+                    </button>
+                  )}
+
+                  {/* BANK DETAILS (> 2000) */}
+                  {numericAmount > 2000 && (
+                    <button 
+                      type="button" 
+                      onClick={() => setSelectedMethod("bank")}
+                      style={selectedMethod === "bank" ? styles.methodBtnActive : styles.methodBtn}
+                    >
+                      Bank Details
+                    </button>
+                  )}
+                </div>
+              </div>
+
+              {/* DETAILS DISPLAYER STRUCTURE */}
+              {selectedMethod === "upi" && (
+                upiId ? <CopyRow label="UPI ID" value={upiId} onCopy={copyText} /> : <div style={styles.noPaymentBox}>UPI ID not available</div>
+              )}
+
+              {selectedMethod === "qr" && (
+                scannerImage ? (
+                  <div style={styles.qrBox}>
+                    <img src={scannerImage} alt="Payment QR" style={styles.qrImg} />
+                  </div>
+                ) : <div style={styles.noPaymentBox}>QR scanner not available</div>
+              )}
+
+              {selectedMethod === "bank" && (
+                <div style={styles.bankDetailContainer}>
+                  {bank?.name && <CopyRow label="Bank Name" value={bank.name} onCopy={copyText} />}
+                  {bank?.accountNumber && <CopyRow label="Account Number" value={bank.accountNumber} onCopy={copyText} />}
+                  {bank?.ifsc && <CopyRow label="IFSC Code" value={bank.ifsc} onCopy={copyText} />}
+                </div>
+              )}
+
+              {/* PROOF UPLOADER FLOW */}
+              {selectedMethod && (
+                <div style={{ marginTop: 15 }}>
+                  <div style={styles.noteBox}>
+                    NOTE :- कृपया UPI और ACCOUNT details सही से भरे , गलत details भरने पर हमारी जिम्मेदारी नहीं होगी !
+                  </div>
+
+                  <input
+                    type="text"
+                    value={utr}
+                    placeholder="Enter UTR / Transaction ID"
+                    onChange={(e) => setUtr(e.target.value)}
+                    style={styles.input}
+                  />
+
+                  <input
+                    type="file"
+                    accept="image/*"
+                    onChange={(e) => setScreenshot(e.target.files?.[0] || null)}
+                    style={styles.fileInput}
+                  />
+
+                  {screenshot && <p style={styles.small}>Selected: {screenshot.name}</p>}
+
+                  <button style={styles.submitBtn} onClick={submitDeposit} disabled={loading}>
+                    {loading ? "Verifying Proof..." : "Submit Payment Proof"}
+                  </button>
+                </div>
+              )}
+
+              {/* Cancel Button */}
+              <button style={styles.cancelBtn} onClick={() => { setShowPayment(false); setSelectedMethod(""); }}>Cancel</button>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+function CopyRow({ label, value, onCopy }) {
+  return (
+    <div style={styles.copyRow}>
+      <div style={{ minWidth: 0 }}>
+        <p style={styles.copyLabel}>{label}</p>
+        <p style={styles.copyValue}>{value}</p>
+      </div>
+      <button style={styles.copyBtn} onClick={() => onCopy(value)}>Copy</button>
+    </div>
+  );
+}
+
+function HistoryBox({ empty, items, getStatusStyle, type }) {
+  return (
+    <div>
+      {items.length === 0 ? (
+        <p style={styles.desc}>{empty}</p>
+      ) : (
+        items.slice(0, 10).map((item) => (
+          <div key={item._id} style={styles.depositItem}>
+            <div>
+              <b style={{ color: "#0f172a" }}>₹{item.amount}</b>
+              <p style={styles.small}>{type === "deposit" ? `UTR: ${item.utr || "-"}` : `Method: ${item.method || "-"}`}</p>
+              <p style={styles.small}>{item.createdAt ? new Date(item.createdAt).toLocaleString("en-IN") : "-"}</p>
+            </div>
+            <span style={{ ...styles.status, ...getStatusStyle(item.status) }}>{item.status || "pending"}</span>
+          </div>
+        ))
+      )}
+    </div>
+  );
+}
+
+// 100% BALANCED JAVASCRIPT STYLE DICTIONARY
+const styles = {page: { 
+minHeight: "100vh", background: "#f1f5f9", color: "#0f172a" },container: { padding: "72px 14px 105px", maxWidth: "480px", margin: "0 auto" },headerRow: { display: "flex", alignItems: "center", gap: "12px", marginBottom: "20px" },backBtn: { width: 42, height: 42, borderRadius: 14, border: "none", background: "#fff", fontSize: 24, fontWeight: 900, boxShadow: "0 4px 12px rgba(0,0,0,0.05)", cursor: "pointer" },title: { flex: 1, margin: 0, fontSize: 27, fontWeight: 900, color: "#0f172a" },online: { color: "#64748b", fontSize: 13, fontWeight: 700 },
+cardRectangle: { background: "#fff", borderRadius: "12px", padding: "16px", marginBottom: "16px", boxShadow: "0 10px 30px rgba(15,23,42,.03)", border: "1px solid #e2e8f0" },cardMainInline: { display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12 },iconBoxSmall: { width: 50, height: 50, borderRadius: 14, display: "flex", alignItems: "center", justifyContent: "center", color: "#fff", fontSize: 24, flexShrink: 0 },infoFlex: { flex: 1, minWidth: 0 },
+label: { margin: "0 0 2px", color: "#64748b", fontSize: 13, fontWeight: 800 },amountText: { margin: 0, color: "#0f172a", fontSize: 20, fontWeight: 900 },
+addBtnInline: { border: "none", background: "linear-gradient(135deg,#2563eb,#06b6d4)", color: "#fff", borderRadius: 10, padding: "10px 14px", fontSize: 14, fontWeight: 900, cursor: "pointer", whiteSpace: "nowrap" },withdrawBtnInline: { border: "1px solid #bbf7d0", background: "#f0fdf4", color: "#166534", borderRadius: 10, padding: "10px 14px", fontSize: 14, fontWeight: 900, cursor: "pointer", whiteSpace: "nowrap" },plus: { marginLeft: 3, fontSize: 15 },desc: { margin: "10px 0 0", color: "#64748b", fontSize: 12, lineHeight: 1.4 },
+error: { background: "#fee2e2", color: "#991b1b", padding: 10, borderRadius: 12, marginBottom: 12, fontWeight: 800, fontSize: 13 },loading: { minHeight: "70vh", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 16, color: "#475569" },
+historyCard: { background: "#fff", borderRadius: 12, padding: 18, boxShadow: "0 18px 45px rgba(15,23,42,.07)", border: "1px solid #e2e8f0" },historyTabs: { display: "flex", gap: "8px", marginBottom: "12px" },historyTab: { flex: 1, border: "none", background: "#f1f5f9", padding: "6px 10px", borderRadius: 8, fontWeight: 800, color: "#64748b", fontSize: "12px", cursor: "pointer", whiteSpace: "nowrap" },activeHistoryTab: { background: "#2563eb", color: "#fff", boxShadow: "0 4px 10px rgba(37,99,235,0.15)" },depositItem: { display: "flex", justifyContent: "space-between", alignItems: "center", padding: "10px 0", borderBottom: "1px solid #f1f5f9" },status: { padding: "4px 8px", borderRadius: 8, fontSize: 12, fontWeight: 900 },small: { fontSize: 11, color: "#94a3b8", margin: "2px 0 0" },
+modalOverlay: { position: "fixed", top: 0, left: 0, right: 0, bottom: 0, background: "rgba(15,23,42,0.3)", backdropFilter: "blur(4px)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 100 },modal: { background: "#fff", width: "100%", maxWidth: "400px", padding: 24, borderRadius: 22, boxShadow: "0 25px 50px -12px rgba(0,0,0,0.1)", position: "relative", margin: "0 12px", border: "1px solid #e2e8f0" },closeBtn: { position: "absolute", top: 12, right: 16, background: "none", border: "none", fontSize: 24, fontWeight: "bold", color: "#94a3b8", cursor: "pointer" },modalTitle: { margin: "0 0 4px", fontSize: 22, fontWeight: 900, color: "#0f172a" },modalSub: { margin: "0 0 16px", fontSize: 12, fontWeight: 700, color: "#64748b" },input: { width: "100%", padding: "12px", borderRadius: "10px", border: "1px solid #cbd5e1", fontSize: "15px", fontWeight: "700", outline: "none", boxSizing: "border-box" },depositNoteBox: { background: "#fffbeb", padding: "12px", borderRadius: "10px", border: "1px solid #fde68a", marginTop: "12px" },depositNoteLine: { fontSize: "11px", margin: "0 0 4px", color: "#b45309", fontWeight: "600", lineHeight: "1.4" },payBtn: { width: "100%", padding: "12px", background: "#2563eb", color: "#fff", border: "none", borderRadius: "10px", fontSize: "15px", fontWeight: "900", marginTop: "14px", cursor: "pointer" },
+paymentPage: { position: "fixed", top: 0, left: 0, right: 0, bottom: 0, background: "#f8fafc", display: "flex", flexDirection: "column", zIndex: 110, overflowY: "auto" },paymentCard: { width: "100%", maxWidth: "480px", margin: "0 auto", padding: "14px", boxSizing: "border-box" },
+headerContainer: { display: "flex", alignItems: "center", justifyContent: "space-between", background: "linear-gradient(135deg, #1e293b 0%, #0f172a 100%)", padding: "14px 16px", borderRadius: "14px", marginBottom: "16px", boxShadow: "0 4px 15px rgba(15, 23, 42, 0.15)", border: "1px solid rgba(255, 255, 255, 0.05)" },backArrowStyle: { fontSize: "20px", color: "#f8fafc", background: "rgba(255, 255, 255, 0.1)", width: "34px", height: "34px", borderRadius: "50%", display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", border: "none" },brandGroupStyle: { display: "flex", alignItems: "center", gap: "6px", color: "#fff" },logoTextStyle: { fontSize: "20px", fontWeight: "900", background: "linear-gradient(to right, #3b82f6, #60a5fa)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent", letterSpacing: "0.5px" },completePaymentTextStyle: { fontSize: "12px", fontWeight: "800", color: "#34d399", textTransform: "uppercase", backgroundColor: "rgba(52, 211, 153, 0.1)", padding: "4px 10px", borderRadius: "20px", letterSpacing: "0.05em" },
+paymentBody: { width: "100%" },amountCardBox: { background: "linear-gradient(135deg, #fef3c7 0%, #fffbeb 50%, #f0fdf4 100%)", border: "2px solid #fde68a", borderRadius: "16px", padding: "20px 16px", textAlign: "center", boxShadow: "0 10px 25px -5px rgba(251, 191, 36, 0.15)" },payTextStyle: { fontSize: "15px", fontWeight: "800", color: "#b45309", textTransform: "uppercase", letterSpacing: "0.05em", margin: 0 },amountTextStyle: { fontSize: "32px", fontWeight: "900", color: "#1e293b", letterSpacing: "-0.02em", marginTop: "4px", margin: 0 },timerBoxStyle: { display: "inline-flex", alignItems: "center", justifyContent: "center", gap: "6px", background: "#fee2e2", color: "#dc2626", padding: "6px 14px", borderRadius: "9999px", fontSize: "13px", fontWeight: "800", marginTop: "10px", border: "1px solid #fca5a5" },
+methodBtn: { background: "#fff", border: "2px solid #cbd5e1", color: "#475569", padding: "12px", borderRadius: "12px", fontSize: "14px", fontWeight: "800", cursor: "pointer" },methodBtnActive: { background: "linear-gradient(135deg, #10b981, #059669)", border: "none", color: "#fff", padding: "12px", borderRadius: "12px", fontSize: "14px", fontWeight: "900", cursor: "pointer", boxShadow: "0 4px 14px rgba(16,185,129,0.3)" },cancelBtn: { width: "100%", border: "1px solid #fca5a5", background: "#fef2f2", color: "#dc2626", padding: "12px", borderRadius: "14px", fontSize: "14px", fontWeight: "900", cursor: "pointer", marginTop: "14px" },
+noPaymentBox: { padding: "16px", background: "#f1f5f9", borderRadius: "12px", textAlign: "center", fontSize: "13px", color: "#64748b", fontWeight: "700" },qrBox: { display: "flex", justifyContent: "center", padding: "14px", background: "#fff", borderRadius: "16px", border: "1px solid #e2e8f0" },qrImg: { width: "200px", height: "200px", objectFit: "contain" },bankDetailContainer: { background: "#fff", padding: "12px", borderRadius: "14px", border: "1px solid #e2e8f0", display: "flex", flexDirection: "column", gap: "10px" },
+copyRow: { display: "flex", alignItems: "center", justifyContent: "space-between", background: "#f8fafc", padding: "10px 14px", borderRadius: "10px", border: "1px solid #e2e8f0" },copyLabel: { margin: 0, fontSize: "11px", color: "#64748b", fontWeight: "800" },copyValue: { margin: "2px 0 0", fontSize: "14px", color: "#0f172a", fontWeight: "900" },copyBtn: { background: "#2563eb", color: "#fff", border: "none", padding: "6px 12px", borderRadius: "6px", fontSize: "12px", fontWeight: "800", cursor: "pointer" },
+noteBox: { background: "#fff5f5", color: "#c53030", padding: "12px", borderRadius: "10px", fontSize: "12px", fontWeight: "700", marginBottom: "12px", border: "1px solid #feb2b2", lineHeight: "1.4" },fileInput: { width: "100%", marginTop: "10px", fontSize: "13px", fontWeight: "700" },submitBtn: { width: "100%", padding: "12px", background: "#10b981", color: "#fff", border: "none", borderRadius: "10px", fontSize: "15px", fontWeight: "900", marginTop: "14px", cursor: "pointer" }}
