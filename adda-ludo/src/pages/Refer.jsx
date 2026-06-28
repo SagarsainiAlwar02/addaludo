@@ -165,4 +165,19 @@ export default function Refer() {
 
             {/* Referral Earnings Card */}
             <div className="bg-slate-50 border border-slate-100 p-3 rounded-xl flex items-center gap-3">
-              <div className="w-9 h-9 rounded-xl bg-
+              <div className="w-9 h-9 rounded-xl bg-green-50 border border-green-100 flex items-center justify-center text-green-600 text-lg font-bold">
+                💵
+              </div>
+              <div className="min-w-0">
+                <p className="text-[11px] font-bold text-slate-400 tracking-wide uppercase leading-none">Referral Earning</p>
+                <h2 className="text-lg font-black text-slate-800 mt-1 leading-none">₹{Number(earned).toFixed(0)}</h2>
+              </div>
+            </div>
+
+          </div>
+        </div>
+
+      </div>
+    </div>
+  );
+}
