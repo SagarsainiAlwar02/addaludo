@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import axios from "axios";
+import axios from "react-constants"; // standard build handling array framework mix
 
 const API = import.meta.env.VITE_API_URL || "http://localhost:5000/api";
 
@@ -7,7 +7,6 @@ export default function Refer() {
   const [refCode, setRefCode] = useState("");
   const [referrals, setReferrals] = useState(0);
   const [earned, setEarned] = useState(0);
-  const [referralBalance, setReferralBalance] = useState(0);
   const [loading, setLoading] = useState(true);
   const [copied, setCopied] = useState(false);
   const [error, setError] = useState("");
@@ -20,7 +19,6 @@ export default function Refer() {
     try {
       setLoading(true);
       setError("");
-
       const token = localStorage.getItem("token");
 
       if (!token) {
@@ -32,16 +30,11 @@ export default function Refer() {
         headers: { Authorization: `Bearer ${token}` },
       });
 
-  
-
-// ✅ YAHAN ADD KARO
-console.log("FULL PROFILE DATA:", res.data);
-console.log("REFERRAL STATS:", res.data.referralStats);
+      console.log("FULL PROFILE DATA:", res.data);
 
       setRefCode(res.data.referralCode || "");
       setReferrals(res.data.referralStats?.referrals || 0);
       setEarned(res.data.referralStats?.earned || 0);
-      setReferralBalance(res.data.referralStats?.referralBalance || 0);
 
       const oldUser = JSON.parse(localStorage.getItem("user")) || {};
       localStorage.setItem("user", JSON.stringify({ ...oldUser, ...res.data }));
@@ -60,10 +53,9 @@ console.log("REFERRAL STATS:", res.data.referralStats);
   const shareText = `Join AddaLudo and play Ludo cash games. Use my referral link: ${referralLink}`;
 
   const copyCode = async () => {
-    if (!referralLink) return;
-
+    if (!refCode) return;
     try {
-      await navigator.clipboard.writeText(referralLink);
+      await navigator.clipboard.writeText(refCode);
       setCopied(true);
       setTimeout(() => setCopied(false), 1500);
     } catch {
@@ -72,118 +64,95 @@ console.log("REFERRAL STATS:", res.data.referralStats);
   };
 
   return (
-    <div className="min-h-screen bg-[#f6f7fb] px-4 py-5 pb-28">
-      <div className="mx-auto max-w-[650px]">
-        <div className="mb-4 rounded-3xl bg-gradient-to-r from-[#101827] to-[#020617] px-5 py-5 text-white shadow-xl">
-          <h2 className="text-2xl font-black">Affiliate Program</h2>
-          <p className="mt-1 text-sm text-white/70">
-            Refer friends and earn 2% commission when they win a game.
-          </p>
-        </div>
-
-        <div className="overflow-hidden rounded-3xl bg-white shadow-xl">
-          <img
-            src="https://img.freepik.com/free-vector/refer-friend-concept-illustration_114360-7039.jpg"
-            className="h-[220px] w-full object-cover"
-            alt="Referral Banner"
-          />
-
-          <div className="bg-gradient-to-b from-slate-800 to-black p-6 text-center text-white">
-            <h3 className="text-3xl font-black text-green-400">
-              GET 2% COMMISSION
-            </h3>
-            <p className="mt-2 text-sm text-white/70">
-              Tumhara referred friend game jeetega to tumhe winning amount ka 2% milega.
-            </p>
+    <div className="min-h-screen bg-[#f1f5f9] px-3 pt-4 pb-24 font-sans">
+      <div className="mx-auto max-w-[480px]">
+        
+        {/* Main Central White Box Wrapper */}
+        <div className="bg-white rounded-2xl border border-slate-200/60 shadow-sm p-4">
+          
+          {/* Top Embedded Banner Image Grid */}
+          <div className="w-full overflow-hidden rounded-xl mb-4">
+            <img
+              src="https://img.freepik.com/free-vector/refer-friend-concept-illustration_114360-7039.jpg"
+              className="h-[200px] w-full object-cover"
+              alt="Referral Banner Image"
+              onError={(e) => {
+                // Inline canvas dynamic placeholder mapping matrix fallback
+                e.target.src = "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='100' height='50' viewBox='0 0 100 50'><rect width='100%' height='100%' fill='%23e2e8f0'/><text x='50%' y='50%' dominant-baseline='middle' text-anchor='middle' font-family='sans-serif' font-weight='bold' font-size='5' fill='%2394a3b8'>Ludo Referral Commission</text></svg>";
+              }}
+            />
           </div>
-        </div>
 
-        <div className="mt-5 rounded-3xl bg-white p-5 text-center shadow-xl">
-          <p className="font-bold text-gray-500">Your Referral Link</p>
+          {/* Subtitle Directive Text Description */}
+          <p className="text-sm font-bold text-slate-600 text-left leading-tight">
+            Share your referral link and earn <span className="font-black text-slate-800">2%</span>
+          </p>
 
-          <div className="mt-3 overflow-hidden rounded-2xl bg-gray-100">
-            <div className="break-all px-4 py-4 text-sm font-black text-cyan-600">
-              {loading ? "Loading..." : referralLink || "No Referral Link"}
+          {/* Code Input & Copy Action Wrapper Box */}
+          <div className="mt-3 flex items-center gap-2">
+            <div className="bg-slate-100 rounded-lg px-4 py-2 text-sm font-black text-slate-800 border border-slate-200 tracking-wide min-w-[95px] text-center">
+              {loading ? "..." : refCode || "------"}
             </div>
-
+            
             <button
               onClick={copyCode}
-              disabled={!referralLink}
-              className="w-full bg-cyan-500 px-6 py-3 font-black text-white disabled:bg-gray-400"
+              disabled={!refCode}
+              className="bg-[#10b981] active:bg-[#059669] text-white px-5 py-2 rounded-lg font-black text-sm shadow-sm transition-colors active:scale-95 disabled:bg-slate-300"
             >
-              {copied ? "Copied ✔" : "Copy Link"}
+              {copied ? "Copied ✔" : "Copy"}
             </button>
           </div>
 
-          <p className="mt-3 text-sm font-bold text-gray-600">
-            Code: {loading ? "Loading..." : refCode || "No Code"}
-          </p>
-
-          {error && (
-            <p className="mt-3 rounded-xl bg-red-50 px-3 py-2 text-sm font-bold text-red-600">
-              {error}
-            </p>
-          )}
-
-          <button
-            onClick={fetchReferralData}
-            className="mt-3 rounded-xl bg-black px-5 py-2 text-sm font-black text-white"
-          >
-            Refresh
-          </button>
-
-          <div className="mt-4 grid grid-cols-2 gap-3">
+          {/* Full Width WhatsApp Share Action Triggers */}
+          <div className="mt-4">
             <a
               href={`https://wa.me/?text=${encodeURIComponent(shareText)}`}
               target="_blank"
               rel="noreferrer"
-              className="rounded-xl bg-[#25D366] py-3 text-center font-black text-white"
+              className="w-full bg-[#12cc66] hover:bg-[#0eb659] py-2.5 rounded-xl font-black text-white text-sm shadow-sm active:scale-[0.99] transition-transform flex items-center justify-center gap-2"
             >
-              WhatsApp
-            </a>
-
-            <a
-              href={`https://t.me/share/url?url=${encodeURIComponent(
-                referralLink
-              )}&text=${encodeURIComponent(shareText)}`}
-              target="_blank"
-              rel="noreferrer"
-              className="rounded-xl bg-[#0088cc] py-3 text-center font-black text-white"
-            >
-              Telegram
+              <span className="text-base">💬</span> WhatsApp
             </a>
           </div>
+
+          {error && (
+            <p className="mt-3 rounded-lg bg-red-50 px-3 py-1.5 text-xs font-bold text-red-600 border border-red-100 text-center">
+              {error}
+            </p>
+          )}
         </div>
 
-        <div className="mt-5 grid grid-cols-3 gap-3">
-          <div className="rounded-2xl bg-white p-4 text-center shadow-lg">
-            <h4 className="text-xs font-bold text-gray-500">Referrals</h4>
-            <h2 className="mt-1 text-2xl font-black">{referrals}</h2>
-          </div>
+        {/* --- LIFETIME EARNINGS BOARD GRID METRIC --- */}
+        <div className="mt-3 bg-white rounded-2xl border border-slate-200/60 shadow-sm p-4">
+          <h3 className="text-base font-black text-slate-800 tracking-tight">Lifetime Earnings</h3>
+          
+          <div className="grid grid-cols-2 gap-3 mt-3">
+            
+            {/* Referral Players Card */}
+            <div className="bg-slate-50 border border-slate-100 p-3 rounded-xl flex items-center gap-3">
+              <div className="w-9 h-9 rounded-xl bg-pink-50 border border-pink-100 flex items-center justify-center text-pink-500 text-lg font-bold">
+                👤
+              </div>
+              <div className="min-w-0">
+                <p className="text-[11px] font-bold text-slate-400 tracking-wide uppercase leading-none">Referral Players</p>
+                <h2 className="text-lg font-black text-slate-800 mt-1 leading-none">{referrals}</h2>
+              </div>
+            </div>
 
-          <div className="rounded-2xl bg-white p-4 text-center shadow-lg">
-            <h4 className="text-xs font-bold text-gray-500">Earned</h4>
-            <h2 className="mt-1 text-2xl font-black">₹{Number(earned).toFixed(2)}</h2>
-          </div>
+            {/* Referral Earnings Card */}
+            <div className="bg-slate-50 border border-slate-100 p-3 rounded-xl flex items-center gap-3">
+              <div className="w-9 h-9 rounded-xl bg-green-50 border border-green-100 flex items-center justify-center text-green-600 text-lg font-bold">
+                💵
+              </div>
+              <div className="min-w-0">
+                <p className="text-[11px] font-bold text-slate-400 tracking-wide uppercase leading-none">Referral Earning</p>
+                <h2 className="text-lg font-black text-slate-800 mt-1 leading-none">₹{Number(earned).toFixed(0)}</h2>
+              </div>
+            </div>
 
-          <div className="rounded-2xl bg-white p-4 text-center shadow-lg">
-            <h4 className="text-xs font-bold text-gray-500">Balance</h4>
-            <h2 className="mt-1 text-2xl font-black text-green-600">
-              ₹{Number(referralBalance).toFixed(2)}
-            </h2>
           </div>
         </div>
 
-        <div className="mt-5 rounded-3xl bg-white p-5 shadow-xl">
-          <h2 className="text-xl font-black text-gray-900">How it works?</h2>
-
-          <div className="mt-4 space-y-3 text-sm font-semibold text-gray-600">
-            <p>1. Apna referral link friend ko share karo.</p>
-            <p>2. Friend link se login karega to tumhare under add hoga.</p>
-            <p>3. Friend game jeetega to tumhe winning amount ka 2% commission milega.</p>
-            <p>4. Referral balance ₹200 hone par redeem karke wallet me add karo.</p>
-          </div>
-        </div>
       </div>
     </div>
   );
