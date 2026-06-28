@@ -80,10 +80,16 @@ export default function Refer() {
         {/* Main Central White Box Wrapper */}
         <div className="bg-white rounded-2xl border border-slate-200/60 shadow-sm p-4">
           
-          {/* Top Clean Minimal Box Gradient Text Layout instead of SVG/Images to prevent build fails */}
-          <div className="w-full overflow-hidden flex flex-col justify-center items-center py-8 bg-gradient-to-br from-amber-50 to-orange-50/60 rounded-xl mb-4 border border-amber-100">
-            <span className="text-4xl mb-1">🎁</span>
-            <span className="text-sm font-black text-amber-600 tracking-wider uppercase">Referral Rewards</span>
+          {/* Top Original Banner Image (Aapki Pehli Wali Photo) */}
+          <div className="w-full overflow-hidden rounded-xl mb-4">
+            <img
+              src="https://img.freepik.com/free-vector/refer-friend-concept-illustration_114360-7039.jpg"
+              className="h-[200px] w-full object-cover"
+              alt="Referral Banner"
+              onError={(e) => {
+                e.target.src = "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='100' height='50' viewBox='0 0 100 50'><rect width='100%' height='100%' fill='%23e2e8f0'/><text x='50%' y='50%' dominant-baseline='middle' text-anchor='middle' font-family='sans-serif' font-weight='bold' font-size='5' fill='%2394a3b8'>Ludo Referral Commission</text></svg>";
+              }}
+            />
           </div>
 
           {/* Subtitle Directive Text Description */}
