@@ -387,37 +387,38 @@ export default function Wallet() {
                 </div>
               )}
 
-             {/* /* PROOF UPLOADER FLOW */ */}
-            {selectedMethod && (
-              <div style={{ marginTop: 15 }}>
-    
-                <div style={styles.noteBox}>
-                   NOTE :- UPI और Scanner पर पेमेंट न होने पर सपोर्ट और Contact करे !
-                   </div>
+              {/* PROOF UPLOADER FLOW */}
+              {selectedMethod && (
+                <div style={{ marginTop: 15 }}>
+                  
+                  {/* Updated Text Note Box As Requested */}
+                  <div style={styles.noteBox}>
+                    UPI और Scanner पर पेमेंट न होने पर सपोर्ट और Contact करे !
+                  </div>
 
-             <input
-             type="text"
-             value={utr}
-            placeholder="Enter UTR / Transaction ID"
-           onChange={(e) => setUtr(e.target.value)}
-        style={styles.input}
-    />
+                  <input
+                    type="text"
+                    value={utr}
+                    placeholder="Enter UTR / Transaction ID"
+                    onChange={(e) => setUtr(e.target.value)}
+                    style={styles.input}
+                  />
 
-    <input
-      type="file"
-          accept="image/*"
-            onChange={(e) => setScreenshot(e.target.files?.[0] || null)}
-               style={styles.fileInput}
-    />
- 
-            {screenshot && <p style={styles.small}>Selected: {screenshot.name}</p>}
-              
-               <button style={styles.submitBtn} onClick={submitDeposit} disabled={loading}>
-                  {loading ? "Verifying Proof..." : "Submit Payment Proof"}
-                    </button>
-    
+                  <input
+                    type="file"
+                    accept="image/*"
+                    onChange={(e) => setScreenshot(e.target.files?.[0] || null)}
+                    style={styles.fileInput}
+                  />
+
+                  {screenshot && <p style={styles.small}>Selected: {screenshot.name}</p>}
+
+                  <button style={styles.submitBtn} onClick={submitDeposit} disabled={loading}>
+                    {loading ? "Verifying Proof..." : "Submit Payment Proof"}
+                  </button>
                 </div>
-)}
+              )}
+
               {/* Cancel Button */}
               <button style={styles.cancelBtn} onClick={() => { setShowPayment(false); setSelectedMethod(""); }}>Cancel</button>
             </div>
@@ -460,6 +461,39 @@ function HistoryBox({ empty, items, getStatusStyle, type }) {
     </div>
   );
 }
+
+// Full JavaScript Layout Styling Sheets
+const styles = {
+  page: { minHeight: "100vh", background: "#f1f5f9", color: "#0f172a" },
+  container: { padding: "72px 14px 105px", maxWidth: "480px", margin: "0 auto" },
+  headerRow: { display: "flex", alignItems: "center", gap: "12px", marginBottom: "20px" },
+  backBtn: { width: 42, height: 42, borderRadius: 14, border: "none", background: "#fff", fontSize: 24, fontWeight: 900, boxShadow: "0 4px 12px rgba(0,0,0,0.05)", cursor: "pointer" },
+  title: { flex: 1, margin: 0, fontSize: 27, fontWeight: 900, color: "#0f172a" },
+  online: { color: "#64748b", fontSize: 13, fontWeight: 700 },
+  
+  cardRectangle: { background: "#fff", borderRadius: "12px", padding: "16px", marginBottom: "16px", boxShadow: "0 10px 30px rgba(15,23,42,.03)", border: "1px solid #e2e8f0" },
+  cardMainInline: { display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12 },
+  iconBoxSmall: { width: 50, height: 50, borderRadius: 14, display: "flex", alignItems: "center", justifyContent: "center", color: "#fff", fontSize: 24, flexShrink: 0 },
+  infoFlex: { flex: 1, minWidth: 0 },
+  
+  label: { margin: "0 0 2px", color: "#64748b", fontSize: 13, fontWeight: 800 },
+  amountText: { margin: 0, color: "#0f172a", fontSize: 20, fontWeight: 900 },
+  
+  addBtnInline: { border: "none", background: "linear-gradient(135deg,#2563eb,#06b6d4)", color: "#fff", borderRadius: 10, padding: "10px 14px", fontSize: 14, fontWeight: 900, cursor: "pointer", whiteSpace: "nowrap" },
+  withdrawBtnInline: { border: "1px solid #bbf7d0", background: "#f0fdf4", color: "#166534", borderRadius: 10, padding: "10px 14px", fontSize: 14, fontWeight: 900, cursor: "pointer", whiteSpace: "nowrap" },
+  plus: { marginLeft: 3, fontSize: 15 },
+  desc: { margin: "10px 0 0", color: "#64748b", fontSize: 12, lineHeight: 1.4 },
+  
+  error: { background: "#fee2e2", color: "#991b1b", padding: 10, borderRadius: 12, marginBottom: 12, fontWeight: 800, fontSize: 13 },
+  loading: { minHeight: "70vh", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 16, color: "#475569" },
+  
+  historyCard: { background: "#fff", borderRadius: 12, padding: 18, boxShadow: "0 18px 45px rgba(15,23,42,.07)", border: "1px solid #e2e8f0" },
+  historyTabs: { display: "flex", gap: "8px", marginBottom: "12px" },
+  historyTab: { flex: 1, border: "none", background: "#f1f5f9", padding: "6px 10px", borderRadius: 8, fontWeight: 800, color: "#64748b", fontSize: "12px", cursor: "pointer", whiteSpace: "nowrap" },
+  activeHistoryTab: { background: "#2563eb", color: "#fff", boxShadow: "0 4px 10px rgba(37,99,235,0.15)" },
+  depositItem: { display: "flex", justifyContent: "space-between", alignItems: "center", padding: "10px 0", borderBottom: "1px solid #f1f5f9" },
+  status: { padding: "4px 8px", borderRadius: 8, fontSize: 12, fontWeight: 900 },
+  small: { fontSize: 11, color: "#94a3b8", margin: "2px 0 0
 
 // 100% BALANCED JAVASCRIPT STYLE DICTIONARY
 const styles = {page: { 
