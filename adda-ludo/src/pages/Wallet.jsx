@@ -95,7 +95,7 @@ export default function Wallet() {
       ]);
     } catch {
       setError("Failed to load wallet");
-    } final {
+    } finally {
       setPageLoading(false);
     }
   };
