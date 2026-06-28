@@ -496,9 +496,9 @@ const styles = {
   loading: { minHeight: "70vh", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 16, color: "#475569" },
   
   historyCard: { background: "#fff", borderRadius: 22, padding: 18, boxShadow: "0 18px 45px rgba(15,23,42,.07)" },
-  historyTabs: { display: "flex", gap: "10px", marginBottom: "14px" },
-  historyTab: { flex: 1, border: "none", background: "#f1f5f9", padding: "10px", borderRadius: 12, fontWeight: 800, color: "#64748b", cursor: "pointer" },
-  activeHistoryTab: { background: "#2563eb", color: "#fff" },
+  historyTabs: { display: "flex", gap: "8px", marginBottom: "12px" },
+  historyTab: { flex: 1, border: "none", background: "#f1f5f9", padding: "6px 10px", borderRadius: "8px", fontWeight: 800, color: "#64748b", fontSize: "12px", cursor: "pointer", whiteSpace: "nowrap" },
+  activeHistoryTab: { background: "#2563eb", color: "#fff", boxShadow "0 4px 10px rgba(37,99,235,0.15)" },
   depositItem: { display: "flex", justifyContent: "space-between", alignItems: "center", padding: "10px 0", borderBottom: "1px solid #f1f5f9" },
   status: { padding: "4px 8px", borderRadius: 8, fontSize: 12, fontWeight: 900 },
   small: { fontSize: 11, color: "#94a3b8", margin: "2px 0 0" },
