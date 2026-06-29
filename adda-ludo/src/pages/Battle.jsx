@@ -113,17 +113,19 @@ const Battle = () => {
     [myId]
   );
 
-  const fetchBattles = useCallback(async () => {
+const fetchBattles = useCallback(async () => {
     if (!token) return;
 
     try {
-      const [openRes, myRes] = await Promise.all([
-        axios.get(`${API_BASE}/battle/open`, authHeader()),
-        axios.get(`${API_BASE}/battle/my`, authHeader()),
-      ]);
+      // Dono ko block karne ke bajaye alag-alag call karo taaki ek heavy call doosri ko na roke
+      axios.get(`${API_BASE}/battle/open`, authHeader()).then((openRes) => {
+        setOpenBattles(Array.isArray(openRes.data?.battles) ? openRes.data.battles : []);
+      }).catch(e => console.log("Open fetch err:", e.message));
 
-      setOpenBattles(Array.isArray(openRes.data?.battles) ? openRes.data.battles : []);
-      setMyBattles(Array.isArray(myRes.data?.battles) ? myRes.data.battles : []);
+      axios.get(`${API_BASE}/battle/my`, authHeader()).then((myRes) => {
+        setMyBattles(Array.isArray(myRes.data?.battles) ? myRes.data.battles : []);
+      }).catch(e => console.log("My fetch err:", e.message));
+
     } catch (err) {
       console.log("Fetch error:", err.response?.data || err.message);
     }
