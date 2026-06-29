@@ -128,7 +128,7 @@ const Battle = () => {
       console.log("Fetch error:", err.response?.data || err.message);
     }
   }, [token, authHeader]);
-  // Real-time Socket Client Listeners Setup
+  // Real-time Socket Client Listeners Setup (Optimized for 0-delay)
   useEffect(() => {
     if (!token) {
       navigate("/login");
@@ -138,50 +138,49 @@ const Battle = () => {
     fetchBattles();
 
     const socketUrl = import.meta.env.VITE_API_URL ? import.meta.env.VITE_API_URL.replace(/\/api$/, "") : "http://localhost:5000";
-    const socket = io(socketUrl);
+    const socket = io(socketUrl, {
+      transports: ["websocket"], // Force WebSocket taaki polling wala delay na ho
+      upgrade: false
+    });
 
-    // 1. Jab koi nayi battle create ho
+    // 1. Nayi battle instant upar chamkegi
     socket.on("newBattle", (newBattleData) => {
-      const creatorId = getCreatorId(newBattleData);
-      const opponentId = getOpponentId(newBattleData);
+      // Palkein jhapakte hi state update
+      setOpenBattles((prev) => {
+        const exists = prev.some(b => b.battleId === newBattleData.battleId || b._id === newBattleData._id);
+        if (exists) return prev;
+        return [newBattleData, ...prev];
+      });
 
-      // Agar battle meri hai, toh myBattles me bhi jani chahiye
-      if (creatorId === myId || opponentId === myId) {
+      const creatorId = getCreatorId(newBattleData);
+      if (creatorId === myId) {
         setMyBattles((prev) => {
           if (prev.some(b => b.battleId === newBattleData.battleId)) return prev;
           return [newBattleData, ...prev];
         });
       }
-
-      // Baaki sabhi ke liye openBattles me jani chahiye
-      setOpenBattles((prev) => {
-        if (prev.some(b => b.battleId === newBattleData.battleId)) return prev;
-        return [newBattleData, ...prev];
-      });
     });
 
-    // 2. Jab koi battle update ho (Player Join kare, Status change ho etc.)
+    // 2. Status change instant catch hoga
     socket.on("battleUpdated", (updatedBattleData) => {
-      const creatorId = getCreatorId(updatedBattleData);
-      const opponentId = getOpponentId(updatedBattleData);
-
-      // Open battles update karo
       setOpenBattles((prev) =>
-        prev.map((b) => (b.battleId === updatedBattleData.battleId ? updatedBattleData : b))
+        prev.map((b) => (b.battleId === updatedBattleData.battleId || b._id === updatedBattleData._id ? updatedBattleData : b))
       );
 
-      // My battles update karo agar mera lena dena hai
+      const creatorId = getCreatorId(updatedBattleData);
+      const opponentId = getOpponentId(updatedBattleData);
       if (creatorId === myId || opponentId === myId) {
         setMyBattles((prev) => {
-          if (prev.some(b => b.battleId === updatedBattleData.battleId)) {
-            return prev.map((b) => (b.battleId === updatedBattleData.battleId ? updatedBattleData : b));
+          const exists = prev.some(b => b.battleId === updatedBattleData.battleId || b._id === updatedBattleData._id);
+          if (exists) {
+            return prev.map((b) => (b.battleId === updatedBattleData.battleId || b._id === updatedBattleData._id ? updatedBattleData : b));
           }
           return [updatedBattleData, ...prev];
         });
       }
     });
 
-    // 3. Jab koi battle cancel ya delete ho jaye
+    // 3. Cancel/Delete instant remove karega
     socket.on("battleDeleted", (deletedBattleId) => {
       setOpenBattles((prev) => prev.filter((b) => b.battleId !== deletedBattleId && b._id !== deletedBattleId));
       setMyBattles((prev) => prev.filter((b) => b.battleId !== deletedBattleId && b._id !== deletedBattleId));
@@ -190,7 +189,7 @@ const Battle = () => {
     return () => {
       socket.disconnect();
     };
-  }, [token, navigate, fetchBattles, myId]);
+  }, [token, navigate, myId]); // fetchBattles ko dependency se hata diya taaki loop na bane
 
   const allBattles = useMemo(() => {
     const map = new Map();
