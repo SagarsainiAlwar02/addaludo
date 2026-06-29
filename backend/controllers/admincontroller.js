@@ -1,52 +1,3 @@
-// import Battle from "../models/battle.js";
-// import Wallet from "../models/wallet.js";
-// import Transaction from "../models/transaction.js";
-
-// export const setBattleWinner = async (req, res) => {
-//   try {
-//     const battleId = req.params.id;
-//     const { winnerId } = req.body;
-//     const adminId = req.user?._id || req.user?.id || req.user || null;
-
-//     if (!winnerId) return res.status(400).json({ msg: "Winner ID is required" });
-
-//     const battle = await Battle.findById(battleId);
-//     if (!battle) return res.status(404).json({ msg: "Battle not found" });
-//     if (battle.status === "completed") return res.status(400).json({ msg: "Already processed" });
-
-//     // Calculate prize money (Aapke Battle schema ke mutabik field name check karein)
-//     const prizeAmount = Number(battle.prize || 0);
-
-//     const wallet = await Wallet.findOne({ userId: winnerId });
-//     if (!wallet) return res.status(404).json({ msg: "Wallet not found" });
-
-//     // Core fix: Adding to winnings
-//     wallet.winnings = Number(wallet.winnings || 0) + prizeAmount;
-//     await wallet.save();
-
-//     battle.winner = winnerId;
-//     battle.status = "completed";
-//     await battle.save();
-
-//     await Transaction.create({
-//       userId: winnerId,
-//       amount: prizeAmount,
-//       type: "game_win",
-//       status: "success",
-//       note: `Battle win prize amount added`,
-//       balanceAfter: Number(wallet.balance || 0) + Number(wallet.winnings || 0),
-//       approvedBy: adminId,
-//       approvedAt: new Date()
-//     });
-
-//     return res.json({ success: true, msg: "Winnings added successfully" });
-//   } catch (err) {
-//     return res.status(500).json({ msg: err.message });
-//   }
-// };
-
-
-
 import Battle from "../models/battle.js";
 import Match from "../models/match.js";
 import Wallet from "../models/wallet.js";
@@ -73,7 +24,6 @@ export const setBattleWinner = async (req, res) => {
 
     const prizeAmount = Number(battle.prize || 0);
 
-    // ✅ winnings field mein add karo (wallet schema ke mutabik)
     const updatedWallet = await Wallet.findOneAndUpdate(
       { userId: winnerId },
       { $inc: { winnings: prizeAmount } },
@@ -129,7 +79,7 @@ export const cancelBattle = async (req, res) => {
     for (const playerId of players) {
       await Wallet.findOneAndUpdate(
         { userId: playerId },
-        { $inc: { balance: refundAmount } } // ✅ balance mein refund
+        { $inc: { balance: refundAmount } }
       );
 
       await Transaction.create({
@@ -174,7 +124,6 @@ export const setMatchWinner = async (req, res) => {
 
     const adminId = req.user?._id || req.user?.id || null;
 
-    // ✅ Winner players array of objects mein check karo
     const winnerPlayer = match.players.find(
       (p) => p.userId && String(p.userId) === String(winnerId)
     );
@@ -186,7 +135,6 @@ export const setMatchWinner = async (req, res) => {
     const commission = Math.floor(totalPool * 0.1);
     const prize = totalPool - commission;
 
-    // ✅ winnings mein add
     const updatedWallet = await Wallet.findOneAndUpdate(
       { userId: winnerId },
       { $inc: { winnings: prize } },
@@ -244,7 +192,6 @@ export const adminCancelMatch = async (req, res) => {
     const { reason } = req.body;
     const fee = Number(match.entryFee || 0);
 
-    // ✅ Sabhi real players ko balance refund
     for (const player of match.players) {
       if (!player.userId || player.isBot) continue;
 
@@ -280,5 +227,76 @@ export const adminCancelMatch = async (req, res) => {
     });
   } catch (err) {
     res.status(500).json({ msg: err.message });
+  }
+};
+
+
+// ================= 🔥 NEW: GET DASHBOARD STATS (ALL TIME / TODAY FILTER) =================
+export const getDashboardStats = async (req, res) => {
+  try {
+    const { filter } = req.query; // Frontend se 'today' ya 'all' filter aayega
+    let dateFilter = {};
+
+    if (filter === 'today') {
+      const startOfToday = new Date();
+      startOfToday.setHours(0, 0, 0, 0);
+
+      const endOfToday = new Date();
+      endOfToday.setHours(23, 59, 59, 999);
+
+      dateFilter = { createdAt: { $gte: startOfToday, $lte: endOfToday } };
+    }
+
+    // 1. New Users Today vs Total Users Count
+    const usersCount = await Wallet.countDocuments(filter === 'today' ? dateFilter : {}); 
+
+    // 2. Today Deposit vs Total Deposit
+    const depositData = await Transaction.aggregate([
+      { $match: { type: "deposit", status: "success", ...(filter === 'today' ? dateFilter : {}) } },
+      { $group: { _id: null, total: { $sum: "$amount" } } }
+    ]);
+
+    // 3. Today Withdraw vs Total Withdraw
+    const withdrawData = await Transaction.aggregate([
+      { $match: { type: "withdraw", status: "success", ...(filter === 'today' ? dateFilter : {}) } },
+      { $group: { _id: null, total: { $sum: "$amount" } } }
+    ]);
+
+    // 4. Today Commission vs Total Commission From Matches
+    const commissionData = await Match.aggregate([
+      { $match: { status: "completed", ...(filter === 'today' ? { completedAt: dateFilter } : {}) } },
+      { $group: { _id: null, total: { $sum: "$commission" } } }
+    ]);
+
+    // 5. Today Bonus vs Total Bonus
+    const bonusData = await Transaction.aggregate([
+      { $match: { type: "bonus", status: "success", ...(filter === 'today' ? dateFilter : {}) } },
+      { $group: { _id: null, total: { $sum: "$amount" } } }
+    ]);
+
+    // 6. Today Penalty vs Total Penalty
+    const penaltyData = await Transaction.aggregate([
+      { $match: { type: "penalty", status: "success", ...(filter === 'today' ? dateFilter : {}) } },
+      { $group: { _id: null, total: { $sum: "$amount" } } }
+    ]);
+
+    const totalDeposit = depositData[0]?.total || 0;
+    const totalWithdraw = withdrawData[0]?.total || 0;
+
+    return res.json({
+      success: true,
+      stats: {
+        users: usersCount,
+        deposit: totalDeposit,
+        withdraw: totalWithdraw,
+        commission: commissionData[0]?.total || 0,
+        bonus: bonusData[0]?.total || 0,
+        penalty: penaltyData[0]?.total || 0,
+        earnings: totalDeposit - totalWithdraw // Earnings calculation
+      }
+    });
+
+  } catch (err) {
+    return res.status(500).json({ success: false, msg: err.message });
   }
 };
