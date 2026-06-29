@@ -2,6 +2,7 @@ import React, { useEffect, useMemo, useState, useCallback } from "react";
 import axios from "axios";
 import { useNavigate } from "react-router-dom";
 import { io } from "socket.io-client";
+
 const API_BASE =
   import.meta.env.VITE_API_URL?.replace(/\/$/, "") ||
   "http://localhost:5000/api";
@@ -25,70 +26,21 @@ const calculatePrizeAmount = (amount) => {
 };
 
 const FAKE_PLAYER_NAMES = [
-  "Player 101",
-  "Rohit",
-  "Player 123",
-  "Sohan",
-  "Player 145",
-  "Player 156",
-  "Player 167",
-  "Player 178",
-  "Player 189",
-  "Player 190",
-  "Player 201",
-  "Player 212",
-  "Player 223",
-  "Player 234",
-  "Player 245",
-  "Player 256",
-  "Player 267",
-  "Player 278",
-  "Player 289",
-  "Player 300",
+  "Player 101", "Rohit", "Player 123", "Sohan", "Player 145",
+  "Player 156", "Player 167", "Player 178", "Player 189", "Player 190",
+  "Player 201", "Player 212", "Player 223", "Player 234", "Player 245",
+  "Player 256", "Player 267", "Player 278", "Player 289", "Player 300",
 ];
 
 const FAKE_OPPONENT_NAMES = [
-  "Player 311",
-  "Player 322",
-  "Player 333",
-  "Player 344",
-  "Player 355",
-  "Player 366",
-  "Player 377",
-  "Player 388",
-  "Player 399",
-  "Player 410",
-  "Player 421",
-  "Player 432",
-  "Player 443",
-  "Player 454",
-  "Player 465",
-  "Player 476",
-  "Player 487",
-  "Player 498",
-  "Player 509",
-  "Player 520",
+  "Player 311", "Player 322", "Player 333", "Player 344", "Player 355",
+  "Player 366", "Player 377", "Player 388", "Player 399", "Player 410",
+  "Player 421", "Player 432", "Player 443", "Player 454", "Player 465",
+  "Player 476", "Player 487", "Player 498", "Player 509", "Player 520",
 ];
 
 const FAKE_BATTLE_AMOUNTS = [
-  4500,
-  3000,
-  300,
-  1150,
-  450,
-  2050,
-  15000,
-  600,
-  2000,
-  10000,
-  100,
-  2250,
-  150,
-  7000,
-  5500,
-  950,
-  50,
-  1050
+  4500, 3000, 300, 1150, 450, 2050, 15000, 600, 2000, 10000, 100, 2250, 150, 7000, 5500, 950, 50, 1050
 ];
 
 const randomFrom = (arr) => arr[Math.floor(Math.random() * arr.length)];
@@ -176,8 +128,8 @@ const Battle = () => {
       console.log("Fetch error:", err.response?.data || err.message);
     }
   }, [token, authHeader]);
-
-useEffect(() => {
+  // Real-time Socket Client Listeners Setup
+  useEffect(() => {
     if (!token) {
       navigate("/login");
       return;
@@ -185,22 +137,60 @@ useEffect(() => {
 
     fetchBattles();
 
-    // Sahi backend domain par socket connection setup
     const socketUrl = import.meta.env.VITE_API_URL ? import.meta.env.VITE_API_URL.replace(/\/api$/, "") : "http://localhost:5000";
     const socket = io(socketUrl);
 
-    // Realtime naye battle ko bina delay ke list me upar add karega
+    // 1. Jab koi nayi battle create ho
     socket.on("newBattle", (newBattleData) => {
+      const creatorId = getCreatorId(newBattleData);
+      const opponentId = getOpponentId(newBattleData);
+
+      // Agar battle meri hai, toh myBattles me bhi jani chahiye
+      if (creatorId === myId || opponentId === myId) {
+        setMyBattles((prev) => {
+          if (prev.some(b => b.battleId === newBattleData.battleId)) return prev;
+          return [newBattleData, ...prev];
+        });
+      }
+
+      // Baaki sabhi ke liye openBattles me jani chahiye
       setOpenBattles((prev) => {
-        if (prev.some(b => b._id === newBattleData._id || b.battleId === newBattleData.battleId)) return prev;
+        if (prev.some(b => b.battleId === newBattleData.battleId)) return prev;
         return [newBattleData, ...prev];
       });
+    });
+
+    // 2. Jab koi battle update ho (Player Join kare, Status change ho etc.)
+    socket.on("battleUpdated", (updatedBattleData) => {
+      const creatorId = getCreatorId(updatedBattleData);
+      const opponentId = getOpponentId(updatedBattleData);
+
+      // Open battles update karo
+      setOpenBattles((prev) =>
+        prev.map((b) => (b.battleId === updatedBattleData.battleId ? updatedBattleData : b))
+      );
+
+      // My battles update karo agar mera lena dena hai
+      if (creatorId === myId || opponentId === myId) {
+        setMyBattles((prev) => {
+          if (prev.some(b => b.battleId === updatedBattleData.battleId)) {
+            return prev.map((b) => (b.battleId === updatedBattleData.battleId ? updatedBattleData : b));
+          }
+          return [updatedBattleData, ...prev];
+        });
+      }
+    });
+
+    // 3. Jab koi battle cancel ya delete ho jaye
+    socket.on("battleDeleted", (deletedBattleId) => {
+      setOpenBattles((prev) => prev.filter((b) => b.battleId !== deletedBattleId && b._id !== deletedBattleId));
+      setMyBattles((prev) => prev.filter((b) => b.battleId !== deletedBattleId && b._id !== deletedBattleId));
     });
 
     return () => {
       socket.disconnect();
     };
-  }, [token, navigate, fetchBattles]);
+  }, [token, navigate, fetchBattles, myId]);
 
   const allBattles = useMemo(() => {
     const map = new Map();
@@ -481,23 +471,22 @@ useEffect(() => {
       );
     }
 
-
     if (status === "join_requested" && isOpponent) {
-  return (
-    <div className="flex flex-col items-center gap-1">
-      <div className="h-7 w-7 animate-spin rounded-full border-4 border-emerald-100 border-t-emerald-500" />
-      <p className="text-[10px] font-black text-slate-500">WAITING</p>
+      return (
+        <div className="flex flex-col items-center gap-1">
+          <div className="h-7 w-7 animate-spin rounded-full border-4 border-emerald-100 border-t-emerald-500" />
+          <p className="text-[10px] font-black text-slate-500">WAITING</p>
 
-      <button
-        disabled={actionLoading}
-        onClick={() => cancelBattle(battle.battleId)}
-        className="rounded-md bg-red-500 px-2 py-1 text-[10px] font-bold text-white disabled:opacity-50"
-      >
-        Cancel
-      </button>
-    </div>
-  );
-}
+          <button
+            disabled={actionLoading}
+            onClick={() => cancelBattle(battle.battleId)}
+            className="rounded-md bg-red-500 px-2 py-1 text-[10px] font-bold text-white disabled:opacity-50"
+          >
+            Cancel
+          </button>
+        </div>
+      );
+    }
 
     return (
       <button disabled className="rounded-xl bg-slate-200 px-4 py-2 text-xs font-black text-slate-500">
@@ -518,9 +507,8 @@ useEffect(() => {
             </div>
 
             <div className="mt-4 rounded-2xl bg-black/20 px-4 py-3 text-center text-sm font-bold leading-6 text-white ring-1 ring-white/10">
-             ADDA LUDO में आपका स्वागत है ,सबसे Fast ⏩ विथड्रॉ है ,👉मात्र 2-3 Min में,
-
-                    👉आपका विश्वास बनाये रखे 🙏
+              ADDA LUDO में आपका स्वागत है ,सबसे Fast ⏩ विथड्रॉ है ,👉मात्र 2-3 Min में,
+              👉आपका विश्वास बनाये रखे 🙏
             </div>
           </div>
         </div>
@@ -530,7 +518,7 @@ useEffect(() => {
             <div>
               <h2 className="text-base font-bold">Create Battle</h2>
               <p className="text-[11px] font-medium text-slate-400">
-                Amount डालो और challenge create करो
+                Amount डालो और challenge create karo
               </p>
             </div>
 
