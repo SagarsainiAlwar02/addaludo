@@ -200,56 +200,105 @@
 //   }
 // });
 
-// // ================= DASHBOARD =================
-// router.get("/dashboard", auth, async (req, res) => {
-//   try {
-//     const totalUsers = await User.countDocuments({ role: "user" });
-//     const totalBlockedUsers = await User.countDocuments({ role: "user", status: "blocked" });
+// //// ==================== DASHBOARD ====================
+router.get("/dashboard", auth, async (req, res) => {
+  try {
+    const { filter } = req.query; // Frontend se 'today' ya 'all' filter aayega
+    let dateFilter = {};
 
-//     const txAgg = await Transaction.aggregate([
-//       { $match: { status: "success" } },
-//       { $group: { _id: "$type", total: { $sum: "$amount" } } },
-//     ]);
+    // Aaj ki date range set karne ke liye logic
+    if (filter === "today") {
+      const startOfToday = new Date();
+      startOfToday.setHours(0, 0, 0, 0);
 
-//     const txMap = {};
-//     txAgg.forEach((item) => { txMap[item._id] = item.total || 0; });
+      const endOfToday = new Date();
+      endOfToday.setHours(23, 59, 59, 999);
 
-//     const walletAgg = await Wallet.aggregate([
-//       { $group: { _id: null, walletBalance: { $sum: "$balance" }, holdBalance: { $sum: "$locked" }, totalReferral: { $sum: "$referralBalance" }, totalWinnings: { $sum: "$winnings" } } },
-//     ]);
+      dateFilter = { createdAt: { $gte: startOfToday, $lte: endOfToday } };
+    }
 
-//     const userReferralAgg = await User.aggregate([
-//       { $group: { _id: null, totalReferralEarning: { $sum: "$totalReferralEarning" } } },
-//     ]);
+    // 1. New Users Count (Filter logic ke saath)
+    const totalUsers = await User.countDocuments({ 
+      role: "user", 
+      ...(filter === "today" ? dateFilter : {}) 
+    });
 
-//     const walletData = walletAgg[0] || {};
-//     const userReferralData = userReferralAgg[0] || {};
+    const totalBlockedUsers = await User.countDocuments({ 
+      role: "user", 
+      status: "blocked",
+      ...(filter === "today" ? dateFilter : {}) 
+    });
 
-//     const totalDeposit = txMap.deposit || 0;
-//     const totalWithdraw = txMap.withdraw || 0;
-//     const totalBonus = txMap.bonus || 0;
-//     const totalPenalty = txMap.penalty || 0;
-//     const totalReferralRedeem = txMap.referral_redeem || 0;
-//     const totalGameEntry = txMap.game_entry || 0;
-//     const totalGameWin = txMap.game_win || 0;
-//     const totalRefund = txMap.refund || 0;
-//     const totalEarnings = totalGameEntry + totalPenalty - totalGameWin - totalRefund;
+    // 2. Transaction Aggregation (Deposit, Withdraw, Bonus, Penalty, etc.)
+    const txAgg = await Transaction.aggregate([
+      { 
+        $match: { 
+          status: "success",
+          ...(filter === "today" ? dateFilter : {})
+        } 
+      },
+      { $group: { _id: "$type", total: { $sum: "$amount" } } },
+    ]);
 
-//     res.json({
-//       totalUsers, totalBlockedUsers, totalDeposit, totalWithdraw,
-//       totalEarnings: Math.max(0, totalEarnings),
-//       totalCommission: txMap.referral_commission || 0,
-//       totalReferral: Number(walletData.totalReferral || 0) + Number(userReferralData.totalReferralEarning || 0) + Number(totalReferralRedeem || 0),
-//       totalBonus, totalPenalty,
-//       holdBalance: walletData.holdBalance || 0,
-//       walletBalance: walletData.walletBalance || 0,
-//       totalWinnings: walletData.totalWinnings || 0,
-//     });
-//   } catch (err) {
-//     console.log("❌ DASHBOARD ERROR:", err);
-//     res.status(500).json({ msg: err.message });
-//   }
-// });
+    const txMap = {};
+    txAgg.forEach((item) => {
+      txMap[item._id] = item.total || 0;
+    });
+
+    // Extracting transaction totals
+    const totalDeposit = txMap.deposit || 0;
+    const totalWithdraw = txMap.withdraw || 0;
+    const totalBonus = txMap.bonus || 0;
+    const totalPenalty = txMap.penalty || 0;
+    const totalReferralRedeem = txMap.referral_redeem || 0;
+
+    // 3. Current Live Balances (Inhe hamesha real-time total hi dikhana hai)
+    const walletAgg = await Wallet.aggregate([
+      { 
+        $group: { 
+          _id: null, 
+          walletBalance: { $sum: "$balance" }, // Users ke main wallet ka sum
+          holdBalance: { $sum: "$locked" },    // Running matches ka hold amount
+          totalReferral: { $sum: "$referralBalance" }, 
+          totalWinnings: { $sum: "$winnings" } 
+        } 
+      },
+    ]);
+
+    const userReferralAgg = await User.aggregate([
+      { $group: { _id: null, totalReferralEarning: { $sum: "$totalReferralEarning" } } },
+    ]);
+
+    const walletData = walletAgg[0] || {};
+    const userReferralData = userReferralAgg[0] || {};
+
+    // 4. Custom Calculations As Per Your Logic
+    // Total Earnings = Deposit ka flat 5%
+    const totalEarnings = totalDeposit * 0.05;
+
+    // Total Commission = Jo matches chalte hain ya transaction commission (Flat 5% on deposit or custom logic)
+    // Aapke purane code me referral_commission tha, par aapke 5% rule ke mutabik ise adjust kar diya hai
+    const totalCommission = txMap.commission || (totalDeposit * 0.05); 
+
+    res.json({
+      totalUsers,
+      totalBlockedUsers,
+      totalDeposit,
+      totalWithdraw,
+      totalEarnings,
+      totalCommission,
+      totalReferral: Number(walletData.totalReferral || 0) + Number(userReferralData.totalReferralEarning || 0) + Number(totalReferralRedeem || 0),
+      totalBonus,
+      totalPenalty,
+      holdBalance: walletData.holdBalance || 0, // Hamesha total live hold dikhayega
+      walletBalance: walletData.walletBalance || 0, // Hamesha total live wallet dikhayega
+      totalWinnings: walletData.totalWinnings || 0,
+    });
+  } catch (err) {
+    console.log("❌ DASHBOARD ERROR:", err);
+    res.status(500).json({ msg: err.message });
+  }
+});
 
 // // ================= BONUS =================
 // router.post("/add-bonus", auth, async (req, res) => {
