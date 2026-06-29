@@ -1954,3 +1954,18 @@ export const rejectAdminBattle = async (req, res) => {
     return res.status(500).json({ success: false, msg: err.message });
   }
 };
+       // ====== NEECHE YEH FAST CODE PASTE KAREIN ======
+
+export const getBattles = async (req, res) => {
+  try {
+    // Agar Battle model imported hai, toh yeh sirf 20 matches layega
+    const battles = await Battle.find()
+      .sort({ createdAt: -1 })
+      .limit(20);
+
+    return res.status(200).json(battles);
+  } catch (error) {
+    // Agar model ka naam kuch aur hua toh error yahan pakda jayega
+    return res.status(500).json({ message: error.message });
+  }
+};
