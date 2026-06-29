@@ -347,7 +347,7 @@ export default function Wallet() {
     </button>
 
     {/* UPI Gateway */}  
-  {numericAmount > 2000 && (
+  {numericAmount >= 100 && numericAmount >= 2000 && (
     <button
       type="button"
       onClick={() => setSelectedMethod("upi")}
