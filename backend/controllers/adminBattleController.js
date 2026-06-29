@@ -7,20 +7,53 @@ function getPlayableBalance(wallet) {
   return Number(wallet.balance || 0) + Number(wallet.winnings || 0);
 }
 
-
+// 1. GET ALL BATTLES (Tabs, Search Aur Pagination Ke Saath Optimized)
 export const getAllBattles = async (req, res) => {
   try {
-    const limit = Math.min(Math.max(Number(req.query.limit || 100), 1), 100);
+    // Vercel UI ke status filters ko backend query parameters se map kiya
+    const { status, search } = req.query;
+    const limit = Math.min(Math.max(Number(req.query.limit || 20), 1), 100); // Default to 20 for extreme speed
     const page = Math.max(Number(req.query.page || 1), 1);
     const skip = (page - 1) * limit;
 
+    let query = {};
+
+    // 1. Smart Status Filter Tabs
+    if (status && status !== "Total Match") {
+      if (status === "Running Match") query.status = "running";
+      else if (status === "Pending Match") query.status = "pending";
+      else if (status === "Completed Match") query.status = "completed";
+      else if (status === "Cancel Match") query.status = "cancelled";
+      else query.status = status.toLowerCase();
+    }
+
+    // 2. Mobile Number Aur Room Code Search Filter
+    if (search) {
+      // Pehle check karenge ki kahin admin direct mobile number se search toh nahi kar raha
+      const foundUsers = await User.find({
+        $or: [
+          { mobile: search },
+          { phone: search },
+          { username: { $regex: search, $options: "i" } }
+        ]
+      }).select("_id").lean();
+
+      const matchedUserIds = foundUsers.map(u => u._id);
+
+      query.$or = [
+        { ludoKingRoomCode: search },
+        { battleId: search },
+        { createdBy: { $in: matchedUserIds } },
+        { opponent: { $in: matchedUserIds } }
+      ];
+    }
+
+    // Index-friendly Count aur Find Queries parallel execute hongi
     const [total, battles] = await Promise.all([
-      Battle.countDocuments({}),
-      Battle.find({})
-        .select(
-          "battleId amount prize status createdAt updatedAt createdBy opponent winner ludoKingRoomCode"
-        )
-        .sort({ _id: -1 })
+      Battle.countDocuments(query),
+      Battle.find(query)
+        .select("battleId amount prize status createdAt updatedAt createdBy opponent winner ludoKingRoomCode")
+        .sort({ _id: -1 }) // Sirf latest items pehle aayenge
         .skip(skip)
         .limit(limit)
         .lean(),
@@ -35,6 +68,7 @@ export const getAllBattles = async (req, res) => {
       ),
     ];
 
+    // Sirf vahi users fetch honge jo is page ke 20 records mein shamil hain
     const users = await User.find({ _id: { $in: userIds } })
       .select("name phone mobile username")
       .lean();
@@ -46,9 +80,9 @@ export const getAllBattles = async (req, res) => {
 
     const battlesWithUsers = battles.map((battle) => ({
       ...battle,
-      createdBy: battle.createdBy ? userMap[String(battle.createdBy)] || battle.createdBy : null,
-      opponent: battle.opponent ? userMap[String(battle.opponent)] || battle.opponent : null,
-      winner: battle.winner ? userMap[String(battle.winner)] || battle.winner : null,
+      createdBy: battle.createdBy ? userMap[String(battle.createdBy)] || { name: "Unknown", mobile: "-" } : null,
+      opponent: battle.opponent ? userMap[String(battle.opponent)] || { name: "Waiting...", mobile: "-" } : null,
+      winner: battle.winner ? userMap[String(battle.winner)] || null : null,
     }));
 
     res.json({
@@ -72,7 +106,7 @@ export const getAllBattles = async (req, res) => {
   }
 };
 
-
+// 2. GET BATTLE BY ID
 export const getBattleById = async (req, res) => {
   try {
     const battle = await Battle.findById(req.params.battleId)
@@ -94,33 +128,19 @@ export const getBattleById = async (req, res) => {
   }
 };
 
-//
-
+// 3. APPROVE BATTLE (WINNER PRIZE MANAGEMENT)
 export const approveBattle = async (req, res) => {
   try {
     const battleId = req.params.battleId;
     const battle = await Battle.findOneAndUpdate(
-  {
-    _id: battleId,
-    resultSettled: false,
-  },
-  {
-    $set: {
-      resultSettled: true,
-    },
-  },
-  {
-    new: true,
-  }
-);
+      { _id: battleId, resultSettled: false },
+      { $set: { resultSettled: true } },
+      { new: true }
+    );
 
-if (!battle) {
-  return res.status(400).json({
-    success: false,
-    msg: "Battle already settled",
-  });
-}
-  
+    if (!battle) {
+      return res.status(400).json({ success: false, msg: "Battle already settled" });
+    }
 
     const winnerId = req.body?.winnerId || battle.winner || battle.resultSubmittedBy;
     if (!winnerId) return res.status(400).json({ success: false, msg: "Winner not found" });
@@ -153,10 +173,7 @@ if (!battle) {
     }
 
     const amount = Number(battle.amount || 0);
-   const prize = Math.min(
-  Number(battle.prize || amount * 2),
-  amount * 2
-);
+    const prize = Math.min(Number(battle.prize || amount * 2), amount * 2);
 
     const creatorWallet = await Wallet.findOne({ userId: battle.createdBy });
     const opponentWallet = await Wallet.findOne({ userId: battle.opponent });
@@ -202,31 +219,19 @@ if (!battle) {
   }
 };
 
-//
+// 4. REJECT BATTLE (REFUND MANAGEMENT)
 export const rejectBattle = async (req, res) => {
   try {
     const battleId = req.params.battleId;
-  const battle = await Battle.findOneAndUpdate(
-  {
-    _id: battleId,
-    resultSettled: false,
-  },
-  {
-    $set: {
-      resultSettled: true,
-    },
-  },
-  {
-    new: true,
-  }
-);
+    const battle = await Battle.findOneAndUpdate(
+      { _id: battleId, resultSettled: false },
+      { $set: { resultSettled: true } },
+      { new: true }
+    );
 
-if (!battle) {
-  return res.status(400).json({
-    success: false,
-    msg: "Battle already settled",
-  });
-}
+    if (!battle) {
+      return res.status(400).json({ success: false, msg: "Battle already settled" });
+    }
 
     const alreadyPaid = await Transaction.findOne({
       roomId: battle.battleId,
@@ -256,10 +261,7 @@ if (!battle) {
 
       for (const userId of players) {
         const refundKey = `${battle.battleId}_refund_${userId}`;
-
-        const alreadyRefundedUser = await Transaction.findOne({
-          uniqueTransactionKey: refundKey,
-        });
+        const alreadyRefundedUser = await Transaction.findOne({ uniqueTransactionKey: refundKey });
 
         if (alreadyRefundedUser) continue;
 
