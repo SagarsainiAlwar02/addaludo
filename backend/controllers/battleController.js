@@ -1221,19 +1221,29 @@ async function lockAmount(userId, amount, roomId) {
     throw new Error("Insufficient wallet balance");
   }
 
-  let remaining = amount;
+ // ... line 1223 tak ka purana code waisa hi rahega
 
-  const useBalance = Math.min(Number(wallet.balance || 0), remaining);
-  wallet.balance = Number(wallet.balance || 0) - useBalance;
-  remaining -= useBalance;
+    let remaining = amount;
 
-  const useWinnings = Math.min(Number(wallet.winnings || 0), remaining);
-  wallet.winnings = Number(wallet.winnings || 0) - useWinnings;
-  remaining -= useWinnings;
+    // 1. Sabse pehle Bonus Amount se paisa kaato (Priority)
+    const useBonus = Math.min(Number(wallet.bonusAmount || 0), remaining);
+    wallet.bonusAmount = Number(wallet.bonusAmount || 0) - useBonus;
+    remaining -= useBonus;
 
-  wallet.locked = Number(wallet.locked || 0) + amount;
-  await wallet.save();
+    // 2. Agar abhi bhi bacha hai, toh Main/Deposit Balance se kaato
+    const useBalance = Math.min(Number(wallet.balance || 0), remaining);
+    wallet.balance = Number(wallet.balance || 0) - useBalance;
+    remaining -= useBalance;
 
+    // 3. Agar abhi bhi bacha hai, toh Winnings se kaato
+    const useWinnings = Math.min(Number(wallet.winnings || 0), remaining);
+    wallet.winnings = Number(wallet.winnings || 0) - useWinnings;
+    remaining -= useWinnings;
+
+    wallet.locked = Number(wallet.locked || 0) + amount;
+    await wallet.save();
+    
+    // ... line 1236 se niche ka purana code waisa hi rahega
   await Transaction.create({
     userId,
     amount,
