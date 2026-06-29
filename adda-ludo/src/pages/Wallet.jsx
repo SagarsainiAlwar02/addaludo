@@ -336,24 +336,26 @@ export default function Wallet() {
                  
 
                   {/* QR SCANNER (100 to 2000) */}
-                  {numericAmount >= 100 && numericAmount <= 2000 && (
-                    <button 
-                      type="button" 
-                      onClick={() => setSelectedMethod("qr")}
-                      style={selectedMethod === "qr" ? styles.methodBtnActive : styles.methodBtn}
-                    >
-                      QR Scanner
-                    </button>
+                {numericAmount >= 100 && numericAmount <= 2000 && (
+  <>
+    <button
+      type="button"
+      onClick={() => setSelectedMethod("qr")}
+      style={selectedMethod === "qr" ? styles.methodBtnActive : styles.methodBtn}
+    >
+      QR Scanner
+    </button>
 
-                    {/* UPI Gateway */}
-                  <button 
-                    type="button" 
-                    onClick={() => setSelectedMethod("upi")}
-                    style={selectedMethod === "upi" ? styles.methodBtnActive : styles.methodBtn}
-                  >
-                    UPI ID
-                  </button>
-                  )}
+    {/* UPI Gateway */}
+    <button
+      type="button"
+      onClick={() => setSelectedMethod("upi")}
+      style={selectedMethod === "upi" ? styles.methodBtnActive : styles.methodBtn}
+    >
+      UPI ID
+    </button>
+  </>
+)}
 
                   {/* BANK DETAILS (> 2000) */}
                   {numericAmount > 2000 && (
