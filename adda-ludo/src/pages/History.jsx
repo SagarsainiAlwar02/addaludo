@@ -115,7 +115,17 @@ export default function History() {
         headers: { Authorization: `Bearer ${token}` }
       });
 
-      setBattles(res.data.battles || []);
+      const allMatches = res.data.battles || [];
+      
+      // 🔥 USER LOGIC FIX: Filter out cancelled matches where opponent didn't even join
+      const filteredMatches = allMatches.filter(battle => {
+        if (battle.status === "cancelled" && !battle.opponent) {
+          return false; // Chhupa do isko list se
+        }
+        return true; // Baaki saare valid matches dikhao
+      });
+
+      setBattles(filteredMatches);
     } catch (err) {
       console.log("History load error:", err.response?.data || err.message);
     } finally {
