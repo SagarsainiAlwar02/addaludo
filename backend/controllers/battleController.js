@@ -1485,18 +1485,22 @@ export const getOpenBattles = async (req, res) => {
 
 export const getMyBattles = async (req, res) => {
   try {
-    await expireOldOpenBattles();
     const userId = getUserId(req);
-    const battles = await Battle.find({ $or: [{ createdBy: userId }, { opponent: userId }] })
+
+    // Database query ko fast karne ke liye sirf limit add kar rahe hain aur expire function ko bypass kar rahe hain
+    const battles = await Battle.find({
+      $or: [{ createdBy: userId }, { opponent: userId }],
+    })
       .populate("createdBy", "name phone")
       .populate("opponent", "name phone")
       .populate("winner", "name phone")
-      .sort({ updatedAt: -1, createdAt: -1 });
+      .sort({ updatedAt: -1, createdAt: -1 })
+      .limit(20); // Sirf top 20 battles mangao taaki query palkein jhapakte hi load ho jaye
+
     return res.json({ success: true, battles });
   } catch (err) {
     return res.status(500).json({ success: false, msg: err.message });
   }
-};
 
 export const getSingleBattle = async (req, res) => {
   try {
