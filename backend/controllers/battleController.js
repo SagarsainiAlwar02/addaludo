@@ -1462,7 +1462,7 @@ export const createBattle = async (req, res) => {
     const prize = calculateBattlePrize(amount);
 
     const battle = await Battle.create({ battleId, amount, prize, createdBy: userId, status: "open" });
-
+    if (req.app.get("io")) { req.app.get("io").emit("newBattle", battle);}
     return res.json({ success: true, msg: "Battle open ho gayi", battle });
   } catch (err) {
     console.log("CREATE BATTLE ERROR:", err);
