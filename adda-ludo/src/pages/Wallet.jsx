@@ -346,7 +346,8 @@ export default function Wallet() {
       QR Scanner
     </button>
 
-    {/* UPI Gateway */}
+    {/* UPI Gateway */}  
+  {numericAmount > 2000 && (
     <button
       type="button"
       onClick={() => setSelectedMethod("upi")}
