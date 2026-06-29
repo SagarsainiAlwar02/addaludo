@@ -1,7 +1,7 @@
 import React, { useEffect, useMemo, useState, useCallback } from "react";
 import axios from "axios";
 import { useNavigate } from "react-router-dom";
-
+import { io } from "socket.io-client";
 const API_BASE =
   import.meta.env.VITE_API_URL?.replace(/\/$/, "") ||
   "http://localhost:5000/api";
@@ -177,7 +177,7 @@ const Battle = () => {
     }
   }, [token, authHeader]);
 
-  useEffect(() => {
+useEffect(() => {
     if (!token) {
       navigate("/login");
       return;
@@ -185,11 +185,21 @@ const Battle = () => {
 
     fetchBattles();
 
-    const interval = setInterval(() => {
-      fetchBattles();
-    }, 10000);
+    // Sahi backend domain par socket connection setup
+    const socketUrl = import.meta.env.VITE_API_URL ? import.meta.env.VITE_API_URL.replace(/\/api$/, "") : "http://localhost:5000";
+    const socket = io(socketUrl);
 
-    return () => clearInterval(interval);
+    // Realtime naye battle ko bina delay ke list me upar add karega
+    socket.on("newBattle", (newBattleData) => {
+      setOpenBattles((prev) => {
+        if (prev.some(b => b._id === newBattleData._id || b.battleId === newBattleData.battleId)) return prev;
+        return [newBattleData, ...prev];
+      });
+    });
+
+    return () => {
+      socket.disconnect();
+    };
   }, [token, navigate, fetchBattles]);
 
   const allBattles = useMemo(() => {
