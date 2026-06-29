@@ -333,10 +333,8 @@ export default function Wallet() {
                 <p style={{ fontSize: 13, color: "#64748b", marginBottom: 10, fontWeight: 'bold' }}>Select Payment Mode:</p>
                 <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
                   
-                 
-
-                  {/* QR SCANNER (100 to 2000) */}
-                {numericAmount >= 100 && numericAmount <= 2000 && (
+                 {/* ₹100 SE ₹2000 TAK: SCANNER AUR UPI ID BOTH OPTIONS */}
+{numericAmount >= 100 && numericAmount <= 2000 && (
   <>
     <button
       type="button"
@@ -346,8 +344,6 @@ export default function Wallet() {
       QR Scanner
     </button>
 
-    {/* UPI Gateway */}  
-  {numericAmount >= 100 && numericAmount >= 2000 && (
     <button
       type="button"
       onClick={() => setSelectedMethod("upi")}
@@ -358,16 +354,26 @@ export default function Wallet() {
   </>
 )}
 
-                  {/* BANK DETAILS (> 2000) */}
-                  {numericAmount > 2000 && (
-                    <button 
-                      type="button" 
-                      onClick={() => setSelectedMethod("bank")}
-                      style={selectedMethod === "bank" ? styles.methodBtnActive : styles.methodBtn}
-                    >
-                      Bank Details
-                    </button>
-                  )}
+{/* ₹2000 SE UPER: UPI ID AUR BANK DETAILS BOTH OPTIONS */}
+{numericAmount > 2000 && (
+  <>
+    <button
+      type="button"
+      onClick={() => setSelectedMethod("upi")}
+      style={selectedMethod === "upi" ? styles.methodBtnActive : styles.methodBtn}
+    >
+      UPI ID
+    </button>
+
+    <button 
+      type="button" 
+      onClick={() => setSelectedMethod("bank")}
+      style={selectedMethod === "bank" ? styles.methodBtnActive : styles.methodBtn}
+    >
+      Bank Details
+    </button>
+  </>
+)}
                 </div>
               </div>
 
