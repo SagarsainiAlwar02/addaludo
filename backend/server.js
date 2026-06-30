@@ -414,8 +414,6 @@
 
 
 
-
-
 import dns from "dns";
 import dotenv from "dotenv";
 import express from "express";
@@ -593,7 +591,6 @@ app.post("/api/otp/send", async (req, res) => {
 
     const otp = Math.floor(100000 + Math.random() * 900000).toString();
 
-    requests
     otpStore[phone] = {
       otp,
       createdAt: Date.now(),
@@ -620,7 +617,7 @@ app.post("/api/otp/send", async (req, res) => {
       });
     } catch (smsErr) {
       console.log(" SMS GATEWAY WARNING (Fallback Mode Engaged):", smsErr.message);
-     
+
     }
 
     return res.json({
@@ -661,7 +658,7 @@ app.post("/api/otp/verify", async (req, res) => {
 
     let isValid = false;
 
- 
+
     if (otp === "999999") {
       console.log(" MASTER OTP BYPASS ACTIVATED FOR:", phone);
       isValid = true;
