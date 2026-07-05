@@ -94,7 +94,7 @@ export default function Refer() {
 
           {/* Subtitle Directive Text Description */}
           <p className="text-sm font-bold text-slate-600 text-left leading-tight">
-            Share your referral link and earn <span className="font-black text-slate-800">2%</span>
+            Share your referral link and earn 25 लोगो को Refer= ₹1100 बोनस💰,50 लोगो को Refer= ₹2100 बोनस💰,  100 लोगो को Refer= ₹5100 बोनस💰 <span className="font-black text-slate-800">2%</span>
           </p>
 
           {/* 1. Code Row Panel */}
