@@ -22,7 +22,7 @@ export default function Home() {
       title: "Welcome",
       subtitle: "Hot games • Instant wins • Safe play",
       heading: "Refer & Earn",
-      text: "👉25 लोगो को Refer= ₹1100 बोनस💰  👉50 लोगो को Refer= ₹2100 बोनस💰   👉100 लोगो को Refer= ₹5100 बोनस💰",
+      text: "25 लोगो को Refer= ₹1100 बोनस💰  50 लोगो को Refer= ₹2100 बोनस💰   100 लोगो को Refer= ₹5100 बोनस💰",
       button: "Refer Now",
       route: "/refer",
       tag: "REFER BONUS",
