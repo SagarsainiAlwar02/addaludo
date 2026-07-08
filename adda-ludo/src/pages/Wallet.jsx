@@ -432,6 +432,10 @@ export default function Wallet() {
 
               {/* Cancel Button */}
               <button style={styles.cancelBtn} onClick={() => { setShowPayment(false); setSelectedMethod(""); }}>Cancel</button>
+           <div style={styles.paymentInstruction}>
+  👆 ऊपर QR Scanner और UPI ID का ऑप्शन दिया गया है,
+  उस पर दबाये और पेमेंट करे !
+</div>
             </div>
           </div>
         </div>
@@ -581,8 +585,20 @@ const styles = {
   copyBtn: { background: "#2563eb", color: "#fff", border: "none", padding: "6px 12px", borderRadius: "6px", fontSize: "12px", fontWeight: "800", cursor: "pointer" },
 
   noteBox: { background: "#fff5f5", color: "#c53030", padding: "12px", borderRadius: "10px", fontSize: "12px", fontWeight: "700", marginBottom: "12px", border: "1px solid #feb2b2", lineHeight: "1.4" },
-  fileInput: { width: "100%", marginTop: "10px", fontSize: "13px", fontWeight: "700" },
-  submitBtn: { width: "100%", padding: "12px", background: "#10b981", color: "#fff", border: "none", borderRadius: "10px", fontSize: "15px", fontWeight: "900", marginTop: "14px", cursor: "pointer" }
+  fileInput: { width: "100%", marginTop: "10px", fontSize: "13px", fontWeight: "700" }, 
+ submitBtn: { width: "100%", padding: "12px", background: "#10b981", color: "#fff", border: "none", borderRadius: "10px", fontSize: "15px", fontWeight: "900", marginTop: "14px", cursor: "pointer" },
+
+paymentInstruction: {
+  marginTop: "12px",
+  padding: "12px",
+  background: "#fff8e1",
+  border: "1px solid #facc15",
+  borderRadius: "10px",
+  color: "#92400e",
+  fontSize: "13px",
+  fontWeight: "700",
+  textAlign: "center",
+  lineHeight: "1.5",
+}
 };
 // 100% BALANCED JAVASCRIPT STYLE DICTIONARY
-
