@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState } from "react";
 import axios from "axios";
 import { useNavigate } from "react-router-dom";
@@ -433,10 +432,10 @@ export default function Wallet() {
 
               {/* Cancel Button */}
               <button style={styles.cancelBtn} onClick={() => { setShowPayment(false); setSelectedMethod(""); }}>Cancel</button>
-              
-              {/* --- YAHAN AAPKA NAYA NOTE BTN KE NICHE ADD KIYA HAI --- */}
-              <div style={styles.bottomCancelNote}>
-                👆ऊपर QR Scanner और UPI का ऑप्शन दिया गया है उस पर दबaye और पेमेंट करे !
+
+              {/* --- CANCEL BUTTON KE NICHE WALA BOX NOTE YAHAN HAI --- */}
+              <div style={styles.bottomCancelNoteBox}>
+                👆ऊपर QR Scanner और UPI का ऑप्शन दिया गया है उस पर दबाये और पेमेंट करे !
               </div>
 
             </div>
@@ -479,7 +478,6 @@ function HistoryBox({ empty, items, getStatusStyle, type }) {
     </div>
   );
 }
-
 const styles = {
   page: { minHeight: "100vh", background: "#f1f5f9", color: "#0f172a" },
   container: { padding: "72px 14px 105px", maxWidth: "480px", margin: "0 auto" },
@@ -515,8 +513,8 @@ const styles = {
   modalOverlay: { position: "fixed", top: 0, left: 0, right: 0, bottom: 0, background: "rgba(15,23,42,0.3)", backdropFilter: "blur(4px)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 100 },
   modal: { background: "#fff", width: "100%", maxWidth: "400px", padding: 24, borderRadius: 22, boxShadow: "0 25px 50px -12px rgba(0,0,0,0.1)", position: "relative", margin: "0 12px", border: "1px solid #e2e8f0" },
   closeBtn: { position: "absolute", top: 12, right: 16 },
-  
-  /* Baki bache existing payment styles */
+
+  /* Payment Modal / Page Styles */
   paymentPage: { position: "fixed", top: 0, left: 0, right: 0, bottom: 0, background: "#f8fafc", zIndex: 200, overflowY: "auto", display: "flex", justifyContent: "center" },
   paymentCard: { width: "100%", maxWidth: "480px", background: "#fff", minHeight: "100vh", display: "flex", flexDirection: "column" },
   headerContainer: { background: "#0f172a", color: "#fff", padding: "16px", display: "flex", alignItems: "center", gap: "12px" },
@@ -538,18 +536,17 @@ const styles = {
   submitBtn: { width: "100%", background: "#2563eb", color: "#fff", padding: "12px", border: "none", borderRadius: "8px", fontWeight: "bold", fontSize: "14px", cursor: "pointer", marginBottom: "12px" },
   cancelBtn: { width: "100%", background: "#fef2f2", border: "1px solid #fee2e2", color: "#ef4444", padding: "12px", borderRadius: "8px", fontWeight: "bold", fontSize: "14px", cursor: "pointer" },
   
-  /* --- NAYE NOTE KA STYLE ENGINE YAHAN HAI --- */
-  bottomCancelNote: {
-    marginTop: "16px",
+  /* --- CANCEL KE NICHE WALE BOX KI STYLE --- */
+  bottomCancelNoteBox: {
+    marginTop: "18px",
     padding: "12px",
-    background: "#f8fafc",
-    border: "1px dashed #cbd5e1",
+    background: "#f0fdf4", 
+    border: "1px solid #bbf7d0", 
     borderRadius: "10px",
-    color: "#475569",
+    color: "#166534", 
     fontSize: "13px",
     textAlign: "center",
-    fontWeight: "600",
+    fontWeight: "700",
     lineHeight: "1.5"
   }
 };
-
