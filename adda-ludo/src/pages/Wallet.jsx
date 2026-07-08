@@ -599,5 +599,6 @@ paymentInstruction: {
   fontWeight: "700",
   textAlign: "center",
   lineHeight: "1.5",
+}
 };
 // 100% BALANCED JAVASCRIPT STYLE DICTIONARY
