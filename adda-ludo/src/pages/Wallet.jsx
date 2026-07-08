@@ -1,3 +1,4 @@
+
 import React, { useEffect, useState } from "react";
 import axios from "axios";
 import { useNavigate } from "react-router-dom";
@@ -432,12 +433,6 @@ export default function Wallet() {
 
               {/* Cancel Button */}
               <button style={styles.cancelBtn} onClick={() => { setShowPayment(false); setSelectedMethod(""); }}>Cancel</button>
-
-              {/* --- CANCEL BUTTON KE NICHE WALA BOX NOTE YAHAN HAI --- */}
-              <div style={styles.bottomCancelNoteBox}>
-                👆ऊपर QR Scanner और UPI का ऑप्शन दिया गया है उस पर दबाये और पेमेंट करे !
-              </div>
-
             </div>
           </div>
         </div>
@@ -512,41 +507,4 @@ const styles = {
 
   modalOverlay: { position: "fixed", top: 0, left: 0, right: 0, bottom: 0, background: "rgba(15,23,42,0.3)", backdropFilter: "blur(4px)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 100 },
   modal: { background: "#fff", width: "100%", maxWidth: "400px", padding: 24, borderRadius: 22, boxShadow: "0 25px 50px -12px rgba(0,0,0,0.1)", position: "relative", margin: "0 12px", border: "1px solid #e2e8f0" },
-  closeBtn: { position: "absolute", top: 12, right: 16 },
-
-  /* Payment Modal / Page Styles */
-  paymentPage: { position: "fixed", top: 0, left: 0, right: 0, bottom: 0, background: "#f8fafc", zIndex: 200, overflowY: "auto", display: "flex", justifyContent: "center" },
-  paymentCard: { width: "100%", maxWidth: "480px", background: "#fff", minHeight: "100vh", display: "flex", flexDirection: "column" },
-  headerContainer: { background: "#0f172a", color: "#fff", padding: "16px", display: "flex", alignItems: "center", gap: "12px" },
-  backArrowStyle: { background: "none", border: "none", color: "#fff", fontSize: "20px", cursor: "pointer" },
-  brandGroupStyle: { flex: 1, display: "flex", alignItems: "center", gap: "6px" },
-  logoTextStyle: { fontSize: "18px", fontWeight: "bold" },
-  completePaymentTextStyle: { background: "rgba(16, 185, 129, 0.2)", color: "#10b981", padding: "6px 12px", borderRadius: "20px", fontSize: "12px", fontWeight: "bold" },
-  paymentBody: { padding: "16px", flex: 1 },
-  amountCardBox: { border: "1px solid #e2e8f0", padding: "16px", borderRadius: "12px", textAlign: "center" },
-  payTextStyle: { fontSize: "14px", color: "#64748b", margin: "0 0 4px" },
-  amountTextStyle: { fontSize: "28px", fontWeight: "bold", color: "#0f172a", margin: "0 0 8px" },
-  timerBoxStyle: { display: "inline-flex", alignItems: "center", gap: "6px", background: "#fee2e2", color: "#ef4444", padding: "4px 12px", borderRadius: "6px", fontSize: "13px" },
-  methodBtn: { background: "#fff", border: "1px solid #e2e8f0", padding: "14px", borderRadius: "10px", fontSize: "14px", fontWeight: "bold", color: "#475569", cursor: "pointer" },
-  methodBtnActive: { background: "#eff6ff", border: "2px solid #2563eb", padding: "13px", borderRadius: "10px", fontSize: "14px", fontWeight: "bold", color: "#2563eb", cursor: "pointer" },
-  noPaymentBox: { padding: "12px", background: "#f1f5f9", borderRadius: "8px", textAlign: "center", color: "#64748b", fontSize: "13px" },
-  noteBox: { background: "#fffbeb", border: "1px solid #fef3c7", padding: "10px", borderRadius: "8px", color: "#b45309", fontSize: "12px", marginBottom: "12px", fontWeight: "500" },
-  input: { width: "100%", padding: "12px", border: "1px solid #e2e8f0", borderRadius: "8px", marginBottom: "12px", fontSize: "14px" },
-  fileInput: { marginBottom: "12px", fontSize: "13px" },
-  submitBtn: { width: "100%", background: "#2563eb", color: "#fff", padding: "12px", border: "none", borderRadius: "8px", fontWeight: "bold", fontSize: "14px", cursor: "pointer", marginBottom: "12px" },
-  cancelBtn: { width: "100%", background: "#fef2f2", border: "1px solid #fee2e2", color: "#ef4444", padding: "12px", borderRadius: "8px", fontWeight: "bold", fontSize: "14px", cursor: "pointer" },
-  
-  /* --- CANCEL KE NICHE WALE BOX KI STYLE --- */
-  bottomCancelNoteBox: {
-    marginTop: "18px",
-    padding: "12px",
-    background: "#f0fdf4", 
-    border: "1px solid #bbf7d0", 
-    borderRadius: "10px",
-    color: "#166534", 
-    fontSize: "13px",
-    textAlign: "center",
-    fontWeight: "700",
-    lineHeight: "1.5"
-  }
-};
+  closeBtn: { position: "absolute", top: 12, right: 16
