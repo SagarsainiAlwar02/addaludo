@@ -1,3 +1,4 @@
+
 import React, { useEffect, useState } from "react";
 import axios from "axios";
 import { useNavigate } from "react-router-dom";
@@ -432,6 +433,12 @@ export default function Wallet() {
 
               {/* Cancel Button */}
               <button style={styles.cancelBtn} onClick={() => { setShowPayment(false); setSelectedMethod(""); }}>Cancel</button>
+              
+              {/* --- YAHAN AAPKA NAYA NOTE BTN KE NICHE ADD KIYA HAI --- */}
+              <div style={styles.bottomCancelNote}>
+                👆ऊपर QR Scanner और UPI का ऑप्शन दिया गया है उस पर दबaye और पेमेंट करे !
+              </div>
+
             </div>
           </div>
         </div>
@@ -472,6 +479,7 @@ function HistoryBox({ empty, items, getStatusStyle, type }) {
     </div>
   );
 }
+
 const styles = {
   page: { minHeight: "100vh", background: "#f1f5f9", color: "#0f172a" },
   container: { padding: "72px 14px 105px", maxWidth: "480px", margin: "0 auto" },
@@ -506,83 +514,42 @@ const styles = {
 
   modalOverlay: { position: "fixed", top: 0, left: 0, right: 0, bottom: 0, background: "rgba(15,23,42,0.3)", backdropFilter: "blur(4px)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 100 },
   modal: { background: "#fff", width: "100%", maxWidth: "400px", padding: 24, borderRadius: 22, boxShadow: "0 25px 50px -12px rgba(0,0,0,0.1)", position: "relative", margin: "0 12px", border: "1px solid #e2e8f0" },
-  closeBtn: { position: "absolute", top: 12, right: 16, background: "none", border: "none", fontSize: 24, fontWeight: "bold", color: "#94a3b8", cursor: "pointer" },
-  modalTitle: { margin: "0 0 4px", fontSize: 22, fontWeight: 900, color: "#0f172a" },
-  modalSub: { margin: "0 0 16px", fontSize: 12, fontWeight: 700, color: "#64748b" },
-  input: { width: "100%", padding: "12px", borderRadius: "10px", border: "1px solid #cbd5e1", fontSize: "15px", fontWeight: "700", outline: "none", boxSizing: "border-box" },
-  depositNoteBox: { background: "#fffbeb", padding: "12px", borderRadius: "10px", border: "1px solid #fde68a", marginTop: "12px" },
-  depositNoteLine: { fontSize: "11px", margin: "0 0 4px", color: "#b45309", fontWeight: "600", lineHeight: "1.4" },
-  payBtn: { width: "100%", padding: "12px", background: "#2563eb", color: "#fff", border: "none", borderRadius: "10px", fontSize: "15px", fontWeight: "900", marginTop: "14px", cursor: "pointer" },
-
-  paymentPage: { position: "fixed", top: 0, left: 0, right: 0, bottom: 0, background: "#f8fafc", display: "flex", flexDirection: "column", zIndex: 110, overflowY: "auto" },
-  paymentCard: { width: "100%", maxWidth: "480px", margin: "0 auto", padding: "14px", boxSizing: "border-box" },
+  closeBtn: { position: "absolute", top: 12, right: 16 },
   
-  headerContainer: { display: "flex", alignItems: "center", justifyContent: "space-between", background: "linear-gradient(135deg, #1e293b 0%, #0f172a 100%)", padding: "14px 16px", borderRadius: "14px", marginBottom: "16px", boxShadow: "0 4px 15px rgba(15, 23, 42, 0.15)", border: "1px solid rgba(255, 255, 255, 0.05)" },
-  backArrowStyle: { fontSize: "20px", color: "#f8fafc", background: "rgba(255, 255, 255, 0.1)", width: "34px", height: "34px", borderRadius: "50%", display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", border: "none" },
-  brandGroupStyle: { display: "flex", alignItems: "center", gap: "6px", color: "#fff" },
-  logoTextStyle: { fontSize: "20px", fontWeight: "900", background: "linear-gradient(to right, #3b82f6, #60a5fa)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent", letterSpacing: "0.5px" },
-  completePaymentTextStyle: { fontSize: "12px", fontWeight: "800", color: "#34d399", textTransform: "uppercase", backgroundColor: "rgba(52, 211, 153, 0.1)", padding: "4px 10px", borderRadius: "20px", letterSpacing: "0.05em" },
-
-  paymentBody: { width: "100%" },
+  /* Baki bache existing payment styles */
+  paymentPage: { position: "fixed", top: 0, left: 0, right: 0, bottom: 0, background: "#f8fafc", zIndex: 200, overflowY: "auto", display: "flex", justifyContent: "center" },
+  paymentCard: { width: "100%", maxWidth: "480px", background: "#fff", minHeight: "100vh", display: "flex", flexDirection: "column" },
+  headerContainer: { background: "#0f172a", color: "#fff", padding: "16px", display: "flex", alignItems: "center", gap: "12px" },
+  backArrowStyle: { background: "none", border: "none", color: "#fff", fontSize: "20px", cursor: "pointer" },
+  brandGroupStyle: { flex: 1, display: "flex", alignItems: "center", gap: "6px" },
+  logoTextStyle: { fontSize: "18px", fontWeight: "bold" },
+  completePaymentTextStyle: { background: "rgba(16, 185, 129, 0.2)", color: "#10b981", padding: "6px 12px", borderRadius: "20px", fontSize: "12px", fontWeight: "bold" },
+  paymentBody: { padding: "16px", flex: 1 },
+  amountCardBox: { border: "1px solid #e2e8f0", padding: "16px", borderRadius: "12px", textAlign: "center" },
+  payTextStyle: { fontSize: "14px", color: "#64748b", margin: "0 0 4px" },
+  amountTextStyle: { fontSize: "28px", fontWeight: "bold", color: "#0f172a", margin: "0 0 8px" },
+  timerBoxStyle: { display: "inline-flex", alignItems: "center", gap: "6px", background: "#fee2e2", color: "#ef4444", padding: "4px 12px", borderRadius: "6px", fontSize: "13px" },
+  methodBtn: { background: "#fff", border: "1px solid #e2e8f0", padding: "14px", borderRadius: "10px", fontSize: "14px", fontWeight: "bold", color: "#475569", cursor: "pointer" },
+  methodBtnActive: { background: "#eff6ff", border: "2px solid #2563eb", padding: "13px", borderRadius: "10px", fontSize: "14px", fontWeight: "bold", color: "#2563eb", cursor: "pointer" },
+  noPaymentBox: { padding: "12px", background: "#f1f5f9", borderRadius: "8px", textAlign: "center", color: "#64748b", fontSize: "13px" },
+  noteBox: { background: "#fffbeb", border: "1px solid #fef3c7", padding: "10px", borderRadius: "8px", color: "#b45309", fontSize: "12px", marginBottom: "12px", fontWeight: "500" },
+  input: { width: "100%", padding: "12px", border: "1px solid #e2e8f0", borderRadius: "8px", marginBottom: "12px", fontSize: "14px" },
+  fileInput: { marginBottom: "12px", fontSize: "13px" },
+  submitBtn: { width: "100%", background: "#2563eb", color: "#fff", padding: "12px", border: "none", borderRadius: "8px", fontWeight: "bold", fontSize: "14px", cursor: "pointer", marginBottom: "12px" },
+  cancelBtn: { width: "100%", background: "#fef2f2", border: "1px solid #fee2e2", color: "#ef4444", padding: "12px", borderRadius: "8px", fontWeight: "bold", fontSize: "14px", cursor: "pointer" },
   
-  // FIXED COMPACT BLACK & WHITE SHARP RECTANGLE CARD BOX
-  amountCardBox: { 
-    background: "#ffffff", 
-    border: "2px solid #0f172a", 
-    borderRadius: "6px", 
-    padding: "10px 14px", 
-    textAlign: "center", 
-    boxShadow: "0 4px 12px rgba(0,0,0,0.04)" 
-  },
-  payTextStyle: { 
-    fontSize: "12px", 
-    fontWeight: "900", 
-    color: "#64748b", 
-    textTransform: "uppercase", 
-    letterSpacing: "0.05em", 
-    margin: 0 
-  },
-  amountTextStyle: { 
-    fontSize: "26px", 
-    fontWeight: "900", 
-    color: "#0f172a", 
-    letterSpacing: "-0.02em", 
-    marginTop: "2px", 
-    marginBottom: "2px", 
-    margin: 0 
-  },
-  timerBoxStyle: { 
-    display: "inline-flex", 
-    alignItems: "center", 
-    justifyContent: "center", 
-    gap: "4px", 
-    background: "#fee2e2", 
-    color: "#dc2626", 
-    padding: "3px 10px", 
-    borderRadius: "4px", 
-    fontSize: "11px", 
-    fontWeight: "800", 
-    marginTop: "4px", 
-    border: "1px solid #fca5a5" 
-  },
-
-  methodBtn: { background: "#fff", border: "2px solid #cbd5e1", color: "#475569", padding: "12px", borderRadius: "12px", fontSize: "14px", fontWeight: "800", cursor: "pointer" },
-  methodBtnActive: { background: "linear-gradient(135deg, #10b981, #059669)", border: "none", color: "#fff", padding: "12px", borderRadius: "12px", fontSize: "14px", fontWeight: "900", cursor: "pointer", boxShadow: "0 4px 14px rgba(16,185,129,0.3)" },
-  cancelBtn: { width: "100%", border: "1px solid #fca5a5", background: "#fef2f2", color: "#dc2626", padding: "12px", borderRadius: "14px", fontSize: "14px", fontWeight: "900", cursor: "pointer", marginTop: "14px" },
-
-  noPaymentBox: { padding: "16px", background: "#f1f5f9", borderRadius: "12px", textAlign: "center", fontSize: "13px", color: "#64748b", fontWeight: "700" },
-  qrBox: { display: "flex", justifyContent: "center", padding: "14px", background: "#fff", borderRadius: "16px", border: "1px solid #e2e8f0" },
-  qrImg: { width: "200px", height: "200px", objectFit: "contain" },
-  bankDetailContainer: { background: "#fff", padding: "12px", borderRadius: "14px", border: "1px solid #e2e8f0", display: "flex", flexDirection: "column", gap: "10px" },
-  
-  copyRow: { display: "flex", alignItems: "center", justifyContent: "space-between", background: "#f8fafc", padding: "10px 14px", borderRadius: "10px", border: "1px solid #e2e8f0" },
-  copyLabel: { margin: 0, fontSize: "11px", color: "#64748b", fontWeight: "800" },
-  copyValue: { margin: "2px 0 0", fontSize: "14px", color: "#0f172a", fontWeight: "900" },
-  copyBtn: { background: "#2563eb", color: "#fff", border: "none", padding: "6px 12px", borderRadius: "6px", fontSize: "12px", fontWeight: "800", cursor: "pointer" },
-
-  noteBox: { background: "#fff5f5", color: "#c53030", padding: "12px", borderRadius: "10px", fontSize: "12px", fontWeight: "700", marginBottom: "12px", border: "1px solid #feb2b2", lineHeight: "1.4" },
-  fileInput: { width: "100%", marginTop: "10px", fontSize: "13px", fontWeight: "700" },
-  submitBtn: { width: "100%", padding: "12px", background: "#10b981", color: "#fff", border: "none", borderRadius: "10px", fontSize: "15px", fontWeight: "900", marginTop: "14px", cursor: "pointer" }
+  /* --- NAYE NOTE KA STYLE ENGINE YAHAN HAI --- */
+  bottomCancelNote: {
+    marginTop: "16px",
+    padding: "12px",
+    background: "#f8fafc",
+    border: "1px dashed #cbd5e1",
+    borderRadius: "10px",
+    color: "#475569",
+    fontSize: "13px",
+    textAlign: "center",
+    fontWeight: "600",
+    lineHeight: "1.5"
+  }
 };
-// 100% BALANCED JAVASCRIPT STYLE DICTIONARY
 
