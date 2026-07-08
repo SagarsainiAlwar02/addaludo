@@ -104,8 +104,8 @@ async function lockAmount(userId, amount, roomId) {
   let remaining = amount;
 
   // 1. Sabse pehle Bonus Amount se paisa kaato (Priority)
-  const useBonus = Math.min(Number(wallet.bonusAmount || 0), remaining);
-  wallet.bonusAmount = Number(wallet.bonusAmount || 0) - useBonus;
+  const useBonus = Math.min(Number(wallet.bonus || 0), remaining);
+  wallet.bonus = Number(wallet.bonus || 0) - useBonus;
   remaining -= useBonus;
 
   // 2. Agar abhi bhi bacha hai, toh Main/Deposit Balance se kaato
