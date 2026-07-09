@@ -79,6 +79,10 @@ async function hasUserActiveUnsubmittedBattle(userId) {
 }
 
 async function getWallet(userId) {
+  // ✅ FIX: agar userId hi nahi hai (null/undefined) to wallet dhoondhne/banane ki koshish mat karo.
+  // Pehle ye getWallet(null) bula leta tha jo ek corrupt "userId: null" wala wallet bana sakta tha.
+  if (!userId) return null;
+
   let wallet = await Wallet.findOne({ userId });
   if (!wallet) {
     wallet = await Wallet.create({
@@ -103,7 +107,9 @@ async function lockAmount(userId, amount, roomId) {
 
   let remaining = amount;
 
-  // 1. Sabse pehle Bonus Amount se paisa kaato (Priority)
+  // ✅ FIX: schema me field ka naam "bonus" hai, "bonusAmount" nahi.
+  // Pehle "bonusAmount" likha tha jo schema me exist hi nahi karta — is wajah se
+  // ye deduction kabhi kaam hi nahi karta tha (silently ignored by Mongoose).
   const useBonus = Math.min(Number(wallet.bonus || 0), remaining);
   wallet.bonus = Number(wallet.bonus || 0) - useBonus;
   remaining -= useBonus;
@@ -135,11 +141,9 @@ async function lockAmount(userId, amount, roomId) {
   return wallet;
 }
 
-// FIX: uniqueTransactionKey add kiya taaki duplicate refund na ho
 async function refundAmount(userId, amount, roomId, note = "Battle amount refunded") {
   const refundKey = `${roomId}_refund_${userId}`;
 
-  // Duplicate refund check
   const alreadyRefunded = await Transaction.findOne({
     uniqueTransactionKey: refundKey,
   });
@@ -147,6 +151,8 @@ async function refundAmount(userId, amount, roomId, note = "Battle amount refund
   if (alreadyRefunded) return null;
 
   const wallet = await getWallet(userId);
+  if (!wallet) return null;
+
   amount = Number(amount || 0);
 
   wallet.locked = Math.max(0, Number(wallet.locked || 0) - amount);
@@ -168,41 +174,63 @@ async function refundAmount(userId, amount, roomId, note = "Battle amount refund
 }
 
 async function giveReferralCommission(winnerId, betAmount, roomId) {
-  const winner = await User.findById(winnerId).select("referredBy phone name");
-  if (!winner || !winner.referredBy) return;
+  try {
+    const winner = await User.findById(winnerId).select("referredBy phone name");
+    if (!winner || !winner.referredBy) return;
 
-  const referrerId = winner.referredBy;
-  const commission = Number((Number(betAmount || 0) * 0.02).toFixed(2));
-  if (commission <= 0) return;
+    const referrerId = winner.referredBy;
+    const commission = Number((Number(betAmount || 0) * 0.02).toFixed(2));
+    if (commission <= 0) return;
 
-  const alreadyGiven = await Transaction.findOne({
-    userId: referrerId,
-    type: "referral_commission",
-    roomId,
-  });
+    const alreadyGiven = await Transaction.findOne({
+      userId: referrerId,
+      type: "referral_commission",
+      roomId,
+    });
 
-  if (alreadyGiven) return;
+    if (alreadyGiven) return;
 
-  const referrerWallet = await getWallet(referrerId);
-  referrerWallet.referralBalance = Number(referrerWallet.referralBalance || 0) + commission;
-  await referrerWallet.save();
+    const referrerWallet = await getWallet(referrerId);
+    if (!referrerWallet) return;
 
-  await User.findByIdAndUpdate(referrerId, {
-    $inc: { totalReferralEarning: commission },
-  });
+    referrerWallet.referralBalance = Number(referrerWallet.referralBalance || 0) + commission;
+    await referrerWallet.save();
 
-  await Transaction.create({
-    userId: referrerId,
-    amount: commission,
-    type: "referral_commission",
-    status: "success",
-    roomId,
-    note: "Referral commission 2% from referred player's winning battle",
-    balanceAfter: referrerWallet.referralBalance,
-  });
+    await User.findByIdAndUpdate(referrerId, {
+      $inc: { totalReferralEarning: commission },
+    });
+
+    await Transaction.create({
+      userId: referrerId,
+      amount: commission,
+      type: "referral_commission",
+      status: "success",
+      roomId,
+      note: "Referral commission 2% from referred player's winning battle",
+      balanceAfter: referrerWallet.referralBalance,
+    });
+  } catch (err) {
+    // ✅ FIX: referral commission ek "nice to have" side-effect hai.
+    // Isme error aane se MAIN winner payment fail/rollback nahi honi chahiye.
+    console.error("[giveReferralCommission] FAILED (winner payment not affected):", err);
+  }
 }
 
+/**
+ * ✅ REWRITTEN settleWinner
+ * Fixes:
+ * 1. Poora adminNote/prize update ek hi atomic $set me — do alag-alag .save() calls
+ *    (jo pehle silently fail ho sakte the) hata diye.
+ * 2. Wallet-credit step ko try/catch me wrap kiya + console.error logging, taaki
+ *    agar wallet-save/transaction-create fail ho to server logs me turant dikhe,
+ *    aur battle document "half-updated" state me na phase.
+ * 3. loserId null hone par crash/corrupt-wallet se bachaav (getWallet null-safe).
+ * 4. alreadyPaid case me bhi clearly return value se pata chalta hai ki payment
+ *    naya hua ya pehle se hi ho chuka tha (caller isko check kar sakta hai).
+ */
 async function settleWinner(battle, winnerId) {
+  // Step 1: Status atomically lock karo taaki koi doosra parallel request
+  // isi battle ko dobara settle na kar sake.
   const lockedBattle = await Battle.findOneAndUpdate(
     {
       _id: battle._id,
@@ -219,7 +247,9 @@ async function settleWinner(battle, winnerId) {
     { new: true }
   );
 
-  if (!lockedBattle) return null;
+  if (!lockedBattle) {
+    return { battle: null, alreadyPaid: false };
+  }
 
   const alreadyPaid = await Transaction.findOne({
     roomId: lockedBattle.battleId,
@@ -227,7 +257,11 @@ async function settleWinner(battle, winnerId) {
     status: "success",
   });
 
-  if (alreadyPaid) return lockedBattle;
+  if (alreadyPaid) {
+    // ✅ FIX: caller ko explicitly bataya ja raha hai ki is call me payment
+    // NAYA nahi hua (pehle se ho chuka tha) — silently "success" nahi dikhaya jayega.
+    return { battle: lockedBattle, alreadyPaid: true };
+  }
 
   const finalPrize = calculateBattlePrize(lockedBattle.amount);
 
@@ -235,19 +269,19 @@ async function settleWinner(battle, winnerId) {
   const winnerString = winnerId.toString();
   const loserId = winnerString === creatorId ? lockedBattle.opponent : lockedBattle.createdBy;
 
-  const winnerWallet = await getWallet(winnerId);
-  const loserWallet = await getWallet(loserId);
-
-  winnerWallet.locked = Math.max(
-    0,
-    Number(winnerWallet.locked || 0) - Number(lockedBattle.amount || 0)
-  );
-
-  // Pehle wallet save, phir transaction
-  winnerWallet.winnings = Number(winnerWallet.winnings || 0) + Number(finalPrize || 0);
-  await winnerWallet.save();
-
   try {
+    const winnerWallet = await getWallet(winnerId);
+    if (!winnerWallet) {
+      throw new Error(`Winner wallet nahi mila/bana (winnerId: ${winnerId})`);
+    }
+
+    winnerWallet.locked = Math.max(
+      0,
+      Number(winnerWallet.locked || 0) - Number(lockedBattle.amount || 0)
+    );
+    winnerWallet.winnings = Number(winnerWallet.winnings || 0) + Number(finalPrize || 0);
+    await winnerWallet.save();
+
     await Transaction.create({
       userId: winnerId,
       amount: finalPrize,
@@ -258,24 +292,47 @@ async function settleWinner(battle, winnerId) {
       note: "Battle winning prize",
       balanceAfter: getPlayableBalance(winnerWallet),
     });
-  } catch (txErr) {
-    if (txErr.code === 11000) return lockedBattle;
-    throw txErr;
+
+    // ✅ FIX: agar loserId null hai (opponent set hi nahi hua tha), to skip karo —
+    // pehle ye getWallet(null) bula ke corrupt wallet bana sakta tha.
+    if (loserId) {
+      const loserWallet = await getWallet(loserId);
+      if (loserWallet) {
+        loserWallet.locked = Math.max(
+          0,
+          Number(loserWallet.locked || 0) - Number(lockedBattle.amount || 0)
+        );
+        await loserWallet.save();
+      }
+    }
+
+    await giveReferralCommission(winnerId, lockedBattle.amount, lockedBattle.battleId);
+
+    // ✅ FIX: prize + adminNote ek hi update me save, alag se dusra .save() call nahi.
+    lockedBattle.prize = finalPrize;
+    if (!lockedBattle.adminNote) {
+      lockedBattle.adminNote = "Auto approved because one user submitted win and other submitted loss";
+    }
+    await lockedBattle.save();
+
+    return { battle: lockedBattle, alreadyPaid: false };
+  } catch (err) {
+    // ✅ FIX: ye sabse important part hai. Pehle koi bhi error yahan silently
+    // upar throw ho jaata tha aur battle "resultSettled: true, status: approved"
+    // reh jaata tha LEKIN paisa kabhi credit nahi hota tha — aur kahin log bhi
+    // nahi hota tha ki aisa kyun hua.
+    console.error(
+      `[settleWinner] Payment credit FAILED for battle ${lockedBattle.battleId}, winnerId ${winnerId}:`,
+      err
+    );
+    // Battle ko "payment_failed" jaisi state me maarke rakho taaki dobara try ho sake.
+    // resultSettled ko false wapas kar dete hain taaki admin dobara Win button use kar sake.
+    await Battle.updateOne(
+      { _id: lockedBattle._id },
+      { $set: { resultSettled: false, status: battle.status, winner: null } }
+    );
+    throw err;
   }
-
-  loserWallet.locked = Math.max(
-    0,
-    Number(loserWallet.locked || 0) - Number(lockedBattle.amount || 0)
-  );
-  await loserWallet.save();
-
-  await giveReferralCommission(winnerId, lockedBattle.amount, lockedBattle.battleId);
-
-  lockedBattle.prize = finalPrize;
-  lockedBattle.adminNote = "Auto approved because one user submitted win and other submitted loss";
-  await lockedBattle.save();
-
-  return lockedBattle;
 }
 
 async function expireOldOpenBattles() {
@@ -352,7 +409,7 @@ export const createBattle = async (req, res) => {
     if (req.app.get("io")) { req.app.get("io").emit("newBattle", battle); }
     return res.json({ success: true, msg: "Battle open ho gayi", battle });
   } catch (err) {
-    console.log("CREATE BATTLE ERROR:", err);
+    console.error("CREATE BATTLE ERROR:", err);
     return res.status(500).json({ success: false, msg: err.message });
   }
 };
@@ -366,6 +423,7 @@ export const getOpenBattles = async (req, res) => {
       .sort({ updatedAt: -1, createdAt: -1 });
     return res.json({ success: true, battles });
   } catch (err) {
+    console.error("GET OPEN BATTLES ERROR:", err);
     return res.status(500).json({ success: false, msg: err.message });
   }
 };
@@ -374,7 +432,6 @@ export const getMyBattles = async (req, res) => {
   try {
     const userId = getUserId(req);
 
-    // Database query ko fast karne ke liye sirf limit add kar rahe hain aur expire function ko bypass kar rahe hain
     const battles = await Battle.find({
       $or: [{ createdBy: userId }, { opponent: userId }],
     })
@@ -382,10 +439,11 @@ export const getMyBattles = async (req, res) => {
       .populate("opponent", "name phone")
       .populate("winner", "name phone")
       .sort({ updatedAt: -1, createdAt: -1 })
-      .limit(20); // Sirf top 20 battles mangao taaki query palkein jhapakte hi load ho jaye
+      .limit(20);
 
     return res.json({ success: true, battles });
   } catch (err) {
+    console.error("GET MY BATTLES ERROR:", err);
     return res.status(500).json({ success: false, msg: err.message });
   }
 };
@@ -413,6 +471,7 @@ export const getSingleBattle = async (req, res) => {
 
     return res.json({ success: true, battle });
   } catch (err) {
+    console.error("GET SINGLE BATTLE ERROR:", err);
     return res.status(500).json({ success: false, msg: err.message });
   }
 };
@@ -457,7 +516,7 @@ export const joinBattle = async (req, res) => {
 
     return res.json({ success: true, msg: "Play request sent. Other searching battles removed.", battle });
   } catch (err) {
-    console.log("JOIN BATTLE ERROR:", err);
+    console.error("JOIN BATTLE ERROR:", err);
     return res.status(500).json({ success: false, msg: err.message });
   }
 };
@@ -514,7 +573,7 @@ export const startBattle = async (req, res) => {
 
     return res.json({ success: true, msg: "Battle started", battle: lockedBattle });
   } catch (err) {
-    console.log("START BATTLE ERROR:", err);
+    console.error("START BATTLE ERROR:", err);
     return res.status(500).json({ success: false, msg: err.message });
   }
 };
@@ -542,7 +601,7 @@ export const rejectBattleRequest = async (req, res) => {
 
     return res.json({ success: true, msg: "Request rejected.", battle });
   } catch (err) {
-    console.log("REJECT BATTLE ERROR:", err);
+    console.error("REJECT BATTLE ERROR:", err);
     return res.status(500).json({ success: false, msg: err.message });
   }
 };
@@ -575,6 +634,7 @@ export const submitRoomCode = async (req, res) => {
 
     return res.json({ success: true, msg: "Room code submitted", battle });
   } catch (err) {
+    console.error("SUBMIT ROOM CODE ERROR:", err);
     return res.status(500).json({ success: false, msg: err.message });
   }
 };
@@ -657,14 +717,33 @@ export const submitResult = async (req, res) => {
 
     // Ek win ek loss — winner settle karo
     if ((r1 === "win" && r2 === "loss") || (r1 === "loss" && r2 === "win")) {
+      // ✅ FIX: pehle results.push() sirf memory me tha, settleWinner() se pehle
+      // save hi nahi hota tha. Ab pehle results properly save karte hain,
+      // phir settlement karte hain — taaki results history hamesha DB me safe rahe
+      // chahe settlement me aage koi bhi error aaye.
+      await battle.save();
+
       const winnerId = r1 === "win" ? battle.createdBy : battle.opponent;
-      const settledBattle = await settleWinner(battle, winnerId);
 
-      if (!settledBattle) {
-        return res.json({ success: true, msg: "Result already settled. Payment dobara add nahi hua.", battle });
+      try {
+        const { battle: settledBattle, alreadyPaid } = await settleWinner(battle, winnerId);
+
+        if (!settledBattle) {
+          return res.json({ success: true, msg: "Result already settled. Payment dobara add nahi hua.", battle });
+        }
+
+        return res.json({
+          success: true,
+          msg: alreadyPaid ? "Result already settled. Payment dobara add nahi hua." : "Result auto approved aur payment credit ho gaya.",
+          battle: settledBattle,
+        });
+      } catch (settleErr) {
+        console.error("SUBMIT RESULT -> AUTO SETTLE ERROR:", settleErr);
+        return res.status(500).json({
+          success: false,
+          msg: "Result submit ho gaya lekin payment process karte waqt error aayi. Admin se contact karein.",
+        });
       }
-
-      return res.json({ success: true, msg: "Result auto approved.", battle: settledBattle });
     }
 
     // Conflict — admin decide karega
@@ -674,7 +753,7 @@ export const submitResult = async (req, res) => {
 
     return res.json({ success: true, msg: "Result submitted. Admin approval pending.", battle });
   } catch (err) {
-    console.log("SUBMIT RESULT ERROR:", err);
+    console.error("SUBMIT RESULT ERROR:", err);
     return res.status(500).json({ success: false, msg: err.message });
   }
 };
@@ -722,6 +801,7 @@ export const cancelBattle = async (req, res) => {
 
     return res.status(400).json({ success: false, msg: "Running battle cancel ke liye Cancel result button use karein" });
   } catch (err) {
+    console.error("CANCEL BATTLE ERROR:", err);
     return res.status(500).json({ success: false, msg: err.message });
   }
 };
@@ -757,7 +837,7 @@ export const getAdminBattles = async (req, res) => {
       battles: battles || [],
     });
   } catch (err) {
-    console.log("ADMIN FETCH BATTLES ERROR:", err);
+    console.error("ADMIN FETCH BATTLES ERROR:", err);
     return res.status(500).json({ success: false, msg: err.message });
   }
 };
@@ -773,6 +853,7 @@ export const getAdminSingleBattle = async (req, res) => {
     if (!battle) return res.status(404).json({ success: false, msg: "Match nahi mila" });
     return res.json({ success: true, battle });
   } catch (err) {
+    console.error("GET ADMIN SINGLE BATTLE ERROR:", err);
     return res.status(500).json({ success: false, msg: err.message });
   }
 };
@@ -782,21 +863,57 @@ export const approveAdminBattle = async (req, res) => {
     const { id } = req.params;
     const { winnerId, adminNote } = req.body;
 
+    if (!winnerId) {
+      return res.status(400).json({ success: false, msg: "Winner ID is required" });
+    }
+
     const battle = await Battle.findById(id);
     if (!battle) return res.status(404).json({ success: false, msg: "Match nahi mila" });
 
-    const settledBattle = await settleWinner(battle, winnerId);
+    // ✅ FIX: winner ko match ke players me se hona chahiye, warna galat user ko
+    // paisa credit ho sakta hai.
+    const creatorId = battle.createdBy?.toString();
+    const opponentId = battle.opponent?.toString();
+    if (String(winnerId) !== creatorId && String(winnerId) !== opponentId) {
+      return res.status(400).json({ success: false, msg: "Winner is not a player in this battle" });
+    }
+
+    let settleResult;
+    try {
+      settleResult = await settleWinner(battle, winnerId);
+    } catch (settleErr) {
+      // ✅ FIX: ab error yahan CLEARLY log hoga aur admin ko bhi bataya jayega
+      // ki payment process karte waqt error aayi (silent "success" nahi dikhega).
+      console.error(`APPROVE ADMIN BATTLE -> settleWinner FAILED for battle ${id}:`, settleErr);
+      return res.status(500).json({
+        success: false,
+        msg: "Winner set karte waqt payment process me error aayi. Server logs check karein. Payment credit NAHI hui hai.",
+      });
+    }
+
+    const { battle: settledBattle, alreadyPaid } = settleResult;
+
     if (!settledBattle) {
       return res.status(400).json({ success: false, msg: "Result already settled ya invalid status hai" });
     }
 
-    if (adminNote) {
+    // ✅ FIX: adminNote ko settleWinner ke andar hi set karke ek hi baar save karte
+    // hain — pehle ek extra alag .save() call yahan hota tha jo silently fail ho
+    // sakta tha.
+    if (adminNote && settledBattle.adminNote !== adminNote) {
+      await Battle.updateOne({ _id: settledBattle._id }, { $set: { adminNote } });
       settledBattle.adminNote = adminNote;
-      await settledBattle.save();
     }
 
-    return res.json({ success: true, msg: "Winner approved successfully", battle: settledBattle });
+    return res.json({
+      success: true,
+      msg: alreadyPaid
+        ? "Winner pehle se hi approved tha, payment dobara credit nahi hui."
+        : "Winner approved successfully aur payment credit ho gayi.",
+      battle: settledBattle,
+    });
   } catch (err) {
+    console.error("APPROVE ADMIN BATTLE ERROR:", err);
     return res.status(500).json({ success: false, msg: err.message });
   }
 };
@@ -829,6 +946,7 @@ export const rejectAdminBattle = async (req, res) => {
 
     return res.json({ success: true, msg: "Match cancel aur refund ho gaya", battle });
   } catch (err) {
+    console.error("REJECT ADMIN BATTLE ERROR:", err);
     return res.status(500).json({ success: false, msg: err.message });
   }
 };
