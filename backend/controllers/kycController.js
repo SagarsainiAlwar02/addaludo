@@ -9,13 +9,6 @@ export const submitKyc = async (req, res) => {
       return res.status(400).json({ msg: "All KYC fields required" });
     }
 
-    const frontImage = req.files?.frontImage?.[0];
-    const backImage = req.files?.backImage?.[0];
-
-    if (!frontImage || !backImage) {
-      return res.status(400).json({ msg: "Front and back document images required" });
-    }
-
     const user = await User.findById(userId);
     if (!user) return res.status(404).json({ msg: "User not found" });
 
@@ -31,8 +24,6 @@ export const submitKyc = async (req, res) => {
       dob,
       docType: docType || "aadhar",
       docNumber,
-      frontImage: `/uploads/kyc/${frontImage.filename}`,
-      backImage: `/uploads/kyc/${backImage.filename}`,
       submittedAt: new Date(),
       approvedAt: null,
       rejectedAt: null,
@@ -52,6 +43,8 @@ export const submitKyc = async (req, res) => {
     res.status(500).json({ msg: err.message });
   }
 };
+
+
 
 export const getAllKyc = async (req, res) => {
   try {
