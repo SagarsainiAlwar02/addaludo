@@ -40,7 +40,7 @@ const FAKE_OPPONENT_NAMES = [
 ];
 
 const FAKE_BATTLE_AMOUNTS = [
-  4500, 3000, 300, 1150, 450, 2050, 15000, 600, 2000, 10000, 100, 2250, 150, 7000, 5500, 950, 50, 1050
+  6500, 100, 3500, 11750, 1550, 2050, 15000, 600, 2000, 10000, 100, 2250, 150, 7000, 5500, 950, 50, 1050
 ];
 
 const randomFrom = (arr) => arr[Math.floor(Math.random() * arr.length)];
@@ -509,7 +509,7 @@ const fetchBattles = useCallback(async () => {
 
             <div className="mt-4 rounded-2xl bg-black/20 px-4 py-3 text-center text-sm font-bold leading-6 text-white ring-1 ring-white/10">
               ADDA LUDO में आपका स्वागत है ,सबसे Fast ⏩ विथड्रॉ है ,👉मात्र 2-3 Min में,
-              👉आपका विश्वास बनाये रखे 🙏
+              👉आपका विश्वास बनाये रखे 🙏 whatsapp support 8239092073
             </div>
           </div>
         </div>

@@ -11,6 +11,7 @@ import {
   rejectKyc,
 } from "../controllers/kycController.js";
 
+// ✅ Ab ye route bina kisi image upload (multer) ke chalega, sirf text data accept karega
 router.post("/submit", auth, submitKyc);
 
 router.get("/admin/all", auth, getAllKyc);
