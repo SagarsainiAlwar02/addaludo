@@ -182,15 +182,16 @@ app.post("/api/otp/send", async (req, res) => {
     console.log(" OTP GENERATED FOR:", phone, "-> OTP:", otp);
 
     // ================= MSGBRIDGE SMS API =================
+   // ================= NEW SMS API =================
     try {
-      const message = `Hi Welcome to ADDALUDO, OTP to your Login is ${otp} . Sender name - RESTPR`;
-      const smsUrl = `https://login.msgbridge.in/sendSMS?username=ADDA&message=${encodeURIComponent(
+      const message = `Your OTP for login is ${otp}. Valid for 10 minutes. Do not share this with anyone. - MSGBRG`;
+      const smsUrl = `http://135.181.19.87/Login/V2/apikey.php?apikey=YpKLhXCdJFTt5oFn&senderid=MSGBRD&templateid=1607100000000384742&number=${phone}&message=${encodeURIComponent(
         message
-      )}&sendername=RESTPR&smstype=TRANS&numbers=${phone}&apikey=434814a5-118b-4288-865d-f0f79c8e35cc`;
+      )}`;
 
       const smsRes = await fetch(smsUrl);
       const smsResponseText = await smsRes.text();
-      console.log(" MsgBridge SMS sent:", smsResponseText);
+      console.log(" SMS sent:", smsResponseText);
     } catch (smsErr) {
       console.log(" SMS GATEWAY WARNING (Fallback Mode Engaged):", smsErr.message);
     }
