@@ -420,8 +420,17 @@ export const getOpenBattles = async (req, res) => {
     const battles = await Battle.find({ status: { $in: PUBLIC_BATTLE_STATUSES } })
       .populate("createdBy", "name phone")
       .populate("opponent", "name phone")
-      .sort({ updatedAt: -1, createdAt: -1 });
-    return res.json({ success: true, battles });
+      .sort({ updatedAt: -1, createdAt: -1 })
+      .lean();
+
+    // ✅ NEW: dummy battles ke liye fake name/mobile display karo
+    const shaped = battles.map((b) =>
+      b.isDummy
+        ? { ...b, createdBy: { _id: b._id, name: b.dummyName || "Player", phone: b.dummyMobile || "" } }
+        : b
+    );
+
+    return res.json({ success: true, battles: shaped });
   } catch (err) {
     console.error("GET OPEN BATTLES ERROR:", err);
     return res.status(500).json({ success: false, msg: err.message });
@@ -492,6 +501,17 @@ export const joinBattle = async (req, res) => {
 
     const battle = await Battle.findOne({ battleId });
     if (!battle) return res.status(404).json({ success: false, msg: "Battle not found" });
+
+       // ✅ NEW: Dummy battle — real user click kare to turant hata do, kabhi real join nahi hoga
+    if (battle.isDummy) {
+      await Battle.deleteOne({ _id: battle._id });
+      return res.status(400).json({
+        success: false,
+        msg: "Ye battle abhi available nahi hai. Koi doosri table try karein.",
+      });
+    }
+
+    if (battle.status !== "open") {
 
     if (battle.status !== "open") {
       return res.status(400).json({ success: false, msg: "Battle already requested or joined" });

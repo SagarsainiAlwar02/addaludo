@@ -18,12 +18,13 @@ const battleSchema = new mongoose.Schema(
       min: 0,
     },
 
-    createdBy: {
-      type: mongoose.Schema.Types.ObjectId,
-      ref: "User",
-      required: true,
-      index: true,
-    },
+   createdBy: {
+  type: mongoose.Schema.Types.ObjectId,
+  ref: "User",
+  required: function () { return !this.isDummy; },
+  default: null,
+  index: true,
+},
 
     opponent: {
       type: mongoose.Schema.Types.ObjectId,
@@ -141,6 +142,10 @@ const battleSchema = new mongoose.Schema(
     },
 
     adminNote: { type: String, default: "" },
+      // ✅ Dummy battle fields — social-proof ke liye, real user nahi hai
+    isDummy: { type: Boolean, default: false, index: true },
+    dummyName: { type: String, default: "" },
+    dummyMobile: { type: String, default: "" },
   },
   { timestamps: true }
 );

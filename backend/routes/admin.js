@@ -571,6 +571,59 @@ router.patch("/withdraw/reject/:id", auth, async (req, res) => {
   }
 });
 
+
+// ================= DUMMY BATTLES =================
+router.post("/dummy-battle/create", auth, async (req, res) => {
+  try {
+    const { name, mobile, amount } = req.body;
+    const dummyAmount = Number(amount);
+
+    if (!name || !dummyAmount || dummyAmount < 50) {
+      return res.status(400).json({ msg: "Name aur valid amount (min ₹50) required hai" });
+    }
+
+    const battleId = "battle_" + Date.now() + "_" + Math.floor(Math.random() * 9999);
+    const totalPool = dummyAmount * 2;
+    const platformFee = dummyAmount <= 500 ? dummyAmount * 0.05 * 2 : dummyAmount * 0.025 * 2;
+    const prize = Math.floor(totalPool - platformFee);
+
+    const battle = await Battle.create({
+      battleId,
+      amount: dummyAmount,
+      prize,
+      status: "open",
+      isDummy: true,
+      dummyName: String(name).trim(),
+      dummyMobile: String(mobile || "").trim(),
+    });
+
+    res.json({ success: true, msg: "Dummy battle created", battle });
+  } catch (err) {
+    console.log("❌ CREATE DUMMY BATTLE ERROR:", err);
+    res.status(500).json({ msg: err.message });
+  }
+});
+
+router.get("/dummy-battle/all", auth, async (req, res) => {
+  try {
+    const battles = await Battle.find({ isDummy: true }).sort({ createdAt: -1 }).lean();
+    res.json({ success: true, battles });
+  } catch (err) {
+    res.status(500).json({ msg: err.message });
+  }
+});
+
+router.delete("/dummy-battle/:id", auth, async (req, res) => {
+  try {
+    await Battle.findOneAndDelete({ _id: req.params.id, isDummy: true });
+    res.json({ success: true, msg: "Dummy battle removed" });
+  } catch (err) {
+    res.status(500).json({ msg: err.message });
+  }
+});
+
+
+
 // ================= ADMIN BATTLES =================
 router.get("/battles", auth, async (req, res) => {
   try {
@@ -805,5 +858,8 @@ router.get("/agent-report", auth, async (req, res) => {
     res.status(500).json({ msg: err.message });
   }
 });
+
+
+
 
 export default router;
