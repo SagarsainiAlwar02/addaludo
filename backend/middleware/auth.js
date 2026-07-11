@@ -49,10 +49,14 @@ if (!mongoose.Types.ObjectId.isValid(decoded.id)) {
       });
     }
 
-    req.user = user._id.toString();
+  req.user = user._id.toString();
     req.userData = user;
 
+    // ✅ NEW: Online-user tracking, fire-and-forget (request slow nahi hoga)
+    User.updateOne({ _id: user._id }, { $set: { lastActiveAt: new Date() } }).catch(() => {});
+
     next();
+
 } catch (err) {
 
   console.log("AUTH ERROR:", err.message);

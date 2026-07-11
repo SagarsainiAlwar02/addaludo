@@ -65,7 +65,7 @@ const userSchema = new mongoose.Schema(
       default: "not_submitted",
     },
 
-    kyc: {
+  kyc: {
       name: { type: String, default: "" },
       dob: { type: String, default: "" },
       docType: { type: String, default: "aadhar" },
@@ -75,6 +75,8 @@ const userSchema = new mongoose.Schema(
       rejectedAt: { type: Date, default: null },
       rejectReason: { type: String, default: "" },
     },
+
+    lastActiveAt: { type: Date, default: null },
   },
   { timestamps: true }
 );

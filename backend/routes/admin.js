@@ -210,6 +210,7 @@ router.delete("/delete/:id", auth, async (req, res) => {
 });
 
 // ================= DASHBOARD =================
+// ================= DASHBOARD (replace the existing router.get("/dashboard", ...) block with this) =================
 router.get("/dashboard", auth, async (req, res) => {
   try {
     const totalUsers = await User.countDocuments({ role: "user" });
@@ -242,17 +243,132 @@ router.get("/dashboard", auth, async (req, res) => {
     const totalGameEntry = txMap.game_entry || 0;
     const totalGameWin = txMap.game_win || 0;
     const totalRefund = txMap.refund || 0;
+    const totalCommission = txMap.referral_commission || 0;
     const totalEarnings = totalGameEntry + totalPenalty - totalGameWin - totalRefund;
+    const totalReferral = Number(walletData.totalReferral || 0) + Number(userReferralData.totalReferralEarning || 0) + Number(totalReferralRedeem || 0);
+
+    // ✅ NEW: last 7 days ke real daily trends (sparklines ke liye)
+    const sevenDaysAgo = new Date();
+    sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 6);
+    sevenDaysAgo.setHours(0, 0, 0, 0);
+
+    const days = [];
+    for (let i = 6; i >= 0; i--) {
+      const d = new Date();
+      d.setDate(d.getDate() - i);
+      days.push(d.toISOString().slice(0, 10));
+    }
+
+    const dailyTxAgg = await Transaction.aggregate([
+      { $match: { status: "success", createdAt: { $gte: sevenDaysAgo } } },
+      {
+        $group: {
+          _id: {
+            day: { $dateToString: { format: "%Y-%m-%d", date: "$createdAt" } },
+            type: "$type",
+          },
+          total: { $sum: "$amount" },
+        },
+      },
+    ]);
+
+    const buildSeries = (type) =>
+      days.map((day) => {
+        const found = dailyTxAgg.find((x) => x._id.day === day && x._id.type === type);
+        return found ? found.total : 0;
+      });
+
+    const dailyUsersAgg = await User.aggregate([
+      { $match: { role: "user", createdAt: { $gte: sevenDaysAgo } } },
+      { $group: { _id: { $dateToString: { format: "%Y-%m-%d", date: "$createdAt" } }, count: { $sum: 1 } } },
+    ]);
+    const usersSeries = days.map((day) => {
+      const found = dailyUsersAgg.find((x) => x._id === day);
+      return found ? found.count : 0;
+    });
+
+    // ✅ NEW: aaj ka real data
+    const { start, end } = todayRange();
+
+    const todayAgg = await Transaction.aggregate([
+      { $match: { status: "success", createdAt: { $gte: start, $lte: end } } },
+      { $group: { _id: "$type", total: { $sum: "$amount" } } },
+    ]);
+    const todayMap = {};
+    todayAgg.forEach((item) => { todayMap[item._id] = item.total || 0; });
+
+    const todayNewUsers = await User.countDocuments({ role: "user", createdAt: { $gte: start, $lte: end } });
+    const todayMatches = await Battle.countDocuments({ createdAt: { $gte: start, $lte: end } });
+    const todayEarnings = Math.max(
+      0,
+      (todayMap.game_entry || 0) + (todayMap.penalty || 0) - (todayMap.game_win || 0) - (todayMap.refund || 0)
+    );
+
+    // ✅ NEW: online users (last 5 min active) — real tracking via lastActiveAt
+    const fiveMinAgo = new Date(Date.now() - 5 * 60 * 1000);
+    const onlineUsers = await User.countDocuments({ role: "user", lastActiveAt: { $gte: fiveMinAgo } });
+
+    // ✅ NEW: active games (abhi chal rahi battles)
+    const activeGames = await Battle.countDocuments({ status: { $in: ["running", "room_submitted"] } });
+
+    // ✅ NEW: recent live activities (latest real transactions)
+    const recentActivitiesRaw = await Transaction.find({ status: "success" })
+      .sort({ createdAt: -1 })
+      .limit(8)
+      .populate("userId", "phone name")
+      .select("type amount note createdAt userId roomId")
+      .lean();
+
+    const recentActivities = recentActivitiesRaw.map((a) => ({
+      type: a.type,
+      amount: a.amount || 0,
+      note: a.note || "",
+      createdAt: a.createdAt,
+      phone: a.userId?.phone || "",
+      name: a.userId?.name || "",
+      roomId: a.roomId || "",
+    }));
 
     res.json({
       totalUsers, totalBlockedUsers, totalDeposit, totalWithdraw,
       totalEarnings: Math.max(0, totalEarnings),
-      totalCommission: txMap.referral_commission || 0,
-      totalReferral: Number(walletData.totalReferral || 0) + Number(userReferralData.totalReferralEarning || 0) + Number(totalReferralRedeem || 0),
-      totalBonus, totalPenalty,
+      totalCommission, totalReferral, totalBonus, totalPenalty,
       holdBalance: walletData.holdBalance || 0,
       walletBalance: walletData.walletBalance || 0,
       totalWinnings: walletData.totalWinnings || 0,
+
+      sparklines: {
+        users: usersSeries,
+        deposit: buildSeries("deposit"),
+        withdraw: buildSeries("withdraw"),
+        earnings: days.map((_, i) => 0), // reserved (kept 0, no reliable daily-earnings series without extra storage)
+        commission: buildSeries("referral_commission"),
+        referral: buildSeries("referral_commission"),
+        bonus: buildSeries("bonus"),
+        penalty: buildSeries("penalty"),
+      },
+
+      today: {
+        deposit: todayMap.deposit || 0,
+        withdraw: todayMap.withdraw || 0,
+        earnings: todayEarnings,
+        bonus: todayMap.bonus || 0,
+        penalty: todayMap.penalty || 0,
+        commission: todayMap.referral_commission || 0,
+        newUsers: todayNewUsers,
+        matches: todayMatches,
+      },
+
+      onlineUsers,
+      activeGames,
+      recentActivities,
+
+      breakdown: {
+        deposit: totalDeposit,
+        withdraw: totalWithdraw,
+        bonus: totalBonus,
+        others: Math.max(0, totalGameEntry + totalGameWin + totalPenalty + totalCommission + totalRefund),
+      },
     });
   } catch (err) {
     console.log("❌ DASHBOARD ERROR:", err);
