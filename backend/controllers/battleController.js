@@ -485,24 +485,17 @@ export const getSingleBattle = async (req, res) => {
   }
 };
 
+
 export const joinBattle = async (req, res) => {
   try {
     await expireOldOpenBattles();
     const userId = getUserId(req);
     const { battleId } = req.params;
 
-    const activeBattleExists = await hasUserActiveUnsubmittedBattle(userId);
-    if (activeBattleExists) {
-      return res.status(400).json({
-        success: false,
-        msg: "Aapki ek battle already chal rahi hai. Pehle uska result update karo.",
-      });
-    }
-
     const battle = await Battle.findOne({ battleId });
     if (!battle) return res.status(404).json({ success: false, msg: "Battle not found" });
 
-       // ✅ NEW: Dummy battle — real user click kare to turant hata do, kabhi real join nahi hoga
+    // ✅ Dummy battle check sabse pehle — koi bhi aur restriction se pehle
     if (battle.isDummy) {
       await Battle.deleteOne({ _id: battle._id });
       return res.status(400).json({
@@ -511,7 +504,13 @@ export const joinBattle = async (req, res) => {
       });
     }
 
-    if (battle.status !== "open") {
+    const activeBattleExists = await hasUserActiveUnsubmittedBattle(userId);
+    if (activeBattleExists) {
+      return res.status(400).json({
+        success: false,
+        msg: "Aapki ek battle already chal rahi hai. Pehle uska result update karo.",
+      });
+    }
 
     if (battle.status !== "open") {
       return res.status(400).json({ success: false, msg: "Battle already requested or joined" });
@@ -540,6 +539,8 @@ export const joinBattle = async (req, res) => {
     return res.status(500).json({ success: false, msg: err.message });
   }
 };
+
+
 
 export const startBattle = async (req, res) => {
   try {
