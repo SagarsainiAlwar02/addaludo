@@ -356,7 +356,7 @@ const fetchBattles = useCallback(async () => {
     }
   };
 
-  const joinMatch = async (battleId) => {
+const joinMatch = async (battleId) => {
     if (myActiveBattle) {
       alert("You are already in game.");
       return;
@@ -370,6 +370,11 @@ const fetchBattles = useCallback(async () => {
       fetchBattles();
       navigate(`/room-code/${joinedId}`);
     } catch (err) {
+      // ✅ Dummy battle silently hat gayi — koi alert nahi dikhana, bas list refresh karo
+      if (err.response?.data?.dummy) {
+        fetchBattles();
+        return;
+      }
       alert(err.response?.data?.msg || "Join failed");
     } finally {
       setActionLoading(false);
