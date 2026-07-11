@@ -496,10 +496,11 @@ export const joinBattle = async (req, res) => {
     if (!battle) return res.status(404).json({ success: false, msg: "Battle not found" });
 
     // ✅ Dummy battle check sabse pehle — koi bhi aur restriction se pehle
-    if (battle.isDummy) {
+   if (battle.isDummy) {
       await Battle.deleteOne({ _id: battle._id });
       return res.status(400).json({
         success: false,
+        dummy: true,
         msg: "Ye battle abhi available nahi hai. Koi doosri table try karein.",
       });
     }
