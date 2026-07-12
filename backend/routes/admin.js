@@ -217,7 +217,7 @@ router.get("/dashboard", auth, async (req, res) => {
     // (koi transaction delete nahi hota, sirf dashboard display "yahan se" ginta hai)
    // ✅ Dashboard reset point — is date se pehle ka history dashboard count mein nahi aayega
     // (koi transaction delete nahi hota, sirf dashboard display "yahan se" ginta hai)
-    const DASHBOARD_RESET_AT = new Date("2026-07-12T00:00:00.000Z");
+    const DASHBOARD_RESET_AT = new Date("2026-07-11T18:30:00.000Z"); // = 12 July 00:00 IST (India time)
 
     // ✅ Hold/Wallet Balance baseline — abhi ka real value "0" se start dikhega,
     // aaj se jo bhi naya paisa aayega wahi upar count hoga (asal paisa touch nahi hota)
