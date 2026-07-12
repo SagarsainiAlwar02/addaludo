@@ -215,7 +215,14 @@ router.get("/dashboard", auth, async (req, res) => {
   try {
     // ✅ Dashboard reset point — is date se pehle ka history dashboard count mein nahi aayega
     // (koi transaction delete nahi hota, sirf dashboard display "yahan se" ginta hai)
+   // ✅ Dashboard reset point — is date se pehle ka history dashboard count mein nahi aayega
+    // (koi transaction delete nahi hota, sirf dashboard display "yahan se" ginta hai)
     const DASHBOARD_RESET_AT = new Date("2026-07-12T00:00:00.000Z");
+
+    // ✅ Hold/Wallet Balance baseline — abhi ka real value "0" se start dikhega,
+    // aaj se jo bhi naya paisa aayega wahi upar count hoga (asal paisa touch nahi hota)
+    const HOLD_BALANCE_BASELINE = 262709;
+    const WALLET_BALANCE_BASELINE = 58566;
 
     const totalUsers = await User.countDocuments({ role: "user" });
 
@@ -335,12 +342,12 @@ router.get("/dashboard", auth, async (req, res) => {
       roomId: a.roomId || "",
     }));
 
-    res.json({
+  res.json({
       totalUsers, totalBlockedUsers, totalDeposit, totalWithdraw,
       totalEarnings: Math.max(0, totalEarnings),
       totalCommission, totalReferral, totalBonus, totalPenalty,
-      holdBalance: walletData.holdBalance || 0,
-      walletBalance: walletData.walletBalance || 0,
+      holdBalance: Math.max(0, Number(walletData.holdBalance || 0) - HOLD_BALANCE_BASELINE),
+      walletBalance: Math.max(0, Number(walletData.walletBalance || 0) - WALLET_BALANCE_BASELINE),
       totalWinnings: walletData.totalWinnings || 0,
 
       sparklines: {
