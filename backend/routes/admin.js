@@ -228,6 +228,9 @@ router.get("/dashboard", auth, async (req, res) => {
     const HOLD_BALANCE_BASELINE = 262709;
     const WALLET_BALANCE_BASELINE = 58566;
 
+      // ✅ Total Referral baseline — aaj se naya referral hi genuinely dikhega
+    const REFERRAL_BASELINE = 19205;
+
     // ✅ NEW: filter=today ka respect karo — Today button pe sirf aaj ka data,
     // All Time pe reset-date se ab tak ka data
     const filter = req.query.filter === "today" ? "today" : "all";
@@ -270,7 +273,8 @@ router.get("/dashboard", auth, async (req, res) => {
     const totalRefund = txMap.refund || 0;
     const totalCommission = txMap.referral_commission || 0;
     const totalEarnings = totalGameEntry + totalPenalty - totalGameWin - totalRefund;
-    const totalReferral = Number(walletData.totalReferral || 0) + Number(userReferralData.totalReferralEarning || 0) + Number(totalReferralRedeem || 0);
+   const totalReferralRaw = Number(walletData.totalReferral || 0) + Number(userReferralData.totalReferralEarning || 0) + Number(totalReferralRedeem || 0);
+    const totalReferral = filter === "today" ? totalReferralRaw : Math.max(0, totalReferralRaw - REFERRAL_BASELINE);
 
     // ✅ NEW: last 7 days ke real daily trends (sparklines ke liye)
     const sevenDaysAgo = new Date();
