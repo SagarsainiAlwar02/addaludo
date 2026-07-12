@@ -213,11 +213,17 @@ router.delete("/delete/:id", auth, async (req, res) => {
 // ================= DASHBOARD (replace the existing router.get("/dashboard", ...) block with this) =================
 router.get("/dashboard", auth, async (req, res) => {
   try {
+    // ✅ Dashboard reset point — is date se pehle ka history dashboard count mein nahi aayega
+    // (koi transaction delete nahi hota, sirf dashboard display "yahan se" ginta hai)
+    const DASHBOARD_RESET_AT = new Date("2026-07-12T00:00:00.000Z");
+
     const totalUsers = await User.countDocuments({ role: "user" });
+
+
     const totalBlockedUsers = await User.countDocuments({ role: "user", status: "blocked" });
 
-    const txAgg = await Transaction.aggregate([
-      { $match: { status: "success" } },
+   const txAgg = await Transaction.aggregate([
+      { $match: { status: "success", createdAt: { $gte: DASHBOARD_RESET_AT } } },
       { $group: { _id: "$type", total: { $sum: "$amount" } } },
     ]);
 
