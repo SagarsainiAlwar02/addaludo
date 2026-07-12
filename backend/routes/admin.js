@@ -222,23 +222,27 @@ router.delete("/delete/:id", auth, async (req, res) => {
 router.get("/dashboard", auth, async (req, res) => {
   try {
     // ✅ Dashboard reset point — is date se pehle ka history dashboard count mein nahi aayega
-    // (koi transaction delete nahi hota, sirf dashboard display "yahan se" ginta hai)
-   // ✅ Dashboard reset point — is date se pehle ka history dashboard count mein nahi aayega
-    // (koi transaction delete nahi hota, sirf dashboard display "yahan se" ginta hai)
-    const DASHBOARD_RESET_AT = new Date("2026-07-11T18:30:00.000Z"); // = 12 July 00:00 IST (India time)
+    const DASHBOARD_RESET_AT = new Date("2026-07-11T18:30:00.000Z"); // = 12 July 00:00 IST
 
-    // ✅ Hold/Wallet Balance baseline — abhi ka real value "0" se start dikhega,
-    // aaj se jo bhi naya paisa aayega wahi upar count hoga (asal paisa touch nahi hota)
+    // ✅ Hold/Wallet Balance baseline
     const HOLD_BALANCE_BASELINE = 262709;
     const WALLET_BALANCE_BASELINE = 58566;
 
-    const totalUsers = await User.countDocuments({ role: "user" });
+    // ✅ NEW: filter=today ka respect karo — Today button pe sirf aaj ka data,
+    // All Time pe reset-date se ab tak ka data
+    const filter = req.query.filter === "today" ? "today" : "all";
+    const { start: todayStartIST, end: todayEndIST } = todayRange();
+    const rangeStart = filter === "today" ? todayStartIST : DASHBOARD_RESET_AT;
+    const rangeEnd = filter === "today" ? todayEndIST : new Date();
 
-
+    const totalUsers =
+      filter === "today"
+        ? await User.countDocuments({ role: "user", createdAt: { $gte: rangeStart, $lte: rangeEnd } })
+        : await User.countDocuments({ role: "user" });
     const totalBlockedUsers = await User.countDocuments({ role: "user", status: "blocked" });
 
-   const txAgg = await Transaction.aggregate([
-      { $match: { status: "success", createdAt: { $gte: DASHBOARD_RESET_AT } } },
+    const txAgg = await Transaction.aggregate([
+      { $match: { status: "success", createdAt: { $gte: rangeStart, $lte: rangeEnd } } },
       { $group: { _id: "$type", total: { $sum: "$amount" } } },
     ]);
 
