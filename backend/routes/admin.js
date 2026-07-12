@@ -49,11 +49,19 @@ const upload = multer({ storage });
 // ================= HELPERS =================
 const getAdminId = (req) => req.user?._id || req.user?.id || req.user || null;
 
+const IST_OFFSET_MS = 5.5 * 60 * 60 * 1000;
+
 const todayRange = () => {
-  const start = new Date();
-  start.setHours(0, 0, 0, 0);
-  const end = new Date();
-  end.setHours(23, 59, 59, 999);
+  const now = new Date();
+  const istNow = new Date(now.getTime() + IST_OFFSET_MS);
+  const istYear = istNow.getUTCFullYear();
+  const istMonth = istNow.getUTCMonth();
+  const istDate = istNow.getUTCDate();
+
+  // ✅ IST (India) ke calendar din ke hisaab se "aaj" ka sahi range
+  const start = new Date(Date.UTC(istYear, istMonth, istDate, 0, 0, 0, 0) - IST_OFFSET_MS);
+  const end = new Date(Date.UTC(istYear, istMonth, istDate, 23, 59, 59, 999) - IST_OFFSET_MS);
+
   return { start, end };
 };
 
