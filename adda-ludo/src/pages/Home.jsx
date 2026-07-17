@@ -22,7 +22,7 @@ export default function Home() {
       title: "Welcome",
       subtitle: "Hot games • Instant wins",
       heading: "Refer & Earn",
-      text: "Refer and Earn 2% Commission life time",
+      text: "Refer and Earn 2% Commision life time",
       button: "Refer Now",
       route: "/refer",
       tag: "REFER BONUS",
@@ -56,13 +56,7 @@ export default function Home() {
           status: "soon",
           route: null,
         },
-        {
-          id: 3,
-          title: "Support",
-          image: "/wpsupport.jpeg",
-          status: "online",
-          route: "/support",
-        },
+        // यहाँ से 3rd WhatsApp Support बॉक्स को हटा दिया गया है ताकि वो ऊपर ग्रिड में न दिखे
       ]);
 
       setLoading(false);
@@ -76,8 +70,8 @@ export default function Home() {
   const current = slides[activeSlide];
 
   return (
-    <div className="page-container pt-1">
-      {/* ULTRA COMPACT CURVED SLIDER - Size reduced significantly */}
+    <div className="page-container pt-1 relative min-h-screen pb-20">
+      {/* ULTRA COMPACT CURVED SLIDER */}
       <div className="relative overflow-hidden rounded-2xl p-3 mb-2 text-white shadow-md bg-gradient-to-br from-[#111827] via-[#1f2937] to-[#030712] transition-all duration-700">
         <div className="absolute top-0 right-0 w-24 h-24 bg-blue-500 opacity-10 blur-2xl"></div>
         <div className="absolute bottom-0 left-0 w-24 h-24 bg-emerald-500 opacity-10 blur-2xl"></div>
@@ -133,7 +127,7 @@ export default function Home() {
         </div>
       </div>
 
-      {/* HEADER - Shifted closer to the slider */}
+      {/* HEADER */}
       <div className="section-header mb-2 mt-1">
         <h2 className="text-lg font-bold">All Games</h2>
 
@@ -153,7 +147,7 @@ export default function Home() {
         </div>
       )}
 
-      {/* GAME GRID - Now sits higher up the page */}
+      {/* GAME GRID - Only Ludo and Snake will appear here */}
       <div className="game-grid">
         {!loading &&
           games.map((game) => (
@@ -171,12 +165,6 @@ export default function Home() {
                 <span className="game-badge badge-soon">Coming Soon</span>
               )}
 
-              {game.status === "online" && (
-                <span className="game-badge" style={{ color: "#16a34a" }}>
-                  Online
-                </span>
-              )}
-
               <img
                 src={game.image}
                 alt={game.title}
@@ -185,6 +173,26 @@ export default function Home() {
               />
             </div>
           ))}
+      </div>
+
+      {/* FLOATING WHATSAPP SUPPORT BUTTON (As requested in photo) */}
+      <div 
+        onClick={() => navigate("/support")}
+        className="fixed bottom-24 right-4 z-50 flex flex-col items-center cursor-pointer active:scale-95 transition-transform"
+      >
+        <div className="bg-[#25D366] p-3 rounded-full shadow-lg flex items-center justify-center hover:bg-[#20ba59]">
+          <svg 
+            xmlns="http://www.w3.org/2000/svg" 
+            viewBox="0 0 24 24" 
+            fill="currentColor" 
+            className="w-7 h-7 text-white"
+          >
+            <path d="M12.012 2c-5.506 0-9.989 4.478-9.99 9.984a9.96 9.96 0 001.333 4.993L2 22l5.233-1.373a9.946 9.946 0 004.773 1.218c5.508 0 9.99-4.478 9.994-9.986A9.998 9.998 0 0012.012 2zm4.7 13.913c-.26.732-1.29 1.41-2.079 1.48-.593.054-1.37.087-2.185-.173A10.232 10.232 0 018.6 14.54a9.016 9.016 0 01-2.454-4.2c-.227-.775-.25-1.503.013-2.193.303-.79.79-1.077 1.076-1.37.13-.133.26-.2.39-.2.134 0 .262.007.363.023.11.016.257.043.376.326.136.325.467 1.14.508 1.222.04.085.068.183.012.296-.057.113-.085.183-.17.283-.084.1-.176.223-.254.3-.087.086-.178.18-.077.355.1.173.447.738.96 1.196.66.587 1.213.77 1.387.857.174.086.275.072.376-.043.1-.117.433-.505.548-.68.114-.173.23-.142.39-.083.16.057 1.01.477 1.183.564.174.086.29.13.333.203.043.073.043.423-.12.89z" />
+          </svg>
+        </div>
+        <span className="text-[11px] font-bold text-gray-700 bg-white/80 px-1.5 py-0.5 rounded shadow-sm mt-1 border border-gray-200">
+          Support
+        </span>
       </div>
     </div>
   );
