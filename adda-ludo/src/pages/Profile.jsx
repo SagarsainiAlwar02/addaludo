@@ -3,7 +3,7 @@ import { useNavigate } from "react-router-dom";
 import axios from "axios";
 import { 
   History, Wallet, Gift, Headphones, LogOut, Pencil, Check, 
-  Trophy, Gamepad2, ShieldCheck, ChevronRight, Phone, User
+  Trophy, Gamepad2, ShieldCheck, ChevronRight, Phone
 } from "lucide-react";
 
 const API_URL = import.meta.env.VITE_API_URL || "http://localhost:5000/api";
@@ -26,24 +26,49 @@ export default function Profile({ onLogout }) {
     fetchProfile();
   }, []);
 
+  const saveProfile = async () => {
+    try {
+        const token = localStorage.getItem("token");
+        await axios.patch(`${API_URL}/user/profile/name`, { name: tempName }, { headers: { Authorization: `Bearer ${token}` } });
+        setProfile(prev => ({...prev, userName: tempName}));
+        setIsEditing(false);
+        alert("Name Updated!");
+    } catch (err) { alert("Update failed"); }
+  };
+
   const handleLogout = () => { localStorage.clear(); navigate("/login"); };
 
   return (
     <div className="min-h-screen bg-slate-50 px-3 pb-24 pt-24 font-sans text-slate-800">
       <div className="mx-auto max-w-[420px]">
         
-        {/* Profile Box - Colorful Gradient Border */}
+        {/* Profile Box - Edit Option Restored */}
         <div className="bg-white rounded-2xl p-4 shadow-sm border-l-4 border-l-indigo-500 flex items-center gap-3 mb-4 transition-all hover:shadow-md">
-          <div className="bg-indigo-100 p-1.5 rounded-full">
-            <img src={`https://api.dicebear.com/7.x/avataaars/svg?seed=${profile.userName}`} className="h-10 w-10" />
+          <div className="bg-indigo-100 p-1 rounded-full">
+             <img src={`https://api.dicebear.com/7.x/avataaars/svg?seed=${profile.userName}`} className="h-10 w-10" />
           </div>
-          <div className="flex-1">
-            <h2 className="text-sm font-black text-slate-900">{profile.userName}</h2>
-            <p className="text-[10px] text-slate-500 font-bold flex items-center gap-1"><Phone className="w-2.5 h-2.5"/> {profile.phone || "No phone"}</p>
+          
+          <div className="flex-1 min-w-0">
+            {isEditing ? (
+              <div className="flex gap-1.5 items-center">
+                <input value={tempName} onChange={(e) => setTempName(e.target.value)} className="w-full bg-slate-100 rounded-lg px-2 py-1 outline-none text-xs font-bold" />
+                <button onClick={saveProfile} className="bg-emerald-500 text-white p-1.5 rounded-lg"><Check className="w-3.5 h-3.5"/></button>
+              </div>
+            ) : (
+              <div className="flex justify-between items-center">
+                <div>
+                  <h2 className="text-sm font-black text-slate-900 truncate">{profile.userName}</h2>
+                  <p className="text-[10px] text-slate-500 font-bold flex items-center gap-1"><Phone className="w-2.5 h-2.5"/> {profile.phone || "No phone"}</p>
+                </div>
+                <button onClick={() => setIsEditing(true)} className="p-1.5 bg-slate-100 rounded-full hover:bg-slate-200 transition">
+                  <Pencil className="w-3.5 h-3.5 text-slate-500" />
+                </button>
+              </div>
+            )}
           </div>
         </div>
 
-        {/* Stats Grid - Vivid Dynamic Colors */}
+        {/* Stats Grid */}
         <div className="grid grid-cols-2 gap-3 mb-4">
           <div className="bg-gradient-to-br from-emerald-50 to-white p-3 rounded-2xl border border-emerald-100 shadow-sm hover:scale-[1.02] transition">
             <div className="flex items-center gap-1.5 text-emerald-600 mb-1">
@@ -61,7 +86,7 @@ export default function Profile({ onLogout }) {
           </div>
         </div>
 
-        {/* KYC Box - Indigo Gradient Look */}
+        {/* KYC Box */}
         <div className="bg-gradient-to-r from-indigo-50 to-purple-50 rounded-2xl p-4 shadow-sm border border-indigo-100 mb-4 flex items-center justify-between">
           <div className="flex items-center gap-3">
              <div className="bg-indigo-500 p-2 rounded-xl text-white"><ShieldCheck className="w-5 h-5"/></div>
@@ -75,7 +100,7 @@ export default function Profile({ onLogout }) {
           <button onClick={() => navigate("/kyc")} className="text-[10px] font-bold bg-white text-indigo-600 px-3 py-1.5 rounded-lg border border-indigo-200 active:scale-95 transition">Verify</button>
         </div>
 
-        {/* Menu Items - Active & Dynamic */}
+        {/* Menu Items */}
         <div className="bg-white rounded-2xl p-1.5 shadow-sm border border-slate-100">
           {[
             { title: "History", icon: <History />, color: "from-blue-400 to-blue-600", path: "/history" },
@@ -103,7 +128,6 @@ export default function Profile({ onLogout }) {
              <span className="flex-1 font-bold text-red-500 text-xs">Logout</span>
           </div>
         </div>
-
       </div>
     </div>
   );
