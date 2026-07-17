@@ -77,54 +77,54 @@ export default function Home() {
 
   return (
     <div className="page-container">
-      {/* GENUINE DARK COLOR SLIDER - CHANGED TO RECTANGLE SHAPE (rounded-none) */}
-      <div className="relative overflow-hidden rounded-none p-6 mb-6 text-white shadow-xl bg-gradient-to-br from-[#111827] via-[#1f2937] to-[#030712] transition-all duration-700">
-        <div className="absolute top-0 right-0 w-44 h-44 bg-blue-500 opacity-10 blur-3xl"></div>
-        <div className="absolute bottom-0 left-0 w-44 h-44 bg-emerald-500 opacity-10 blur-3xl"></div>
+      {/* COMPACT RECTANGLE SLIDER (Hieght reduced and corners made sharp rectangle) */}
+      <div className="relative overflow-hidden rounded-none p-4 mb-5 text-white shadow-xl bg-gradient-to-br from-[#111827] via-[#1f2937] to-[#030712] transition-all duration-700">
+        <div className="absolute top-0 right-0 w-32 h-32 bg-blue-500 opacity-10 blur-3xl"></div>
+        <div className="absolute bottom-0 left-0 w-32 h-32 bg-emerald-500 opacity-10 blur-3xl"></div>
 
-        <div className="relative z-10 min-h-[215px] flex flex-col justify-between text-white">
+        <div className="relative z-10 flex flex-col justify-between text-white">
           <div>
-            <div className="inline-flex items-center gap-2 rounded-none bg-white/10 border border-white/10 px-3 py-1 text-xs font-bold text-white tracking-wide mb-4">
+            <div className="inline-flex items-center gap-2 rounded-none bg-white/10 border border-white/10 px-2.5 py-0.5 text-[11px] font-bold text-white tracking-wide mb-3">
               🎲 {current.tag}
             </div>
 
-            <h2 className="text-3xl font-black leading-tight text-white">
+            <h2 className="text-2xl font-black leading-tight text-white">
               {current.title}
             </h2>
 
-            <p className="text-white mt-2 text-sm font-medium">
+            <p className="text-white mt-1 text-xs font-medium opacity-90">
               {current.subtitle}
             </p>
 
-            {/* INNER CONTENT BOX - CHANGED TO RECTANGLE SHAPE (rounded-none) */}
-            <div className="mt-5 bg-white/10 border border-white/10 rounded-none p-4 backdrop-blur text-white">
-              <h3 className="text-xl font-bold text-white">
+            {/* INNER CONTENT BOX - RECTANGLE & COMPACT */}
+            <div className="mt-3 bg-white/5 border border-white/10 rounded-none p-3 backdrop-blur text-white">
+              <h3 className="text-base font-bold text-white">
                 {current.heading}
               </h3>
 
-              <p className="text-sm text-white mt-1">
+              <p className="text-xs text-white mt-0.5 opacity-90">
                 {current.text}
               </p>
             </div>
           </div>
 
-          <div className="flex justify-between items-center mt-5">
+          <div className="flex justify-between items-center mt-4">
             <button
               onClick={() => navigate(current.route)}
-              className="bg-gradient-to-r from-emerald-500 to-blue-500 text-white px-5 py-2.5 rounded-none text-sm font-bold shadow-lg active:scale-95 transition"
+              className="bg-gradient-to-r from-emerald-500 to-blue-500 text-white px-4 py-2 rounded-none text-xs font-bold shadow-lg active:scale-95 transition"
             >
               {current.button} →
             </button>
 
-            <div className="flex gap-2">
+            <div className="flex gap-1.5">
               {slides.map((_, i) => (
                 <button
                   key={i}
                   onClick={() => setActiveSlide(i)}
-                  className={`h-2 transition-all duration-300 ${
+                  className={`h-1.5 transition-all duration-300 ${
                     activeSlide === i
-                      ? "w-7 bg-white"
-                      : "w-2 bg-white/40"
+                      ? "w-6 bg-white"
+                      : "w-1.5 bg-white/40"
                   }`}
                 ></button>
               ))}
