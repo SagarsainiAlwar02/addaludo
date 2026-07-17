@@ -42,7 +42,7 @@ export default function Profile({ onLogout }) {
     <div className="min-h-screen bg-slate-50 px-3 pb-24 pt-24 font-sans text-slate-800">
       <div className="mx-auto max-w-[420px]">
         
-        {/* Profile Box - Edit Option Restored */}
+        {/* Profile Box */}
         <div className="bg-white rounded-2xl p-4 shadow-sm border-l-4 border-l-indigo-500 flex items-center gap-3 mb-4 transition-all hover:shadow-md">
           <div className="bg-indigo-100 p-1 rounded-full">
              <img src={`https://api.dicebear.com/7.x/avataaars/svg?seed=${profile.userName}`} className="h-10 w-10" />
@@ -86,18 +86,39 @@ export default function Profile({ onLogout }) {
           </div>
         </div>
 
-        {/* KYC Box */}
-        <div className="bg-gradient-to-r from-indigo-50 to-purple-50 rounded-2xl p-4 shadow-sm border border-indigo-100 mb-4 flex items-center justify-between">
-          <div className="flex items-center gap-3">
-             <div className="bg-indigo-500 p-2 rounded-xl text-white"><ShieldCheck className="w-5 h-5"/></div>
-             <div>
-                <p className="text-[9px] font-bold text-indigo-400 uppercase tracking-widest">KYC Status</p>
-                <p className={`text-xs font-black ${profile.kycStatus === 'approved' ? 'text-indigo-700' : 'text-slate-600'}`}>
-                    {profile.kycStatus === 'approved' ? 'Verified Account' : 'Pending Verification'}
-                </p>
-             </div>
-          </div>
-          <button onClick={() => navigate("/kyc")} className="text-[10px] font-bold bg-white text-indigo-600 px-3 py-1.5 rounded-lg border border-indigo-200 active:scale-95 transition">Verify</button>
+        {/* Dynamic KYC Box */}
+        <div className={`rounded-2xl p-4 shadow-sm border mb-4 flex items-center justify-between transition-all ${
+           profile.kycStatus === 'approved' ? 'bg-emerald-50 border-emerald-100' :
+           profile.kycStatus === 'rejected' ? 'bg-red-50 border-red-100' :
+           'bg-indigo-50 border-indigo-100'
+        }`}>
+            <div className="flex items-center gap-3">
+                <div className={`p-2 rounded-xl ${profile.kycStatus === 'approved' ? 'bg-emerald-500 text-white' : 'bg-indigo-500 text-white'}`}>
+                    <ShieldCheck className="w-5 h-5"/>
+                </div>
+                <div>
+                    <p className="text-[9px] font-bold text-slate-500 uppercase tracking-widest">KYC Status</p>
+                    <p className={`text-xs font-black ${
+                        profile.kycStatus === 'approved' ? 'text-emerald-700' :
+                        profile.kycStatus === 'rejected' ? 'text-red-600' : 'text-indigo-700'
+                    }`}>
+                        {profile.kycStatus === 'approved' ? 'Verified' : 
+                         profile.kycStatus === 'rejected' ? 'Rejected' : 
+                         profile.kycStatus === 'pending' ? 'Under Review' : 'Not Verified'}
+                    </p>
+                </div>
+            </div>
+            <button
+                onClick={() => navigate("/kyc")}
+                className={`text-[10px] font-bold px-3 py-1.5 rounded-lg border active:scale-95 transition ${
+                    profile.kycStatus === 'approved' ? 'bg-white text-emerald-600 border-emerald-200' :
+                    profile.kycStatus === 'rejected' ? 'bg-red-500 text-white border-red-500' :
+                    'bg-indigo-600 text-white border-indigo-500'
+                }`}
+            >
+                {profile.kycStatus === 'approved' ? 'View' :
+                 profile.kycStatus === 'rejected' ? 'Retry KYC' : 'Complete Now'}
+            </button>
         </div>
 
         {/* Menu Items */}
