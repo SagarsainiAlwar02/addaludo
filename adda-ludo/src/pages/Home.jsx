@@ -22,7 +22,7 @@ export default function Home() {
       title: "Welcome",
       subtitle: "Hot games • Instant wins",
       heading: "Refer & Earn",
-      text: "25 Refer= ₹1100, 50 Refer= ₹2100, 100 Refer= ₹5100💰",
+      text: "Refer and Earn 2% Commission life time",
       button: "Refer Now",
       route: "/refer",
       tag: "REFER BONUS",
