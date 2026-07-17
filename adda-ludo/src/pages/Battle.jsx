@@ -40,7 +40,7 @@ const FAKE_OPPONENT_NAMES = [
 ];
 
 const FAKE_BATTLE_AMOUNTS = [
-  6500, 100, 3500, 11750, 1550, 2050, 15000, 600, 2000, 10000, 100, 2250, 150, 7000, 5500, 950, 50, 1050
+  500, 1000, 5000, 1450, 150, 2050, 15000, 600, 2000, 10000, 100, 2250, 150, 7000, 5500, 950, 50, 1050
 ];
 
 const randomFrom = (arr) => arr[Math.floor(Math.random() * arr.length)];
