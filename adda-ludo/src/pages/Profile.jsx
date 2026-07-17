@@ -2,18 +2,8 @@ import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import axios from "axios";
 import { 
-  History, 
-  Wallet, 
-  Gift, 
-  Headphones, 
-  LogOut, 
-  Pencil, 
-  Check, 
-  Trophy, 
-  Gamepad2, 
-  ShieldCheck, 
-  ChevronRight,
-  Phone
+  History, Wallet, Gift, Headphones, LogOut, Pencil, Check, 
+  Trophy, Gamepad2, ShieldCheck, ChevronRight, Phone, User
 } from "lucide-react";
 
 const API_URL = import.meta.env.VITE_API_URL || "http://localhost:5000/api";
@@ -28,119 +18,89 @@ export default function Profile({ onLogout }) {
     const fetchProfile = async () => {
       try {
         const token = localStorage.getItem("token");
-        const storedUser = JSON.parse(localStorage.getItem("user")) || {};
-        if (!token) {
-          setProfile({ userName: storedUser.name || "Player", phone: storedUser.phone || "", totalWon: storedUser.totalWon || 0, matches: storedUser.matches || 0, kycStatus: storedUser.kycStatus || "not_submitted" });
-          setTempName(storedUser.name || "Player");
-          return;
-        }
         const res = await axios.get(`${API_URL}/user/profile`, { headers: { Authorization: `Bearer ${token}` } });
-        const user = res.data || {};
-        setProfile({ userName: user.name || "Player", phone: user.phone || "", totalWon: user.totalWon || 0, matches: user.matches || 0, kycStatus: user.kycStatus || "not_submitted" });
-        setTempName(user.name || "Player");
+        setProfile({ userName: res.data.name || "Player", phone: res.data.phone || "", totalWon: res.data.totalWon || 0, matches: res.data.matches || 0, kycStatus: res.data.kycStatus || "not_submitted" });
+        setTempName(res.data.name || "Player");
       } catch (err) { console.log(err); }
     };
     fetchProfile();
   }, []);
 
-  const saveProfile = async () => {
-    try {
-        const token = localStorage.getItem("token");
-        await axios.patch(`${API_URL}/user/profile/name`, { name: tempName }, { headers: { Authorization: `Bearer ${token}` } });
-        setProfile(prev => ({...prev, userName: tempName}));
-        setIsEditing(false);
-    } catch (err) { alert("Update failed"); }
-  };
-
   const handleLogout = () => { localStorage.clear(); navigate("/login"); };
 
-  const menuItems = [
-    { title: "History", icon: <History className="w-4 h-4 text-white" />, path: "/history", gradient: "from-indigo-500 to-blue-600", shadow: "shadow-indigo-100" },
-    { title: "My Wallet", icon: <Wallet className="w-4 h-4 text-white" />, path: "/wallet", gradient: "from-emerald-500 to-teal-600", shadow: "shadow-emerald-100" },
-    { title: "Refer & Earn", icon: <Gift className="w-4 h-4 text-white" />, path: "/refer", gradient: "from-amber-500 to-orange-600", shadow: "shadow-amber-100" },
-    { title: "Support", icon: <Headphones className="w-4 h-4 text-white" />, path: "/support", gradient: "from-sky-500 to-blue-600", shadow: "shadow-sky-100" },
-  ];
-
   return (
-    /* pt-24 लगाने से अब यह हेडर के नीचे खिसक गया है */
     <div className="min-h-screen bg-slate-50 px-3 pb-24 pt-24 font-sans text-slate-800">
       <div className="mx-auto max-w-[420px]">
         
-        {/* Profile Card - Now perfectly visible below header */}
-        <div className="bg-white rounded-2xl p-4 shadow-sm border border-slate-100 flex items-center gap-3 mb-3 relative overflow-hidden">
-           <div className="absolute top-0 right-0 p-1 opacity-5">
-             <Trophy className="w-16 h-16 text-emerald-500"/>
-           </div>
-          <img src={`https://api.dicebear.com/7.x/avataaars/svg?seed=${profile.userName}`} className="h-12 w-12 rounded-full border-2 border-slate-50 shadow" />
-          
-          <div className="flex-1 min-w-0">
-            {isEditing ? (
-              <div className="flex gap-1.5">
-                <input value={tempName} onChange={(e) => setTempName(e.target.value)} className="w-full bg-slate-100 rounded-md px-2 py-0.5 outline-none text-xs" />
-                <button onClick={saveProfile} className="bg-emerald-500 text-white p-1.5 rounded-md"><Check className="w-3.5 h-3.5"/></button>
-              </div>
-            ) : (
-              <div className="flex justify-between items-center">
-                <div className="truncate">
-                  <h2 className="text-base font-black text-slate-900 leading-tight truncate">{profile.userName}</h2>
-                  <p className="text-[11px] text-slate-400 font-bold flex items-center gap-1 mt-0.5"><Phone className="w-2.5 h-2.5"/> {profile.phone || "No phone"}</p>
-                </div>
-                <button onClick={() => setIsEditing(true)} className="p-1.5 bg-slate-100 rounded-full hover:bg-slate-200 transition">
-                  <Pencil className="w-3.5 h-3.5 text-slate-500" />
-                </button>
-              </div>
-            )}
+        {/* Profile Box - Colorful Gradient Border */}
+        <div className="bg-white rounded-2xl p-4 shadow-sm border-l-4 border-l-indigo-500 flex items-center gap-3 mb-4 transition-all hover:shadow-md">
+          <div className="bg-indigo-100 p-1.5 rounded-full">
+            <img src={`https://api.dicebear.com/7.x/avataaars/svg?seed=${profile.userName}`} className="h-10 w-10" />
+          </div>
+          <div className="flex-1">
+            <h2 className="text-sm font-black text-slate-900">{profile.userName}</h2>
+            <p className="text-[10px] text-slate-500 font-bold flex items-center gap-1"><Phone className="w-2.5 h-2.5"/> {profile.phone || "No phone"}</p>
           </div>
         </div>
 
-        {/* Stats Grid */}
-        <div className="grid grid-cols-2 gap-2.5 mb-3">
-          <div className="bg-white p-3 rounded-xl shadow-sm border border-slate-100">
-            <span className="text-[9px] font-bold text-slate-400 uppercase tracking-wider">Total Won</span>
-            <h2 className="text-base font-black text-emerald-600 mt-0.5">₹{profile.totalWon.toLocaleString()}</h2>
+        {/* Stats Grid - Vivid Dynamic Colors */}
+        <div className="grid grid-cols-2 gap-3 mb-4">
+          <div className="bg-gradient-to-br from-emerald-50 to-white p-3 rounded-2xl border border-emerald-100 shadow-sm hover:scale-[1.02] transition">
+            <div className="flex items-center gap-1.5 text-emerald-600 mb-1">
+               <Trophy className="w-3 h-3"/>
+               <span className="text-[9px] font-bold uppercase tracking-wider">Total Won</span>
+            </div>
+            <h2 className="text-lg font-black text-emerald-700">₹{profile.totalWon.toLocaleString()}</h2>
           </div>
-          <div className="bg-white p-3 rounded-xl shadow-sm border border-slate-100">
-            <span className="text-[9px] font-bold text-slate-400 uppercase tracking-wider">Matches</span>
-            <h2 className="text-base font-black text-blue-600 mt-0.5">{profile.matches}</h2>
+          <div className="bg-gradient-to-br from-blue-50 to-white p-3 rounded-2xl border border-blue-100 shadow-sm hover:scale-[1.02] transition">
+            <div className="flex items-center gap-1.5 text-blue-600 mb-1">
+               <Gamepad2 className="w-3 h-3"/>
+               <span className="text-[9px] font-bold uppercase tracking-wider">Matches</span>
+            </div>
+            <h2 className="text-lg font-black text-blue-700">{profile.matches}</h2>
           </div>
         </div>
 
-        {/* KYC Section */}
-        <div className="bg-white rounded-xl p-3 shadow-sm border border-slate-100 mb-3 flex items-center justify-between">
-          <div className="flex items-center gap-2">
-             <div className="bg-blue-50 p-1.5 rounded-lg text-blue-600"><ShieldCheck className="w-4 h-4"/></div>
+        {/* KYC Box - Indigo Gradient Look */}
+        <div className="bg-gradient-to-r from-indigo-50 to-purple-50 rounded-2xl p-4 shadow-sm border border-indigo-100 mb-4 flex items-center justify-between">
+          <div className="flex items-center gap-3">
+             <div className="bg-indigo-500 p-2 rounded-xl text-white"><ShieldCheck className="w-5 h-5"/></div>
              <div>
-                <p className="text-[10px] font-bold text-slate-400 uppercase leading-none">KYC Status</p>
-                <p className={`text-xs font-black mt-0.5 ${profile.kycStatus === 'approved' ? 'text-emerald-600' : 'text-slate-600'}`}>
-                    {profile.kycStatus === 'approved' ? 'Verified' : 'Not Verified'}
+                <p className="text-[9px] font-bold text-indigo-400 uppercase tracking-widest">KYC Status</p>
+                <p className={`text-xs font-black ${profile.kycStatus === 'approved' ? 'text-indigo-700' : 'text-slate-600'}`}>
+                    {profile.kycStatus === 'approved' ? 'Verified Account' : 'Pending Verification'}
                 </p>
              </div>
           </div>
-          <button onClick={() => navigate("/kyc")} className="text-[10px] font-black bg-slate-900 text-white px-3 py-1.5 rounded-md active:scale-95 transition">Verify</button>
+          <button onClick={() => navigate("/kyc")} className="text-[10px] font-bold bg-white text-indigo-600 px-3 py-1.5 rounded-lg border border-indigo-200 active:scale-95 transition">Verify</button>
         </div>
 
-        {/* Menu Items */}
+        {/* Menu Items - Active & Dynamic */}
         <div className="bg-white rounded-2xl p-1.5 shadow-sm border border-slate-100">
-          {menuItems.map((item) => (
+          {[
+            { title: "History", icon: <History />, color: "from-blue-400 to-blue-600", path: "/history" },
+            { title: "My Wallet", icon: <Wallet />, color: "from-emerald-400 to-emerald-600", path: "/wallet" },
+            { title: "Refer & Earn", icon: <Gift />, color: "from-amber-400 to-amber-600", path: "/refer" },
+            { title: "Support", icon: <Headphones />, color: "from-rose-400 to-rose-600", path: "/support" }
+          ].map((item, idx) => (
             <div
-              key={item.title}
+              key={idx}
               onClick={() => navigate(item.path)}
-              className="flex items-center gap-3 p-2.5 hover:bg-slate-50 rounded-xl cursor-pointer transition group"
+              className="flex items-center gap-3 p-3 hover:bg-slate-50 rounded-xl cursor-pointer transition-all group"
             >
-              <div className={`w-9 h-9 flex items-center justify-center rounded-xl bg-gradient-to-br ${item.gradient} ${item.shadow} shadow-md transition-transform group-hover:scale-105`}>
-                {item.icon}
+              <div className={`w-9 h-9 flex items-center justify-center rounded-xl bg-gradient-to-br ${item.color} text-white shadow-lg shadow-slate-200 group-hover:rotate-6 transition-transform`}>
+                {React.cloneElement(item.icon, { className: "w-4 h-4" })}
               </div>
-              
-              <span className="flex-1 font-bold text-slate-700 text-xs ml-0.5">{item.title}</span>
+              <span className="flex-1 font-bold text-slate-700 text-xs">{item.title}</span>
               <ChevronRight className="w-4 h-4 text-slate-300" />
             </div>
           ))}
 
-          <div onClick={handleLogout} className="flex items-center gap-3 p-2.5 hover:bg-red-50 rounded-xl cursor-pointer transition">
-             <div className="w-9 h-9 flex items-center justify-center rounded-xl bg-gradient-to-br from-red-500 to-rose-600 shadow-md shadow-red-100">
-                <LogOut className="w-4 h-4 text-white" />
+          <div onClick={handleLogout} className="flex items-center gap-3 p-3 hover:bg-red-50 rounded-xl cursor-pointer transition">
+             <div className="w-9 h-9 flex items-center justify-center rounded-xl bg-gradient-to-br from-slate-700 to-slate-900 text-white shadow-lg">
+                <LogOut className="w-4 h-4" />
              </div>
-             <span className="flex-1 font-bold text-red-500 text-xs ml-0.5">Logout</span>
+             <span className="flex-1 font-bold text-red-500 text-xs">Logout</span>
           </div>
         </div>
 
