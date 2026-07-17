@@ -54,81 +54,94 @@ export default function Profile({ onLogout }) {
 
   const handleLogout = () => { localStorage.clear(); navigate("/login"); };
 
-  // Menu items with Gradient Icon Styles
   const menuItems = [
-    { title: "History", icon: <History className="w-6 h-6 text-white" />, path: "/history", gradient: "from-indigo-500 to-blue-600", shadow: "shadow-indigo-200" },
-    { title: "My Wallet", icon: <Wallet className="w-6 h-6 text-white" />, path: "/wallet", gradient: "from-emerald-500 to-teal-600", shadow: "shadow-emerald-200" },
-    { title: "Refer & Earn", icon: <Gift className="w-6 h-6 text-white" />, path: "/refer", gradient: "from-amber-500 to-orange-600", shadow: "shadow-amber-200" },
-    { title: "Support", icon: <Headphones className="w-6 h-6 text-white" />, path: "/support", gradient: "from-sky-500 to-blue-600", shadow: "shadow-sky-200" },
+    { title: "History", icon: <History className="w-4 h-4 text-white" />, path: "/history", gradient: "from-indigo-500 to-blue-600", shadow: "shadow-indigo-100" },
+    { title: "My Wallet", icon: <Wallet className="w-4 h-4 text-white" />, path: "/wallet", gradient: "from-emerald-500 to-teal-600", shadow: "shadow-emerald-100" },
+    { title: "Refer & Earn", icon: <Gift className="w-4 h-4 text-white" />, path: "/refer", gradient: "from-amber-500 to-orange-600", shadow: "shadow-amber-100" },
+    { title: "Support", icon: <Headphones className="w-4 h-4 text-white" />, path: "/support", gradient: "from-sky-500 to-blue-600", shadow: "shadow-sky-100" },
   ];
 
   return (
-    <div className="min-h-screen bg-slate-50 px-4 pb-24 pt-8 font-sans text-slate-800">
-      <div className="mx-auto max-w-[480px]">
+    <div className="min-h-screen bg-slate-50 px-3 pb-20 pt-4 font-sans text-slate-800">
+      <div className="mx-auto max-w-[420px]">
         
-        {/* Profile Card */}
-        <div className="bg-white rounded-3xl p-6 shadow-sm border border-slate-100 flex items-center gap-4 mb-6 relative overflow-hidden">
-           <div className="absolute top-0 right-0 p-3 opacity-10">
-             <Trophy className="w-24 h-24 text-emerald-500"/>
+        {/* Profile Card - Sleek & Compact */}
+        <div className="bg-white rounded-2xl p-4 shadow-sm border border-slate-100 flex items-center gap-3 mb-3 relative overflow-hidden">
+           <div className="absolute top-0 right-0 p-1 opacity-5">
+             <Trophy className="w-16 h-16 text-emerald-500"/>
            </div>
-          <img src={`https://api.dicebear.com/7.x/avataaars/svg?seed=${profile.userName}`} className="h-16 w-16 rounded-full border-4 border-slate-50 shadow-md" />
+          <img src={`https://api.dicebear.com/7.x/avataaars/svg?seed=${profile.userName}`} className="h-12 w-12 rounded-full border-2 border-slate-50 shadow" />
           
-          <div className="flex-1">
+          <div className="flex-1 min-w-0">
             {isEditing ? (
-              <div className="flex gap-2">
-                <input value={tempName} onChange={(e) => setTempName(e.target.value)} className="w-full bg-slate-100 rounded-lg px-3 py-1 outline-none text-sm" />
-                <button onClick={saveProfile} className="bg-emerald-500 text-white p-2 rounded-lg"><Check className="w-4 h-4"/></button>
+              <div className="flex gap-1.5">
+                <input value={tempName} onChange={(e) => setTempName(e.target.value)} className="w-full bg-slate-100 rounded-md px-2 py-0.5 outline-none text-xs" />
+                <button onClick={saveProfile} className="bg-emerald-500 text-white p-1.5 rounded-md"><Check className="w-3.5 h-3.5"/></button>
               </div>
             ) : (
               <div className="flex justify-between items-center">
-                <div>
-                  <h2 className="text-xl font-black text-slate-900">{profile.userName}</h2>
-                  <p className="text-xs text-slate-400 font-bold flex items-center gap-1 mt-0.5"><Phone className="w-3 h-3"/> {profile.phone || "No phone"}</p>
+                <div className="truncate">
+                  <h2 className="text-base font-black text-slate-900 leading-tight truncate">{profile.userName}</h2>
+                  <p className="text-[11px] text-slate-400 font-bold flex items-center gap-1 mt-0.5"><Phone className="w-2.5 h-2.5"/> {profile.phone || "No phone"}</p>
                 </div>
-                <button onClick={() => setIsEditing(true)} className="p-2 bg-slate-100 rounded-full hover:bg-slate-200 transition">
-                  <Pencil className="w-4 h-4 text-slate-600" />
+                <button onClick={() => setIsEditing(true)} className="p-1.5 bg-slate-100 rounded-full hover:bg-slate-200 transition">
+                  <Pencil className="w-3.5 h-3.5 text-slate-500" />
                 </button>
               </div>
             )}
           </div>
         </div>
 
-        {/* Stats Grid */}
-        <div className="grid grid-cols-2 gap-4 mb-6">
-          <div className="bg-white p-4 rounded-2xl shadow-sm border border-slate-100 hover:scale-[1.02] transition">
-            <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Total Won</span>
-            <h2 className="text-xl font-black text-emerald-600 mt-1">₹{profile.totalWon.toLocaleString()}</h2>
+        {/* Stats Grid - Smaller height */}
+        <div className="grid grid-cols-2 gap-2.5 mb-3">
+          <div className="bg-white p-3 rounded-xl shadow-sm border border-slate-100">
+            <span className="text-[9px] font-bold text-slate-400 uppercase tracking-wider">Total Won</span>
+            <h2 className="text-base font-black text-emerald-600 mt-0.5">₹{profile.totalWon.toLocaleString()}</h2>
           </div>
-          <div className="bg-white p-4 rounded-2xl shadow-sm border border-slate-100 hover:scale-[1.02] transition">
-            <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Matches</span>
-            <h2 className="text-xl font-black text-blue-600 mt-1">{profile.matches}</h2>
+          <div className="bg-white p-3 rounded-xl shadow-sm border border-slate-100">
+            <span className="text-[9px] font-bold text-slate-400 uppercase tracking-wider">Matches</span>
+            <h2 className="text-base font-black text-blue-600 mt-0.5">{profile.matches}</h2>
           </div>
         </div>
 
-        {/* Menu Items with Premium Icon Style */}
-        <div className="bg-white rounded-3xl p-2 shadow-sm border border-slate-100">
+        {/* KYC Section - Thin Bar */}
+        <div className="bg-white rounded-xl p-3 shadow-sm border border-slate-100 mb-3 flex items-center justify-between">
+          <div className="flex items-center gap-2">
+             <div className="bg-blue-50 p-1.5 rounded-lg text-blue-600"><ShieldCheck className="w-4 h-4"/></div>
+             <div>
+                <p className="text-[10px] font-bold text-slate-400 uppercase leading-none">KYC Status</p>
+                <p className={`text-xs font-black mt-0.5 ${profile.kycStatus === 'approved' ? 'text-emerald-600' : 'text-slate-600'}`}>
+                    {profile.kycStatus === 'approved' ? 'Verified' : 'Not Verified'}
+                </p>
+             </div>
+          </div>
+          <button onClick={() => navigate("/kyc")} className="text-[10px] font-black bg-slate-900 text-white px-3 py-1.5 rounded-md active:scale-95 transition">Verify</button>
+        </div>
+
+        {/* Menu Items - Reduced Padding & Small Icons */}
+        <div className="bg-white rounded-2xl p-1.5 shadow-sm border border-slate-100">
           {menuItems.map((item) => (
             <div
               key={item.title}
               onClick={() => navigate(item.path)}
-              className="flex items-center gap-4 p-3.5 hover:bg-slate-50 rounded-2xl cursor-pointer transition group"
+              className="flex items-center gap-3 p-2.5 hover:bg-slate-50 rounded-xl cursor-pointer transition group"
             >
-              {/* Premium Gradient Icon Container */}
-              <div className={`w-12 h-12 flex items-center justify-center rounded-2xl bg-gradient-to-br ${item.gradient} ${item.shadow} shadow-lg transition-transform group-hover:scale-105`}>
+              {/* Smaller Gradient Icon */}
+              <div className={`w-9 h-9 flex items-center justify-center rounded-xl bg-gradient-to-br ${item.gradient} ${item.shadow} shadow-md transition-transform group-hover:scale-105`}>
                 {item.icon}
               </div>
               
-              <span className="flex-1 font-bold text-slate-700 ml-1">{item.title}</span>
-              <ChevronRight className="w-5 h-5 text-slate-300" />
+              <span className="flex-1 font-bold text-slate-700 text-xs ml-0.5">{item.title}</span>
+              <ChevronRight className="w-4 h-4 text-slate-300" />
             </div>
           ))}
 
-          {/* Logout with Rose Gradient */}
-          <div onClick={handleLogout} className="flex items-center gap-4 p-3.5 hover:bg-red-50 rounded-2xl cursor-pointer transition">
-             <div className="w-12 h-12 flex items-center justify-center rounded-2xl bg-gradient-to-br from-red-500 to-rose-600 shadow-lg shadow-red-200">
-                <LogOut className="w-6 h-6 text-white" />
+          {/* Logout Option Row */}
+          <div onClick={handleLogout} className="flex items-center gap-3 p-2.5 hover:bg-red-50 rounded-xl cursor-pointer transition">
+             <div className="w-9 h-9 flex items-center justify-center rounded-xl bg-gradient-to-br from-red-500 to-rose-600 shadow-md shadow-red-100">
+                <LogOut className="w-4 h-4 text-white" />
              </div>
-             <span className="flex-1 font-bold text-red-500 ml-1">Logout</span>
+             <span className="flex-1 font-bold text-red-500 text-xs ml-0.5">Logout</span>
           </div>
         </div>
 
