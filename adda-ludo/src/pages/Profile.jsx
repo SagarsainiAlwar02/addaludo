@@ -62,10 +62,11 @@ export default function Profile({ onLogout }) {
   ];
 
   return (
-    <div className="min-h-screen bg-slate-50 px-3 pb-20 pt-4 font-sans text-slate-800">
+    /* pt-24 लगाने से अब यह हेडर के नीचे खिसक गया है */
+    <div className="min-h-screen bg-slate-50 px-3 pb-24 pt-24 font-sans text-slate-800">
       <div className="mx-auto max-w-[420px]">
         
-        {/* Profile Card - Sleek & Compact */}
+        {/* Profile Card - Now perfectly visible below header */}
         <div className="bg-white rounded-2xl p-4 shadow-sm border border-slate-100 flex items-center gap-3 mb-3 relative overflow-hidden">
            <div className="absolute top-0 right-0 p-1 opacity-5">
              <Trophy className="w-16 h-16 text-emerald-500"/>
@@ -92,7 +93,7 @@ export default function Profile({ onLogout }) {
           </div>
         </div>
 
-        {/* Stats Grid - Smaller height */}
+        {/* Stats Grid */}
         <div className="grid grid-cols-2 gap-2.5 mb-3">
           <div className="bg-white p-3 rounded-xl shadow-sm border border-slate-100">
             <span className="text-[9px] font-bold text-slate-400 uppercase tracking-wider">Total Won</span>
@@ -104,7 +105,7 @@ export default function Profile({ onLogout }) {
           </div>
         </div>
 
-        {/* KYC Section - Thin Bar */}
+        {/* KYC Section */}
         <div className="bg-white rounded-xl p-3 shadow-sm border border-slate-100 mb-3 flex items-center justify-between">
           <div className="flex items-center gap-2">
              <div className="bg-blue-50 p-1.5 rounded-lg text-blue-600"><ShieldCheck className="w-4 h-4"/></div>
@@ -118,7 +119,7 @@ export default function Profile({ onLogout }) {
           <button onClick={() => navigate("/kyc")} className="text-[10px] font-black bg-slate-900 text-white px-3 py-1.5 rounded-md active:scale-95 transition">Verify</button>
         </div>
 
-        {/* Menu Items - Reduced Padding & Small Icons */}
+        {/* Menu Items */}
         <div className="bg-white rounded-2xl p-1.5 shadow-sm border border-slate-100">
           {menuItems.map((item) => (
             <div
@@ -126,7 +127,6 @@ export default function Profile({ onLogout }) {
               onClick={() => navigate(item.path)}
               className="flex items-center gap-3 p-2.5 hover:bg-slate-50 rounded-xl cursor-pointer transition group"
             >
-              {/* Smaller Gradient Icon */}
               <div className={`w-9 h-9 flex items-center justify-center rounded-xl bg-gradient-to-br ${item.gradient} ${item.shadow} shadow-md transition-transform group-hover:scale-105`}>
                 {item.icon}
               </div>
@@ -136,7 +136,6 @@ export default function Profile({ onLogout }) {
             </div>
           ))}
 
-          {/* Logout Option Row */}
           <div onClick={handleLogout} className="flex items-center gap-3 p-2.5 hover:bg-red-50 rounded-xl cursor-pointer transition">
              <div className="w-9 h-9 flex items-center justify-center rounded-xl bg-gradient-to-br from-red-500 to-rose-600 shadow-md shadow-red-100">
                 <LogOut className="w-4 h-4 text-white" />
