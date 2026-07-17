@@ -13,16 +13,16 @@ export default function Home() {
       title: "Welcome to Adda Ludo",
       subtitle: "Play game and earn money",
       heading: "24×7 Support",
-      text: "Fast withdrawal • Safe play • Instant matches",
+      text: "Fast withdrawal • Safe play",
       button: "Play Now",
       route: "/battle",
       tag: "LIVE GAMING PLATFORM",
     },
     {
       title: "Welcome",
-      subtitle: "Hot games • Instant wins • Safe play",
+      subtitle: "Hot games • Instant wins",
       heading: "Refer & Earn",
-      text: "25 लोगो को Refer= ₹1100 बोनस💰,50 लोगो को Refer= ₹2100 बोनस💰,  100 लोगो को Refer= ₹5100 बोनस💰",
+      text: "25 Refer= ₹1100, 50 Refer= ₹2100, 100 Refer= ₹5100💰",
       button: "Refer Now",
       route: "/refer",
       tag: "REFER BONUS",
@@ -76,55 +76,55 @@ export default function Home() {
   const current = slides[activeSlide];
 
   return (
-    <div className="page-container">
-      {/* COMPACT SLIDER WITH ORIGINAL CURVED SHAPE (rounded-2xl + Small Size) */}
-      <div className="relative overflow-hidden rounded-2xl p-4 mb-4 text-white shadow-xl bg-gradient-to-br from-[#111827] via-[#1f2937] to-[#030712] transition-all duration-700">
-        <div className="absolute top-0 right-0 w-32 h-32 bg-blue-500 opacity-10 blur-3xl"></div>
-        <div className="absolute bottom-0 left-0 w-32 h-32 bg-emerald-500 opacity-10 blur-3xl"></div>
+    <div className="page-container pt-1">
+      {/* ULTRA COMPACT CURVED SLIDER - Size reduced significantly */}
+      <div className="relative overflow-hidden rounded-2xl p-3 mb-2 text-white shadow-md bg-gradient-to-br from-[#111827] via-[#1f2937] to-[#030712] transition-all duration-700">
+        <div className="absolute top-0 right-0 w-24 h-24 bg-blue-500 opacity-10 blur-2xl"></div>
+        <div className="absolute bottom-0 left-0 w-24 h-24 bg-emerald-500 opacity-10 blur-2xl"></div>
 
         <div className="relative z-10 flex flex-col justify-between text-white">
           <div>
-            <div className="inline-flex items-center gap-2 rounded-full bg-white/10 border border-white/10 px-2.5 py-0.5 text-[11px] font-bold text-white tracking-wide mb-2.5">
+            <div className="inline-flex items-center gap-1.5 rounded-full bg-white/10 border border-white/10 px-2 py-0.5 text-[10px] font-bold text-white tracking-wide mb-1.5">
               🎲 {current.tag}
             </div>
 
-            <h2 className="text-2xl font-black leading-tight text-white">
+            <h2 className="text-xl font-black leading-tight text-white">
               {current.title}
             </h2>
 
-            <p className="text-white mt-1 text-xs font-medium opacity-90">
+            <p className="text-white mt-0.5 text-[11px] font-medium opacity-90">
               {current.subtitle}
             </p>
 
-            {/* INNER BOX WITH CURVED SHAPE & COMPACT SIZE */}
-            <div className="mt-3 bg-white/5 border border-white/10 rounded-xl p-3 backdrop-blur text-white">
-              <h3 className="text-base font-bold text-white">
+            {/* INNER BOX WITH CURVED SHAPE & MINIMAL SIZE */}
+            <div className="mt-2 bg-white/5 border border-white/10 rounded-xl p-2 backdrop-blur text-white">
+              <h3 className="text-sm font-bold text-white leading-none">
                 {current.heading}
               </h3>
 
-              <p className="text-xs text-white mt-0.5 opacity-90">
+              <p className="text-[11px] text-white mt-0.5 opacity-90 leading-tight">
                 {current.text}
               </p>
             </div>
           </div>
 
-          <div className="flex justify-between items-center mt-4">
+          <div className="flex justify-between items-center mt-3">
             <button
               onClick={() => navigate(current.route)}
-              className="bg-gradient-to-r from-emerald-500 to-blue-500 text-white px-4 py-2 rounded-lg text-xs font-bold shadow-lg active:scale-95 transition"
+              className="bg-gradient-to-r from-emerald-500 to-blue-500 text-white px-3 py-1.5 rounded-lg text-[11px] font-bold shadow-md active:scale-95 transition"
             >
               {current.button} →
             </button>
 
-            <div className="flex gap-1.5">
+            <div className="flex gap-1">
               {slides.map((_, i) => (
                 <button
                   key={i}
                   onClick={() => setActiveSlide(i)}
-                  className={`h-1.5 rounded-full transition-all duration-300 ${
+                  className={`h-1 rounded-full transition-all duration-300 ${
                     activeSlide === i
-                      ? "w-6 bg-white"
-                      : "w-1.5 bg-white/40"
+                      ? "w-4 bg-white"
+                      : "w-1 bg-white/40"
                   }`}
                 ></button>
               ))}
@@ -133,11 +133,11 @@ export default function Home() {
         </div>
       </div>
 
-      {/* HEADER */}
-      <div className="section-header">
-        <h2>All Games</h2>
+      {/* HEADER - Shifted closer to the slider */}
+      <div className="section-header mb-2 mt-1">
+        <h2 className="text-lg font-bold">All Games</h2>
 
-        <button className="btn-rules">
+        <button className="btn-rules py-1 px-2.5 text-xs">
           Rules{" "}
           <i
             className="fa-solid fa-arrow-right-long"
@@ -148,12 +148,12 @@ export default function Home() {
 
       {/* LOADING */}
       {loading && (
-        <div className="text-center p-5 text-gray-500 font-semibold">
+        <div className="text-center p-3 text-gray-500 font-semibold text-sm">
           Loading games...
         </div>
       )}
 
-      {/* GAME GRID */}
+      {/* GAME GRID - Now sits higher up the page */}
       <div className="game-grid">
         {!loading &&
           games.map((game) => (
