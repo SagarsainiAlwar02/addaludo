@@ -77,14 +77,14 @@ export default function Home() {
 
   return (
     <div className="page-container">
-      {/* COMPACT RECTANGLE SLIDER (Hieght reduced and corners made sharp rectangle) */}
-      <div className="relative overflow-hidden rounded-none p-4 mb-5 text-white shadow-xl bg-gradient-to-br from-[#111827] via-[#1f2937] to-[#030712] transition-all duration-700">
+      {/* COMPACT SLIDER WITH ORIGINAL CURVED SHAPE (rounded-2xl + Small Size) */}
+      <div className="relative overflow-hidden rounded-2xl p-4 mb-4 text-white shadow-xl bg-gradient-to-br from-[#111827] via-[#1f2937] to-[#030712] transition-all duration-700">
         <div className="absolute top-0 right-0 w-32 h-32 bg-blue-500 opacity-10 blur-3xl"></div>
         <div className="absolute bottom-0 left-0 w-32 h-32 bg-emerald-500 opacity-10 blur-3xl"></div>
 
         <div className="relative z-10 flex flex-col justify-between text-white">
           <div>
-            <div className="inline-flex items-center gap-2 rounded-none bg-white/10 border border-white/10 px-2.5 py-0.5 text-[11px] font-bold text-white tracking-wide mb-3">
+            <div className="inline-flex items-center gap-2 rounded-full bg-white/10 border border-white/10 px-2.5 py-0.5 text-[11px] font-bold text-white tracking-wide mb-2.5">
               🎲 {current.tag}
             </div>
 
@@ -96,8 +96,8 @@ export default function Home() {
               {current.subtitle}
             </p>
 
-            {/* INNER CONTENT BOX - RECTANGLE & COMPACT */}
-            <div className="mt-3 bg-white/5 border border-white/10 rounded-none p-3 backdrop-blur text-white">
+            {/* INNER BOX WITH CURVED SHAPE & COMPACT SIZE */}
+            <div className="mt-3 bg-white/5 border border-white/10 rounded-xl p-3 backdrop-blur text-white">
               <h3 className="text-base font-bold text-white">
                 {current.heading}
               </h3>
@@ -111,7 +111,7 @@ export default function Home() {
           <div className="flex justify-between items-center mt-4">
             <button
               onClick={() => navigate(current.route)}
-              className="bg-gradient-to-r from-emerald-500 to-blue-500 text-white px-4 py-2 rounded-none text-xs font-bold shadow-lg active:scale-95 transition"
+              className="bg-gradient-to-r from-emerald-500 to-blue-500 text-white px-4 py-2 rounded-lg text-xs font-bold shadow-lg active:scale-95 transition"
             >
               {current.button} →
             </button>
@@ -121,7 +121,7 @@ export default function Home() {
                 <button
                   key={i}
                   onClick={() => setActiveSlide(i)}
-                  className={`h-1.5 transition-all duration-300 ${
+                  className={`h-1.5 rounded-full transition-all duration-300 ${
                     activeSlide === i
                       ? "w-6 bg-white"
                       : "w-1.5 bg-white/40"
