@@ -252,44 +252,30 @@ const Battle = () => {
     return list;
   }, [allBattles, myId]);
 
+  // Running Battles & Pending Battles together in Running Section
   const runningBattles = useMemo(() => {
-    const realRunningBattles = [];
+    const realRunningAndPendingBattles = [];
 
     for (const battle of allBattles) {
       const status = String(battle?.status || "").toLowerCase();
 
-      if (status === "running" || status === "room_submitted") {
-        realRunningBattles.push(battle);
+      if (
+        status === "running" ||
+        status === "room_submitted" ||
+        status === "result_submitted" ||
+        status === "cancel_requested"
+      ) {
+        realRunningAndPendingBattles.push(battle);
       }
     }
 
-    realRunningBattles.sort(
+    realRunningAndPendingBattles.sort(
       (a, b) =>
         new Date(b.updatedAt || b.createdAt || 0) -
         new Date(a.updatedAt || a.createdAt || 0)
     );
 
-    return [...realRunningBattles, ...FAKE_RUNNING_BATTLES];
-  }, [allBattles]);
-
-  const pendingBattles = useMemo(() => {
-    const list = [];
-
-    for (const battle of allBattles) {
-      const status = String(battle?.status || "").toLowerCase();
-
-      if (status === "result_submitted" || status === "cancel_requested") {
-        list.push(battle);
-      }
-    }
-
-    list.sort(
-      (a, b) =>
-        new Date(b.updatedAt || b.createdAt || 0) -
-        new Date(a.updatedAt || a.createdAt || 0)
-    );
-
-    return list;
+    return [...realRunningAndPendingBattles, ...FAKE_RUNNING_BATTLES];
   }, [allBattles]);
 
   const validateAmount = () => {
@@ -518,7 +504,7 @@ const Battle = () => {
             <div>
               <h2 className="text-base font-bold">Create Battle</h2>
               <p className="text-[11px] font-medium text-slate-400">
-        
+                Amount डालो और challenge create karo
               </p>
             </div>
 
@@ -553,7 +539,6 @@ const Battle = () => {
           </div>
         </div>
 
-        {/* Text-only Section Titles with emoji on right */}
         <SectionTitle title="Open Battles" />
 
         <div className="space-y-4">
@@ -578,30 +563,12 @@ const Battle = () => {
             <MatchCard
               key={battle.battleId}
               battle={battle}
-              type="running"
               calculatePrize={calculatePrize}
               myId={myId}
               onClick={() => {
                 if (battle.isFake) return;
                 navigate(`/room-code/${battle.battleId}`);
               }}
-            />
-          ))}
-        </div>
-
-        <SectionTitle title="Pending Results" />
-
-        <div className="space-y-4">
-          {pendingBattles.length === 0 && <EmptyBox text="No Pending Results" />}
-
-          {pendingBattles.map((battle) => (
-            <MatchCard
-              key={battle.battleId}
-              battle={battle}
-              type="pending"
-              calculatePrize={calculatePrize}
-              myId={myId}
-              onClick={() => navigate(`/room-code/${battle.battleId}`)}
             />
           ))}
         </div>
@@ -654,10 +621,11 @@ function OpenCard({ battle, action, calculatePrize }) {
   );
 }
 
-function MatchCard({ battle, type, calculatePrize, onClick, myId }) {
+function MatchCard({ battle, calculatePrize, onClick, myId }) {
   if (!battle) return null;
 
-  const isPending = type === "pending";
+  const status = String(battle?.status || "").toLowerCase();
+  const isPending = status === "result_submitted" || status === "cancel_requested";
 
   const isMine =
     String(battle?.createdBy?._id || battle?.createdBy?.id || battle?.createdBy || "") === myId;
@@ -665,13 +633,13 @@ function MatchCard({ battle, type, calculatePrize, onClick, myId }) {
   const isOpponent =
     String(battle?.opponent?._id || battle?.opponent?.id || battle?.opponent || "") === myId;
 
-  const showViewButton = !isPending && !battle?.isFake && (isMine || isOpponent);
+  const isParticipant = !battle?.isFake && (isMine || isOpponent);
 
   return (
     <div
       onClick={onClick}
       className={`cursor-pointer overflow-hidden rounded-xl bg-white shadow-md ring-1 active:scale-[0.99] ${
-        isPending ? "ring-orange-200" : "ring-indigo-200"
+        isPending ? "ring-orange-300 bg-orange-50/20" : "ring-indigo-200"
       }`}
     >
       <div className="px-3 py-2 border-b border-slate-100 flex items-center justify-between gap-2">
@@ -698,10 +666,16 @@ function MatchCard({ battle, type, calculatePrize, onClick, myId }) {
         <MoneyBlock label="Entry Fee" value={battle?.amount} />
 
         <div className="flex justify-center shrink-0">
-          {showViewButton ? (
-            <button className="rounded-lg bg-indigo-600 px-3.5 py-1.5 text-xs font-bold text-white shadow-md shadow-indigo-500/20 active:scale-95">
-              VIEW
-            </button>
+          {isParticipant ? (
+            isPending ? (
+              <button className="rounded-lg bg-orange-500 px-3 py-1.5 text-xs font-black text-white shadow-md shadow-orange-500/20 active:scale-95 uppercase">
+                Pending
+              </button>
+            ) : (
+              <button className="rounded-lg bg-indigo-600 px-3.5 py-1.5 text-xs font-black text-white shadow-md shadow-indigo-500/20 active:scale-95 uppercase">
+                VIEW
+              </button>
+            )
           ) : (
             <div className="flex h-8 w-11 items-center justify-center rounded-lg bg-gradient-to-r from-pink-500 via-violet-500 to-indigo-500 text-[11px] font-bold text-white shadow-sm">
               VS
