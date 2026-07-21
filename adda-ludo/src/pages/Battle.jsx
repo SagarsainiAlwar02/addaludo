@@ -518,7 +518,7 @@ const Battle = () => {
             <div>
               <h2 className="text-base font-bold">Create Battle</h2>
               <p className="text-[11px] font-medium text-slate-400">
-                Amount डालो और challenge create karo
+        
               </p>
             </div>
 
@@ -553,7 +553,7 @@ const Battle = () => {
           </div>
         </div>
 
-        {/* Section Titles */}
+        {/* Text-only Section Titles with emoji on right */}
         <SectionTitle title="Open Battles" />
 
         <div className="space-y-4">
@@ -612,11 +612,11 @@ const Battle = () => {
 
 function SectionTitle({ title }) {
   return (
-    <div className="mb-3 mt-7 flex justify-start">
-      <div className="inline-flex items-center gap-2 overflow-hidden rounded-lg bg-gradient-to-r from-indigo-600 to-indigo-800 px-3.5 py-1.5 text-white shadow-sm ring-1 ring-indigo-500/30">
-        <span className="text-xs">⚔️</span>
-        <h3 className="text-xs font-black uppercase tracking-wide">{title}</h3>
-      </div>
+    <div className="mb-2 mt-6 flex items-center justify-start gap-1.5 px-1">
+      <h3 className="text-sm font-black uppercase tracking-wide text-slate-800">
+        {title}
+      </h3>
+      <span className="text-sm">⚔️</span>
     </div>
   );
 }
