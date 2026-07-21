@@ -1,12 +1,26 @@
 import mongoose from "mongoose";
 
+// Helper function: Generate 5 random characters (e.g., Hwhos, x7K2p)
+function makeRandomName() {
+  const chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
+  let result = "";
+  for (let i = 0; i < 5; i++) {
+    result += chars.charAt(Math.floor(Math.random() * chars.length));
+  }
+  return result;
+}
+
 function makeReferralCode() {
   return "BA-" + Math.floor(100000 + Math.random() * 900000);
 }
 
 const userSchema = new mongoose.Schema(
   {
-    name: { type: String, default: "New User" },
+    // Auto generate 5 random characters as initial name
+    name: { 
+      type: String, 
+      default: makeRandomName 
+    },
 
     email: {
       type: String,
@@ -47,11 +61,11 @@ const userSchema = new mongoose.Schema(
       default: 0,
     },
 
- role: {
-  type: String,
-  enum: ["user", "admin", "agent"],
-  default: "user",
-},
+    role: {
+      type: String,
+      enum: ["user", "admin", "agent"],
+      default: "user",
+    },
 
     status: {
       type: String,
@@ -65,7 +79,7 @@ const userSchema = new mongoose.Schema(
       default: "not_submitted",
     },
 
-  kyc: {
+    kyc: {
       name: { type: String, default: "" },
       dob: { type: String, default: "" },
       docType: { type: String, default: "aadhar" },
@@ -99,6 +113,5 @@ userSchema.pre("save", async function (next) {
     next(err);
   }
 });
-
 
 export default mongoose.models.User || mongoose.model("User", userSchema);
