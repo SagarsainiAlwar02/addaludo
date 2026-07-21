@@ -17,6 +17,9 @@ export default function Withdraw() {
   const [pageLoading, setPageLoading] = useState(true);
   const [message, setMessage] = useState("");
 
+  // KYC State Add Kiya Gaya Hai
+  const [kycStatus, setKycStatus] = useState("not_submitted");
+
   const [details, setDetails] = useState({
     upiId: "",
     confirmUpiId: "",
@@ -33,8 +36,17 @@ export default function Withdraw() {
   const loadData = async () => {
     try {
       setPageLoading(true);
+
+      // 1. Withdraw Data Fetch
       const res = await axios.get(`${API_BASE}/redeem`, authHeader);
       setWinningBalance(Number(res.data.winningBalance || 0));
+
+      // 2. User Profile/KYC Status Fetch
+      const profileRes = await axios.get(
+        `${API_BASE}/user/profile`,
+        authHeader
+      );
+      setKycStatus(profileRes.data?.kycStatus || "not_submitted");
     } catch (err) {
       setMessage(err.response?.data?.msg || "Withdraw data load nahi hua");
     } finally {
@@ -55,24 +67,14 @@ export default function Withdraw() {
   const bankRequired = Number(amount) > 2000;
 
   const submitWithdraw = async () => {
-    const withdrawAmount = Number(amount);
-
-    // ✅ KYC CHECK START
-    try {
-      const profileRes = await axios.get(`${API_BASE}/user/profile`, authHeader);
-
-      const kycStatus = profileRes.data?.kycStatus || "not_submitted";
-
-      if (kycStatus !== "approved") {
-        alert("Withdraw ke liye KYC complete karna jaruri hai.");
-        navigate("/kyc");
-        return;
-      }
-    } catch (err) {
-      alert("KYC status check nahi hua. Please login again.");
+    // Agar KYC Approved nahi hai toh Submit mat hone do
+    if (kycStatus !== "approved") {
+      alert("Withdraw ke liye KYC complete karna jaruri hai.");
+      navigate("/kyc");
       return;
     }
-    // ✅ KYC CHECK END
+
+    const withdrawAmount = Number(amount);
 
     if (!withdrawAmount) return setMessage("Amount enter karo");
 
@@ -193,6 +195,15 @@ export default function Withdraw() {
             ₹ {winningBalance.toFixed(2)}
           </h2>
         </div>
+
+        {/* KYC Warning Box (Jab tak KYC approved na ho) */}
+        {kycStatus !== "approved" && (
+          <div className="mt-4 rounded-2xl border border-red-300 bg-red-50 p-4 text-center">
+            <p className="text-sm font-bold text-red-800">
+              ⚠️ Aapka KYC complete nahi hai. Withdraw karne ke liye pehle KYC verification zaroori hai.
+            </p>
+          </div>
+        )}
 
         <div className="mt-4 rounded-2xl border border-yellow-300 bg-yellow-50 px-4 py-3">
           <p className="text-[13px] leading-5 font-bold text-yellow-900">
@@ -332,13 +343,23 @@ export default function Withdraw() {
           </div>
         )}
 
-        <button
-          onClick={submitWithdraw}
-          disabled={loading}
-          className="mt-6 w-full rounded-2xl bg-green-600 py-3.5 text-base font-black text-white shadow-lg disabled:opacity-60"
-        >
-          {loading ? "Submitting..." : "Submit Withdraw Request"}
-        </button>
+        {/* Dynamic Button (KYC ke according button badal jayega) */}
+        {kycStatus === "approved" ? (
+          <button
+            onClick={submitWithdraw}
+            disabled={loading}
+            className="mt-6 w-full rounded-2xl bg-green-600 py-3.5 text-base font-black text-white shadow-lg disabled:opacity-60"
+          >
+            {loading ? "Submitting..." : "Submit Withdraw Request"}
+          </button>
+        ) : (
+          <button
+            onClick={() => navigate("/kyc")}
+            className="mt-6 w-full rounded-2xl bg-amber-500 py-3.5 text-base font-black text-white shadow-lg hover:bg-amber-600 transition-all"
+          >
+            Complete KYC First
+          </button>
+        )}
       </div>
     </div>
   );
