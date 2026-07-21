@@ -113,11 +113,10 @@ const Battle = () => {
     [myId]
   );
 
-const fetchBattles = useCallback(async () => {
+  const fetchBattles = useCallback(async () => {
     if (!token) return;
 
     try {
-      // Dono ko block karne ke bajaye alag-alag call karo taaki ek heavy call doosri ko na roke
       axios.get(`${API_BASE}/battle/open`, authHeader()).then((openRes) => {
         setOpenBattles(Array.isArray(openRes.data?.battles) ? openRes.data.battles : []);
       }).catch(e => console.log("Open fetch err:", e.message));
@@ -130,7 +129,7 @@ const fetchBattles = useCallback(async () => {
       console.log("Fetch error:", err.response?.data || err.message);
     }
   }, [token, authHeader]);
-  // Real-time Socket Client Listeners Setup (Optimized for 0-delay)
+
   useEffect(() => {
     if (!token) {
       navigate("/login");
@@ -141,13 +140,11 @@ const fetchBattles = useCallback(async () => {
 
     const socketUrl = import.meta.env.VITE_API_URL ? import.meta.env.VITE_API_URL.replace(/\/api$/, "") : "http://localhost:5000";
     const socket = io(socketUrl, {
-      transports: ["websocket"], // Force WebSocket taaki polling wala delay na ho
+      transports: ["websocket"],
       upgrade: false
     });
 
-    // 1. Nayi battle instant upar chamkegi
     socket.on("newBattle", (newBattleData) => {
-      // Palkein jhapakte hi state update
       setOpenBattles((prev) => {
         const exists = prev.some(b => b.battleId === newBattleData.battleId || b._id === newBattleData._id);
         if (exists) return prev;
@@ -163,7 +160,6 @@ const fetchBattles = useCallback(async () => {
       }
     });
 
-    // 2. Status change instant catch hoga
     socket.on("battleUpdated", (updatedBattleData) => {
       setOpenBattles((prev) =>
         prev.map((b) => (b.battleId === updatedBattleData.battleId || b._id === updatedBattleData._id ? updatedBattleData : b))
@@ -182,7 +178,6 @@ const fetchBattles = useCallback(async () => {
       }
     });
 
-    // 3. Cancel/Delete instant remove karega
     socket.on("battleDeleted", (deletedBattleId) => {
       setOpenBattles((prev) => prev.filter((b) => b.battleId !== deletedBattleId && b._id !== deletedBattleId));
       setMyBattles((prev) => prev.filter((b) => b.battleId !== deletedBattleId && b._id !== deletedBattleId));
@@ -191,7 +186,7 @@ const fetchBattles = useCallback(async () => {
     return () => {
       socket.disconnect();
     };
-  }, [token, navigate, myId]); // fetchBattles ko dependency se hata diya taaki loop na bane
+  }, [token, navigate, myId]);
 
   const allBattles = useMemo(() => {
     const map = new Map();
@@ -356,7 +351,7 @@ const fetchBattles = useCallback(async () => {
     }
   };
 
-const joinMatch = async (battleId) => {
+  const joinMatch = async (battleId) => {
     if (myActiveBattle) {
       alert("You are already in game.");
       return;
@@ -370,7 +365,6 @@ const joinMatch = async (battleId) => {
       fetchBattles();
       navigate(`/room-code/${joinedId}`);
     } catch (err) {
-      // ✅ Dummy battle silently hat gayi — koi alert nahi dikhana, bas list refresh karo
       if (err.response?.data?.dummy) {
         fetchBattles();
         return;
@@ -500,24 +494,23 @@ const joinMatch = async (battleId) => {
       </button>
     );
   };
-    return (
-  <div className="min-h-screen bg-[#eef3ff] px-3 pb-28 pt-14 text-slate-950">
-    <div className="mx-auto max-w-md">
-      {/* Banner Box */}
-      <div className="mb-4 overflow-hidden rounded-2xl bg-gradient-to-br from-[#111827] via-[#202b65] to-[#06b6d4] p-2.5 shadow-md">
-        <div className="rounded-xl bg-white bg-opacity-10 p-2.5 backdrop-blur-xl">
-          <div className="flex items-center justify-center">
+
+  return (
+    <div className="min-h-screen bg-[#eef3ff] px-3 pb-28 pt-14 text-slate-950">
+      <div className="mx-auto max-w-md">
+        {/* Banner Box - Updated Styling */}
+        <div className="mb-4 overflow-hidden rounded-2xl bg-gradient-to-br from-[#111827] via-[#202b65] to-[#06b6d4] p-2 shadow-md">
+          <div className="flex items-center justify-center pt-1 pb-1">
             <p className="text-[10px] font-black uppercase tracking-[0.25em] text-cyan-100">
               Adda Ludo
             </p>
           </div>
 
-          <div className="mt-1.5 rounded-xl bg-black bg-opacity-20 px-3 py-1.5 text-center text-xs font-bold leading-5 text-white ring-1 ring-white ring-opacity-10">
+          <div className="mt-1 rounded-xl bg-black/30 px-3 py-2 text-center text-[11px] font-bold leading-relaxed text-white ring-1 ring-white/10 shadow-inner">
             ADDA LUDO में आपका स्वागत है, सबसे Fast ⏩ विथड्रॉ है, 👉 मात्र 2-3 Min में, 👈 आपका विश्वास बनाये रखे 🙏 whatsapp support 8239092073
           </div>
         </div>
-      </div>
-    </div>
+
         <div className="mb-5 rounded-xl bg-white p-3 shadow-md ring-1 ring-slate-200">
           <div className="mb-3 flex items-center justify-between">
             <div>
