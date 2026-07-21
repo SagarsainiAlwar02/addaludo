@@ -44,7 +44,7 @@ const FAKE_BATTLE_AMOUNTS = [
 ];
 
 const randomFrom = (arr) => arr[Math.floor(Math.random() * arr.length)];
-const FAKE_RUNNING_AMOUNTS = FAKE_BATTLE_AMOUNTS.slice(0, 15);
+const FAKE_RUNNING_AMOUNTS = FAKE_BATTLE_AMOUNTS.slice(0, 18);
 
 const FAKE_RUNNING_BATTLES = FAKE_RUNNING_AMOUNTS.map((amount, index) => {
   const creatorName = randomFrom(FAKE_PLAYER_NAMES);
