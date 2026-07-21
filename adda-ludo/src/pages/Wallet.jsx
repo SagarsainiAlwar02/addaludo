@@ -19,6 +19,9 @@ export default function Wallet() {
     locked: 0,
   });
 
+  // KYC State Added
+  const [kycStatus, setKycStatus] = useState("not_submitted");
+
   const [amount, setAmount] = useState("");
   const [utr, setUtr] = useState("");
   const [screenshot, setScreenshot] = useState(null);
@@ -56,6 +59,16 @@ export default function Wallet() {
     });
   };
 
+  // KYC Status Fetch Function
+  const loadKycStatus = async () => {
+    try {
+      const res = await axios.get(`${API_BASE}/user/profile`, authHeader);
+      setKycStatus(res.data?.kycStatus || "not_submitted");
+    } catch (err) {
+      console.log("KYC status check error:", err.response?.data || err.message);
+    }
+  };
+
   const loadDeposits = async () => {
     try {
       const res = await axios.get(`${API_BASE}/deposit/my`, authHeader);
@@ -88,6 +101,7 @@ export default function Wallet() {
       setPageLoading(true);
       await Promise.all([
         loadWallet(),
+        loadKycStatus(), // KYC status loaded here
         loadDeposits(),
         loadWithdraws(),
         loadPaymentSettings(),
@@ -245,7 +259,7 @@ export default function Wallet() {
           <p style={styles.desc}>Use to play Tournaments & Battles. Cannot be withdrawn.</p>
         </div>
 
-        {/* --- WINNING CARD --- */}
+        {/* --- WINNING CARD WITH DYNAMIC KYC BUTTON --- */}
         <div style={styles.cardRectangle}>
           <div style={styles.cardMainInline}>
             <div style={{ ...styles.iconBoxSmall, background: "linear-gradient(135deg,#16a34a,#86efac)" }}>🏆</div>
@@ -254,9 +268,15 @@ export default function Wallet() {
               <h1 style={styles.amountText}>₹ {Number(wallet.winnings || 0).toFixed(2)}</h1>
             </div>
             <div>
-              <button style={styles.withdrawBtnInline} onClick={() => navigate("/withdraw")}>
-                Withdraw 🏦
-              </button>
+              {kycStatus === "approved" ? (
+                <button style={styles.withdrawBtnInline} onClick={() => navigate("/withdraw")}>
+                  Withdraw 🏦
+                </button>
+              ) : (
+                <button style={styles.completeKycBtnInline} onClick={() => navigate("/kyc")}>
+                  Complete KYC 📋
+                </button>
+              )}
             </div>
           </div>
           <p style={styles.desc}>Withdrawable to UPI or Bank. Also usable for play.</p>
@@ -333,47 +353,47 @@ export default function Wallet() {
                 <p style={{ fontSize: 13, color: "#64748b", marginBottom: 10, fontWeight: 'bold' }}>Select Payment Mode:</p>
                 <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
                   
-                 {/* ₹100 SE ₹2000 TAK: SCANNER AUR UPI ID BOTH OPTIONS */}
-{numericAmount >= 100 && numericAmount <= 2000 && (
-  <>
-    <button
-      type="button"
-      onClick={() => setSelectedMethod("qr")}
-      style={selectedMethod === "qr" ? styles.methodBtnActive : styles.methodBtn}
-    >
-      QR Scanner
-    </button>
+                  {/* ₹100 SE ₹2000 TAK: SCANNER AUR UPI ID BOTH OPTIONS */}
+                  {numericAmount >= 100 && numericAmount <= 2000 && (
+                    <>
+                      <button
+                        type="button"
+                        onClick={() => setSelectedMethod("qr")}
+                        style={selectedMethod === "qr" ? styles.methodBtnActive : styles.methodBtn}
+                      >
+                        QR Scanner
+                      </button>
 
-    <button
-      type="button"
-      onClick={() => setSelectedMethod("upi")}
-      style={selectedMethod === "upi" ? styles.methodBtnActive : styles.methodBtn}
-    >
-      UPI ID
-    </button>
-  </>
-)}
+                      <button
+                        type="button"
+                        onClick={() => setSelectedMethod("upi")}
+                        style={selectedMethod === "upi" ? styles.methodBtnActive : styles.methodBtn}
+                      >
+                        UPI ID
+                      </button>
+                    </>
+                  )}
 
-{/* ₹2000 SE UPER: UPI ID AUR BANK DETAILS BOTH OPTIONS */}
-{numericAmount > 2000 && (
-  <>
-    <button
-      type="button"
-      onClick={() => setSelectedMethod("upi")}
-      style={selectedMethod === "upi" ? styles.methodBtnActive : styles.methodBtn}
-    >
-      UPI ID
-    </button>
+                  {/* ₹2000 SE UPER: UPI ID AUR BANK DETAILS BOTH OPTIONS */}
+                  {numericAmount > 2000 && (
+                    <>
+                      <button
+                        type="button"
+                        onClick={() => setSelectedMethod("upi")}
+                        style={selectedMethod === "upi" ? styles.methodBtnActive : styles.methodBtn}
+                      >
+                        UPI ID
+                      </button>
 
-    <button 
-      type="button" 
-      onClick={() => setSelectedMethod("bank")}
-      style={selectedMethod === "bank" ? styles.methodBtnActive : styles.methodBtn}
-    >
-      Bank Details
-    </button>
-  </>
-)}
+                      <button 
+                        type="button" 
+                        onClick={() => setSelectedMethod("bank")}
+                        style={selectedMethod === "bank" ? styles.methodBtnActive : styles.methodBtn}
+                      >
+                        Bank Details
+                      </button>
+                    </>
+                  )}
                 </div>
               </div>
 
@@ -432,10 +452,9 @@ export default function Wallet() {
 
               {/* Cancel Button */}
               <button style={styles.cancelBtn} onClick={() => { setShowPayment(false); setSelectedMethod(""); }}>Cancel</button>
-           <div style={styles.paymentInstruction}>
-  👆 ऊपर QR Scanner और UPI ID का ऑप्शन दिया गया है,
-  उस पर दबाये और पेमेंट करे !
-</div>
+              <div style={styles.paymentInstruction}>
+                👆 ऊपर QR Scanner और UPI ID का ऑप्शन दिया गया है, उस पर दबाये और पेमेंट करे !
+              </div>
             </div>
           </div>
         </div>
@@ -476,6 +495,7 @@ function HistoryBox({ empty, items, getStatusStyle, type }) {
     </div>
   );
 }
+
 const styles = {
   page: { minHeight: "100vh", background: "#f1f5f9", color: "#0f172a" },
   container: { padding: "72px 14px 105px", maxWidth: "480px", margin: "0 auto" },
@@ -494,6 +514,10 @@ const styles = {
   
   addBtnInline: { border: "none", background: "linear-gradient(135deg,#2563eb,#06b6d4)", color: "#fff", borderRadius: 10, padding: "10px 14px", fontSize: 14, fontWeight: 900, cursor: "pointer", whiteSpace: "nowrap" },
   withdrawBtnInline: { border: "1px solid #bbf7d0", background: "#f0fdf4", color: "#166534", borderRadius: 10, padding: "10px 14px", fontSize: 14, fontWeight: 900, cursor: "pointer", whiteSpace: "nowrap" },
+  
+  // Dynamic Complete KYC Button Styling
+  completeKycBtnInline: { border: "none", background: "linear-gradient(135deg, #f59e0b, #d97706)", color: "#fff", borderRadius: 10, padding: "10px 12px", fontSize: 13, fontWeight: 900, cursor: "pointer", whiteSpace: "nowrap", boxShadow: "0 4px 10px rgba(217,119,6,0.2)" },
+
   plus: { marginLeft: 3, fontSize: 15 },
   desc: { margin: "10px 0 0", color: "#64748b", fontSize: 12, lineHeight: 1.4 },
   
@@ -529,7 +553,6 @@ const styles = {
 
   paymentBody: { width: "100%" },
   
-  // FIXED COMPACT BLACK & WHITE SHARP RECTANGLE CARD BOX
   amountCardBox: { 
     background: "#ffffff", 
     border: "2px solid #0f172a", 
@@ -586,19 +609,18 @@ const styles = {
 
   noteBox: { background: "#fff5f5", color: "#c53030", padding: "12px", borderRadius: "10px", fontSize: "12px", fontWeight: "700", marginBottom: "12px", border: "1px solid #feb2b2", lineHeight: "1.4" },
   fileInput: { width: "100%", marginTop: "10px", fontSize: "13px", fontWeight: "700" }, 
- submitBtn: { width: "100%", padding: "12px", background: "#10b981", color: "#fff", border: "none", borderRadius: "10px", fontSize: "15px", fontWeight: "900", marginTop: "14px", cursor: "pointer" },
+  submitBtn: { width: "100%", padding: "12px", background: "#10b981", color: "#fff", border: "none", borderRadius: "10px", fontSize: "15px", fontWeight: "900", marginTop: "14px", cursor: "pointer" },
 
-paymentInstruction: {
-  marginTop: "12px",
-  padding: "12px",
-  background: "#fff8e1",
-  border: "1px solid #facc15",
-  borderRadius: "10px",
-  color: "#92400e",
-  fontSize: "13px",
-  fontWeight: "700",
-  textAlign: "center",
-  lineHeight: "1.5",
-}
+  paymentInstruction: {
+    marginTop: "12px",
+    padding: "12px",
+    background: "#fff8e1",
+    border: "1px solid #facc15",
+    borderRadius: "10px",
+    color: "#92400e",
+    fontSize: "13px",
+    fontWeight: "700",
+    textAlign: "center",
+    lineHeight: "1.5",
+  }
 };
-// 100% BALANCED JAVASCRIPT STYLE DICTIONARY
