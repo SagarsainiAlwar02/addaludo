@@ -503,6 +503,7 @@ const joinMatch = async (battleId) => {
 return (
       <div className="min-h-screen bg-[#eef3ff] px-3 pb-28 pt-14 text-slate-950">
         <div className="mx-auto max-w-md">
+          {/* Banner Box */}
           <div className="mb-4 overflow-hidden rounded-2xl bg-gradient-to-br from-[#111827] via-[#202b65] to-[#06b6d4] p-2.5 shadow-md">
             <div className="rounded-xl bg-white/10 p-2.5 backdrop-blur-xl">
               <div className="flex items-center justify-center">
