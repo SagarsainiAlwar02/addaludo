@@ -498,7 +498,7 @@ const Battle = () => {
   return (
     <div className="min-h-screen bg-[#eef3ff] px-3 pb-28 pt-14 text-slate-950">
       <div className="mx-auto max-w-md">
-        {/* Banner Box - Updated Styling */}
+        {/* Banner Box */}
         <div className="mb-4 overflow-hidden rounded-2xl bg-gradient-to-br from-[#111827] via-[#202b65] to-[#06b6d4] p-2 shadow-md">
           <div className="flex items-center justify-center pt-1 pb-1">
             <p className="text-[10px] font-black uppercase tracking-[0.25em] text-cyan-100">
@@ -551,7 +551,8 @@ const Battle = () => {
           </div>
         </div>
 
-        <SectionTitle title="Open Battles" badge={visibleOpenBattles.length} gradient="from-cyan-500 to-blue-600" />
+        {/* Custom Box Titles without count badges & with Battle Sign */}
+        <SectionTitle title="Open Battles" gradient="from-cyan-600 via-blue-600 to-indigo-700" />
 
         <div className="space-y-4">
           {visibleOpenBattles.length === 0 && <EmptyBox text="No Battles Live" />}
@@ -566,7 +567,7 @@ const Battle = () => {
           ))}
         </div>
 
-        <SectionTitle title="Running Battles" badge={runningBattles.length} gradient="from-violet-600 to-indigo-700" />
+        <SectionTitle title="Running Battles" gradient="from-violet-600 via-purple-600 to-indigo-800" />
 
         <div className="space-y-4">
           {runningBattles.length === 0 && <EmptyBox text="No Running Battles" />}
@@ -586,7 +587,7 @@ const Battle = () => {
           ))}
         </div>
 
-        <SectionTitle title="Pending Results" badge={pendingBattles.length} gradient="from-amber-500 to-orange-600" />
+        <SectionTitle title="Pending Results" gradient="from-amber-500 via-orange-600 to-red-600" />
 
         <div className="space-y-4">
           {pendingBattles.length === 0 && <EmptyBox text="No Pending Results" />}
@@ -607,16 +608,13 @@ const Battle = () => {
   );
 };
 
-function SectionTitle({ title, badge, gradient }) {
+function SectionTitle({ title, gradient }) {
   return (
-    <div className="mb-3 mt-7 flex items-center justify-between">
-      <h3 className="text-lg font-black text-slate-900">{title}</h3>
-
-      {badge > 0 && (
-        <div className={`rounded-2xl bg-gradient-to-r ${gradient} px-4 py-2 text-sm font-black text-white shadow-lg`}>
-          {badge}
-        </div>
-      )}
+    <div className="mb-3 mt-7 overflow-hidden rounded-xl bg-white shadow-sm ring-1 ring-slate-200">
+      <div className={`flex items-center justify-center gap-2 bg-gradient-to-r ${gradient} px-4 py-2.5 text-white shadow-inner`}>
+        <span className="text-base">⚔️</span>
+        <h3 className="text-sm font-black uppercase tracking-wider">{title}</h3>
+      </div>
     </div>
   );
 }
