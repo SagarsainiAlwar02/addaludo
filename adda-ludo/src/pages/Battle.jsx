@@ -500,19 +500,18 @@ const joinMatch = async (battleId) => {
       </button>
     );
   };
-
-  return (
-      <div className="min-h-screen bg-[#eef3ff] px-3 pb-28 pt-4 text-slate-950">
+return (
+      <div className="min-h-screen bg-[#eef3ff] px-3 pb-28 pt-14 text-slate-950">
         <div className="mx-auto max-w-md">
-          <div className="mb-4 overflow-hidden rounded-2xl bg-gradient-to-br from-[#111827] via-[#202b65] to-[#06b6d4] p-3 shadow-md">
-            <div className="rounded-xl bg-white/10 p-3 backdrop-blur-xl">
+          <div className="mb-4 overflow-hidden rounded-2xl bg-gradient-to-br from-[#111827] via-[#202b65] to-[#06b6d4] p-2.5 shadow-md">
+            <div className="rounded-xl bg-white/10 p-2.5 backdrop-blur-xl">
               <div className="flex items-center justify-center">
                 <p className="text-[10px] font-black uppercase tracking-[0.25em] text-cyan-100">
                   Adda Ludo
                 </p>
               </div>
 
-              <div className="mt-2 rounded-xl bg-black/20 px-3 py-2 text-center text-xs font-bold leading-5 text-white ring-1 ring-white/10">
+              <div className="mt-1.5 rounded-xl bg-black/20 px-3 py-1.5 text-center text-xs font-bold leading-5 text-white ring-1 ring-white/10">
                 ADDA LUDO में आपका स्वागत है, सबसे Fast ⏩ विथड्रॉ है, 👉 मात्र 2-3 Min में, 👈 आपका विश्वास बनाये रखे 🙏 whatsapp support 8239092073
               </div>
             </div>
