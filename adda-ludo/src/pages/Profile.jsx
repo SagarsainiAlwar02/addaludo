@@ -8,35 +8,81 @@ import {
 
 const API_URL = import.meta.env.VITE_API_URL || "http://localhost:5000/api";
 
+// 5 random characters generator function
+const generateRandomName = () => {
+  const chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
+  let randomName = "";
+  for (let i = 0; i < 5; i++) {
+    randomName += chars.charAt(Math.floor(Math.random() * chars.length));
+  }
+  return randomName;
+};
+
 export default function Profile({ onLogout }) {
   const navigate = useNavigate();
   const [isEditing, setIsEditing] = useState(false);
-  const [profile, setProfile] = useState({ userName: "Player", phone: "", totalWon: 0, matches: 0, kycStatus: "not_submitted" });
+  const [profile, setProfile] = useState({ 
+    userName: "", 
+    phone: "", 
+    totalWon: 0, 
+    matches: 0, 
+    kycStatus: "not_submitted" 
+  });
   const [tempName, setTempName] = useState("");
 
   useEffect(() => {
     const fetchProfile = async () => {
       try {
         const token = localStorage.getItem("token");
-        const res = await axios.get(`${API_URL}/user/profile`, { headers: { Authorization: `Bearer ${token}` } });
-        setProfile({ userName: res.data.name || "Player", phone: res.data.phone || "", totalWon: res.data.totalWon || 0, matches: res.data.matches || 0, kycStatus: res.data.kycStatus || "not_submitted" });
-        setTempName(res.data.name || "Player");
-      } catch (err) { console.log(err); }
+        const res = await axios.get(`${API_URL}/user/profile`, { 
+          headers: { Authorization: `Bearer ${token}` } 
+        });
+
+        // Use database name if present; otherwise generate a 5-character random string (e.g., Hwhos)
+        const finalUserName = res.data.name || generateRandomName();
+
+        setProfile({ 
+          userName: finalUserName, 
+          phone: res.data.phone || "", 
+          totalWon: res.data.totalWon || 0, 
+          matches: res.data.matches || 0, 
+          kycStatus: res.data.kycStatus || "not_submitted" 
+        });
+        
+        setTempName(finalUserName);
+      } catch (err) { 
+        console.log("Error fetching profile:", err); 
+      }
     };
     fetchProfile();
   }, []);
 
   const saveProfile = async () => {
+    if (tempName.trim().length < 3) {
+      alert("Name minimum 3 characters ka hona chahiye!");
+      return;
+    }
+
     try {
-        const token = localStorage.getItem("token");
-        await axios.patch(`${API_URL}/user/profile/name`, { name: tempName }, { headers: { Authorization: `Bearer ${token}` } });
-        setProfile(prev => ({...prev, userName: tempName}));
-        setIsEditing(false);
-        alert("Name Updated!");
-    } catch (err) { alert("Update failed"); }
+      const token = localStorage.getItem("token");
+      await axios.patch(
+        `${API_URL}/user/profile/name`, 
+        { name: tempName }, 
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+      
+      setProfile(prev => ({ ...prev, userName: tempName }));
+      setIsEditing(false);
+      alert("Name Updated!");
+    } catch (err) { 
+      alert("Update failed"); 
+    }
   };
 
-  const handleLogout = () => { localStorage.clear(); navigate("/login"); };
+  const handleLogout = () => { 
+    localStorage.clear(); 
+    navigate("/login"); 
+  };
 
   return (
     <div className="min-h-screen bg-slate-50 px-3 pb-24 pt-24 font-sans text-slate-800">
@@ -45,20 +91,29 @@ export default function Profile({ onLogout }) {
         {/* Profile Box */}
         <div className="bg-white rounded-2xl p-4 shadow-sm border-l-4 border-l-indigo-500 flex items-center gap-3 mb-4 transition-all hover:shadow-md">
           <div className="bg-indigo-100 p-1 rounded-full">
-             <img src={`https://api.dicebear.com/7.x/avataaars/svg?seed=${profile.userName}`} className="h-10 w-10" />
+             <img src={`https://api.dicebear.com/7.x/avataaars/svg?seed=${profile.userName}`} className="h-10 w-10" alt="avatar" />
           </div>
           
           <div className="flex-1 min-w-0">
             {isEditing ? (
               <div className="flex gap-1.5 items-center">
-                <input value={tempName} onChange={(e) => setTempName(e.target.value)} className="w-full bg-slate-100 rounded-lg px-2 py-1 outline-none text-xs font-bold" />
-                <button onClick={saveProfile} className="bg-emerald-500 text-white p-1.5 rounded-lg"><Check className="w-3.5 h-3.5"/></button>
+                <input 
+                  value={tempName} 
+                  maxLength={15}
+                  onChange={(e) => setTempName(e.target.value)} 
+                  className="w-full bg-slate-100 rounded-lg px-2 py-1 outline-none text-xs font-bold" 
+                />
+                <button onClick={saveProfile} className="bg-emerald-500 text-white p-1.5 rounded-lg">
+                  <Check className="w-3.5 h-3.5"/>
+                </button>
               </div>
             ) : (
               <div className="flex justify-between items-center">
                 <div>
                   <h2 className="text-sm font-black text-slate-900 truncate">{profile.userName}</h2>
-                  <p className="text-[10px] text-slate-500 font-bold flex items-center gap-1"><Phone className="w-2.5 h-2.5"/> {profile.phone || "No phone"}</p>
+                  <p className="text-[10px] text-slate-500 font-bold flex items-center gap-1">
+                    <Phone className="w-2.5 h-2.5"/> {profile.phone || "No phone"}
+                  </p>
                 </div>
                 <button onClick={() => setIsEditing(true)} className="p-1.5 bg-slate-100 rounded-full hover:bg-slate-200 transition">
                   <Pencil className="w-3.5 h-3.5 text-slate-500" />
