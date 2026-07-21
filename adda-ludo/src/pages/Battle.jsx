@@ -551,8 +551,8 @@ const Battle = () => {
           </div>
         </div>
 
-        {/* Custom Box Titles without count badges & with Battle Sign */}
-        <SectionTitle title="Open Battles" gradient="from-cyan-600 via-blue-600 to-indigo-700" />
+        {/* Left-aligned Compact Section Titles with Same Theme Color */}
+        <SectionTitle title="Open Battles" />
 
         <div className="space-y-4">
           {visibleOpenBattles.length === 0 && <EmptyBox text="No Battles Live" />}
@@ -567,7 +567,7 @@ const Battle = () => {
           ))}
         </div>
 
-        <SectionTitle title="Running Battles" gradient="from-violet-600 via-purple-600 to-indigo-800" />
+        <SectionTitle title="Running Battles" />
 
         <div className="space-y-4">
           {runningBattles.length === 0 && <EmptyBox text="No Running Battles" />}
@@ -587,7 +587,7 @@ const Battle = () => {
           ))}
         </div>
 
-        <SectionTitle title="Pending Results" gradient="from-amber-500 via-orange-600 to-red-600" />
+        <SectionTitle title="Pending Results" />
 
         <div className="space-y-4">
           {pendingBattles.length === 0 && <EmptyBox text="No Pending Results" />}
@@ -608,12 +608,12 @@ const Battle = () => {
   );
 };
 
-function SectionTitle({ title, gradient }) {
+function SectionTitle({ title }) {
   return (
-    <div className="mb-3 mt-7 overflow-hidden rounded-xl bg-white shadow-sm ring-1 ring-slate-200">
-      <div className={`flex items-center justify-center gap-2 bg-gradient-to-r ${gradient} px-4 py-2.5 text-white shadow-inner`}>
-        <span className="text-base">⚔️</span>
-        <h3 className="text-sm font-black uppercase tracking-wider">{title}</h3>
+    <div className="mb-3 mt-7 flex justify-start">
+      <div className="inline-flex items-center gap-2 overflow-hidden rounded-lg bg-gradient-to-r from-indigo-600 to-indigo-800 px-3.5 py-1.5 text-white shadow-sm ring-1 ring-indigo-500/30">
+        <span className="text-xs">⚔️</span>
+        <h3 className="text-xs font-black uppercase tracking-wide">{title}</h3>
       </div>
     </div>
   );
