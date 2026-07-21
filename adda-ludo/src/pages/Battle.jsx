@@ -26,7 +26,7 @@ const calculatePrizeAmount = (amount) => {
 };
 
 const FAKE_PLAYER_NAMES = [
-  "Player 101", "Rohit", "Player 123", "Sohan", "Player 145",
+  "Player 101", "Rohit", "Player 59", "Sohan", "Player 145",
   "Player 156", "Player 167", "Player 178", "Player 189", "Player 190",
   "Player 201", "Player 212", "Player 223", "Player 234", "Player 245",
   "Player 256", "Player 267", "Player 278", "Player 289", "Player 300",
@@ -40,7 +40,7 @@ const FAKE_OPPONENT_NAMES = [
 ];
 
 const FAKE_BATTLE_AMOUNTS = [
-  500, 1000, 5000, 1450, 150, 2050, 15000, 600, 2000, 10000, 100, 2250, 150, 7000, 5500, 950, 50, 1050
+  1600, 500, 1000, 200, 350, 4000, 100, 1450, 3250, 2050, 1500, 600, 2000, 200, 100, 2250, 150, 7000, 5500, 950, 50, 1050
 ];
 
 const randomFrom = (arr) => arr[Math.floor(Math.random() * arr.length)];
