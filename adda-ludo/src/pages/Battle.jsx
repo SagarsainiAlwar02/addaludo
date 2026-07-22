@@ -282,17 +282,17 @@ const Battle = () => {
     const amt = Number(betAmount);
 
     if (!amt || amt < 50) {
-      alert("Minimum battle amount ₹50 hai");
+      alert("Min battle ₹50 ");
       return false;
     }
 
     if (amt > 100000) {
-      alert("Maximum battle amount ₹100000 hai");
+      alert("Max battle ₹100000");
       return false;
     }
 
     if (amt % 50 !== 0) {
-      alert("Amount ₹50 ke multiple me hona chahiye");
+      alert("Amount in Multiple ₹50 ");
       return false;
     }
 
@@ -303,26 +303,16 @@ const Battle = () => {
     if (!validateAmount()) return;
 
     if (myActiveBattle) {
-      alert("Aapki ek battle already chal rahi hai. Pehle uska result update karo.");
+      alert("You already in game ");
       return;
     }
 
     if (mySearchingBattles.length >= MAX_SEARCHING_BATTLES) {
-      alert("Searching me maximum 2 battle hi create kar sakte ho.");
+      alert("set only 2 battle ");
       return;
     }
 
     const amt = Number(betAmount);
-
-    const sameOpenAmount = allBattles.some((battle) => {
-      const status = String(battle?.status || "").toLowerCase();
-      return status === "open" && Number(battle?.amount) === amt;
-    });
-
-    if (sameOpenAmount) {
-      alert(`₹${amt} ki open battle already लगी हुई है.`);
-      return;
-    }
 
     try {
       setActionLoading(true);
