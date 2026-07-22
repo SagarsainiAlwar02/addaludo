@@ -313,12 +313,13 @@ const Battle = () => {
 
     const amt = Number(betAmount);
 
-    // Single User Same Amount Validation (Agar current user ne pehle se us same amount ki open battle bana rakhi hai)
-    const hasSameAmountBattle = mySearchingBattles.some(
-      (b) => Number(b.amount) === amt
+    // SINGLE USER SAME AMOUNT VALIDATION
+    // Check if the current user already has an active open battle with the exact same amount
+    const isSameAmountByMe = mySearchingBattles.some(
+      (battle) => Number(battle.amount) === amt
     );
 
-    if (hasSameAmountBattle) {
+    if (isSameAmountByMe) {
       alert("no same amount");
       return;
     }
@@ -330,7 +331,11 @@ const Battle = () => {
       fetchBattles();
     } catch (err) {
       const errMsg = err.response?.data?.msg || "";
-      if (errMsg.toLowerCase().includes("insufficient") || errMsg.toLowerCase().includes("balance") || errMsg.toLowerCase().includes("fund")) {
+      if (
+        errMsg.toLowerCase().includes("insufficient") ||
+        errMsg.toLowerCase().includes("balance") ||
+        errMsg.toLowerCase().includes("fund")
+      ) {
         alert("Insufficient balance");
       } else if (errMsg) {
         alert(errMsg);
@@ -359,7 +364,11 @@ const Battle = () => {
         return;
       }
       const errMsg = err.response?.data?.msg || "";
-      if (errMsg.toLowerCase().includes("insufficient") || errMsg.toLowerCase().includes("balance") || errMsg.toLowerCase().includes("fund")) {
+      if (
+        errMsg.toLowerCase().includes("insufficient") ||
+        errMsg.toLowerCase().includes("balance") ||
+        errMsg.toLowerCase().includes("fund")
+      ) {
         alert("Insufficient balance");
       } else if (errMsg) {
         alert(errMsg);
@@ -506,7 +515,7 @@ const Battle = () => {
             <div>
               <h2 className="text-base font-bold">Create Battle</h2>
               <p className="text-[11px] font-medium text-slate-400">
-                Amount डालो और challenge create karo
+              
               </p>
             </div>
 
