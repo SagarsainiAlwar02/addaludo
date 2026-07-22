@@ -367,13 +367,13 @@ const Battle = () => {
   };
 
   const rejectBattle = async (battleId) => {
-    if (!window.confirm("Player request reject karni hai?")) return;
+    if (!window.confirm("Reject request")) return;
 
     try {
       setActionLoading(true);
       await axios.post(`${API_BASE}/battle/reject/${battleId}`, {}, authHeader());
       fetchBattles();
-      alert("Request reject ho gayi");
+      alert("Request rejected");
     } catch (err) {
       alert(err.response?.data?.msg || "Reject failed");
     } finally {
