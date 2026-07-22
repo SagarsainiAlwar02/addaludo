@@ -8,8 +8,15 @@ export default function Home({ user }) {
   const [games, setGames] = useState([]);
   const [activeSlide, setActiveSlide] = useState(0);
 
-  // Check if KYC is completed (Aapke user object ke mutabiq condition)
-  const isKycDone = user?.isKycDone || user?.kycStatus === "APPROVED";
+  // LocalStorage se fallback check
+  const localUser = JSON.parse(localStorage.getItem("user") || "{}");
+  const currentUser = user || localUser;
+
+  // KYC status check (APPROVED, VERIFIED, ya true par complete mana jayega)
+  const isKycDone =
+    currentUser?.isKycDone === true ||
+    currentUser?.kycStatus === "APPROVED" ||
+    currentUser?.kycStatus === "VERIFIED";
 
   const slides = [
     {
@@ -74,10 +81,13 @@ export default function Home({ user }) {
   return (
     <div className="page-container pt-1 relative min-h-screen pb-32">
       
-      {/* 🛑 KYC ALERT BOX: Jab tak KYC complete nahi hogi, tab tak yeh dikhega */}
+      {/* 🛑 COMPLETE YOUR KYC BOX */}
+      {/* Yeh sirf tabhi dikhega jab isKycDone = false hoga. Complete hote hi permanently remove ho jayega */}
       {!isKycDone && (
         <div className="mb-2 flex items-center justify-between rounded-xl border border-slate-300 bg-white p-3 shadow-sm">
-          <span className="text-sm font-bold text-slate-800">Complete your KYC</span>
+          <span className="text-sm font-bold text-slate-800">
+            Complete your KYC
+          </span>
           <button
             onClick={() => navigate("/kyc")}
             className="rounded-lg bg-[#ff5232] px-4 py-2 text-xs font-bold text-white shadow transition-all hover:bg-[#e04528] active:scale-95"
