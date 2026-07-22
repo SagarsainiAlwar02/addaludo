@@ -186,7 +186,7 @@ const Battle = () => {
     return () => {
       socket.disconnect();
     };
-  }, [token, navigate, myId]);
+  }, [token, navigate, myId, fetchBattles]);
 
   const allBattles = useMemo(() => {
     const map = new Map();
@@ -280,7 +280,17 @@ const Battle = () => {
   const validateAmount = () => {
     const amt = Number(betAmount);
 
-    if (!amt || amt < 50 || amt > 100000 || amt % 50 !== 0) {
+    if (!amt || amt < 50) {
+      alert("Min battle ₹50 ");
+      return false;
+    }
+
+    if (amt > 100000) {
+      alert("Max battle ₹100000");
+      return false;
+    }
+
+    if (amt % 50 !== 0) {
       alert("Amount in Multiple ₹50 ");
       return false;
     }
@@ -303,13 +313,28 @@ const Battle = () => {
 
     const amt = Number(betAmount);
 
+    // Single User Same Amount Validation (Agar current user ne pehle se us same amount ki open battle bana rakhi hai)
+    const hasSameAmountBattle = mySearchingBattles.some(
+      (b) => Number(b.amount) === amt
+    );
+
+    if (hasSameAmountBattle) {
+      alert("no same amount");
+      return;
+    }
+
     try {
       setActionLoading(true);
       await axios.post(`${API_BASE}/battle/create`, { amount: amt }, authHeader());
       setBetAmount("");
       fetchBattles();
     } catch (err) {
-      alert(err.response?.data?.msg || "Insufficient fund");
+      const errMsg = err.response?.data?.msg || "";
+      if (errMsg.toLowerCase().includes("insufficient") || errMsg.toLowerCase().includes("balance") || errMsg.toLowerCase().includes("fund")) {
+        alert("Insufficient balance");
+      } else if (errMsg) {
+        alert(errMsg);
+      }
     } finally {
       setActionLoading(false);
     }
@@ -317,7 +342,7 @@ const Battle = () => {
 
   const joinMatch = async (battleId) => {
     if (myActiveBattle) {
-      alert("You already in game ");
+      alert("You are already in game.");
       return;
     }
 
@@ -333,7 +358,12 @@ const Battle = () => {
         fetchBattles();
         return;
       }
-      alert(err.response?.data?.msg || "Insufficient fund");
+      const errMsg = err.response?.data?.msg || "";
+      if (errMsg.toLowerCase().includes("insufficient") || errMsg.toLowerCase().includes("balance") || errMsg.toLowerCase().includes("fund")) {
+        alert("Insufficient balance");
+      } else if (errMsg) {
+        alert(errMsg);
+      }
     } finally {
       setActionLoading(false);
     }
@@ -348,7 +378,7 @@ const Battle = () => {
       fetchBattles();
       navigate(`/room-code/${startedId}`);
     } catch (err) {
-      console.log("Start failed:", err.message);
+      console.log("Start error:", err.message);
     } finally {
       setActionLoading(false);
     }
@@ -360,7 +390,7 @@ const Battle = () => {
       await axios.post(`${API_BASE}/battle/reject/${battleId}`, {}, authHeader());
       fetchBattles();
     } catch (err) {
-      console.log("Reject failed:", err.message);
+      console.log("Reject error:", err.message);
     } finally {
       setActionLoading(false);
     }
@@ -372,7 +402,7 @@ const Battle = () => {
       await axios.patch(`${API_BASE}/battle/cancel/${battleId}`, {}, authHeader());
       fetchBattles();
     } catch (err) {
-      console.log("Cancel failed:", err.message);
+      console.log("Cancel error:", err.message);
     } finally {
       setActionLoading(false);
     }
