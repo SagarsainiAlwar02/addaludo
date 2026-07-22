@@ -4,7 +4,7 @@ import { useNavigate } from "react-router-dom";
 export default function Support() {
   const navigate = useNavigate();
 
-  const supportNumber = "918239092073";
+  const supportNumber = "919983776947";
   const whatsappLink = `https://api.whatsapp.com/send?phone=${supportNumber}&text=Hello%20Support`;
 
   return (
