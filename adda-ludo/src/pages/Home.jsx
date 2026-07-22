@@ -1,12 +1,15 @@
 import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 
-export default function Home() {
+export default function Home({ user }) {
   const navigate = useNavigate();
 
   const [loading, setLoading] = useState(false);
   const [games, setGames] = useState([]);
   const [activeSlide, setActiveSlide] = useState(0);
+
+  // Check if KYC is completed (Aapke user object ke mutabiq condition)
+  const isKycDone = user?.isKycDone || user?.kycStatus === "APPROVED";
 
   const slides = [
     {
@@ -70,6 +73,20 @@ export default function Home() {
 
   return (
     <div className="page-container pt-1 relative min-h-screen pb-32">
+      
+      {/* 🛑 KYC ALERT BOX: Jab tak KYC complete nahi hogi, tab tak yeh dikhega */}
+      {!isKycDone && (
+        <div className="mb-2 flex items-center justify-between rounded-xl border border-slate-300 bg-white p-3 shadow-sm">
+          <span className="text-sm font-bold text-slate-800">Complete your KYC</span>
+          <button
+            onClick={() => navigate("/kyc")}
+            className="rounded-lg bg-[#ff5232] px-4 py-2 text-xs font-bold text-white shadow transition-all hover:bg-[#e04528] active:scale-95"
+          >
+            Complete KYC
+          </button>
+        </div>
+      )}
+
       {/* ULTRA COMPACT CURVED SLIDER */}
       <div className="relative overflow-hidden rounded-2xl p-3 mb-2 text-white shadow-md bg-gradient-to-br from-[#111827] via-[#1f2937] to-[#030712] transition-all duration-700">
         <div className="absolute top-0 right-0 w-24 h-24 bg-blue-500 opacity-10 blur-2xl"></div>
