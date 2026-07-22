@@ -252,7 +252,6 @@ const Battle = () => {
     return list;
   }, [allBattles, myId]);
 
-  // Running Battles & Pending Battles together in Running Section
   const runningBattles = useMemo(() => {
     const realRunningAndPendingBattles = [];
 
@@ -281,17 +280,7 @@ const Battle = () => {
   const validateAmount = () => {
     const amt = Number(betAmount);
 
-    if (!amt || amt < 50) {
-      alert("Min battle ₹50 ");
-      return false;
-    }
-
-    if (amt > 100000) {
-      alert("Max battle ₹100000");
-      return false;
-    }
-
-    if (amt % 50 !== 0) {
+    if (!amt || amt < 50 || amt > 100000 || amt % 50 !== 0) {
       alert("Amount in Multiple ₹50 ");
       return false;
     }
@@ -319,9 +308,8 @@ const Battle = () => {
       await axios.post(`${API_BASE}/battle/create`, { amount: amt }, authHeader());
       setBetAmount("");
       fetchBattles();
-      alert("Battle set ho gayi!");
     } catch (err) {
-      alert(err.response?.data?.msg || "Create failed");
+      alert(err.response?.data?.msg || "Insufficient fund");
     } finally {
       setActionLoading(false);
     }
@@ -329,7 +317,7 @@ const Battle = () => {
 
   const joinMatch = async (battleId) => {
     if (myActiveBattle) {
-      alert("You are already in game.");
+      alert("You already in game ");
       return;
     }
 
@@ -345,7 +333,7 @@ const Battle = () => {
         fetchBattles();
         return;
       }
-      alert(err.response?.data?.msg || "Join failed");
+      alert(err.response?.data?.msg || "Insufficient fund");
     } finally {
       setActionLoading(false);
     }
@@ -360,37 +348,31 @@ const Battle = () => {
       fetchBattles();
       navigate(`/room-code/${startedId}`);
     } catch (err) {
-      alert(err.response?.data?.msg || "Start failed");
+      console.log("Start failed:", err.message);
     } finally {
       setActionLoading(false);
     }
   };
 
   const rejectBattle = async (battleId) => {
-    if (!window.confirm("Reject request")) return;
-
     try {
       setActionLoading(true);
       await axios.post(`${API_BASE}/battle/reject/${battleId}`, {}, authHeader());
       fetchBattles();
-      alert("Request rejected");
     } catch (err) {
-      alert(err.response?.data?.msg || "Reject failed");
+      console.log("Reject failed:", err.message);
     } finally {
       setActionLoading(false);
     }
   };
 
   const cancelBattle = async (battleId) => {
-    if (!window.confirm("Cancel this battle?")) return;
-
     try {
       setActionLoading(true);
       await axios.patch(`${API_BASE}/battle/cancel/${battleId}`, {}, authHeader());
       fetchBattles();
-      alert("Battle cancelled");
     } catch (err) {
-      alert(err.response?.data?.msg || "Cancel failed");
+      console.log("Cancel failed:", err.message);
     } finally {
       setActionLoading(false);
     }
