@@ -268,14 +268,27 @@ const Battle = () => {
       }
     }
 
+    // Sort by recent updates
     realRunningAndPendingBattles.sort(
       (a, b) =>
         new Date(b.updatedAt || b.createdAt || 0) -
         new Date(a.updatedAt || a.createdAt || 0)
     );
 
-    return [...realRunningAndPendingBattles, ...FAKE_RUNNING_BATTLES];
-  }, [allBattles]);
+    const merged = [...realRunningAndPendingBattles, ...FAKE_RUNNING_BATTLES];
+
+    // Priority sorting: Keep logged in user's active/pending battle ALWAYS at the TOP
+    merged.sort((a, b) => {
+      const aIsMine = !a.isFake && (getCreatorId(a) === myId || getOpponentId(a) === myId);
+      const bIsMine = !b.isFake && (getCreatorId(b) === myId || getOpponentId(b) === myId);
+
+      if (aIsMine && !bIsMine) return -1;
+      if (!aIsMine && bIsMine) return 1;
+      return 0;
+    });
+
+    return merged;
+  }, [allBattles, myId]);
 
   const validateAmount = () => {
     const amt = Number(betAmount);
@@ -313,8 +326,6 @@ const Battle = () => {
 
     const amt = Number(betAmount);
 
-    // SINGLE USER SAME AMOUNT VALIDATION
-    // Check if the current user already has an active open battle with the exact same amount
     const isSameAmountByMe = mySearchingBattles.some(
       (battle) => Number(battle.amount) === amt
     );
@@ -497,16 +508,16 @@ const Battle = () => {
   return (
     <div className="min-h-screen bg-[#eef3ff] px-3 pb-28 pt-14 text-slate-950">
       <div className="mx-auto max-w-md">
-        {/* Banner Box */}
-        <div className="mb-4 overflow-hidden rounded-2xl bg-gradient-to-br from-[#111827] via-[#202b65] to-[#06b6d4] p-2 shadow-md">
-          <div className="flex items-center justify-center pt-1 pb-1">
-            <p className="text-[10px] font-black uppercase tracking-[0.25em] text-cyan-100">
+        {/* Banner Box - Compact Padding & Gaps */}
+        <div className="mb-3 overflow-hidden rounded-xl bg-gradient-to-br from-[#111827] via-[#202b65] to-[#06b6d4] p-1.5 shadow-md">
+          <div className="flex items-center justify-center py-0.5">
+            <p className="text-[10px] font-black uppercase tracking-[0.2em] text-cyan-100">
               Adda Ludo
             </p>
           </div>
 
-          <div className="mt-1 rounded-xl bg-black/30 px-3 py-2 text-center text-[11px] font-bold leading-relaxed text-white ring-1 ring-white/10 shadow-inner">
-            कृपया कुछ घण्टों के लिए सपोर्ट  बंद है तब तक सपोर्ट के लिए इस no 7689017559 पर कॉल करे 🙏 Thanks 
+          <div className="mt-0.5 rounded-lg bg-black/30 px-2.5 py-1 text-center text-[10px] font-bold leading-tight text-white ring-1 ring-white/10 shadow-inner">
+            कृपया कुछ घण्टों के लिए सपोर्ट बंद है तब तक सपोर्ट के लिए इस no 7689017559 पर कॉल करे 🙏 Thanks
           </div>
         </div>
 
@@ -514,9 +525,7 @@ const Battle = () => {
           <div className="mb-3 flex items-center justify-between">
             <div>
               <h2 className="text-base font-bold">Create Battle</h2>
-              <p className="text-[11px] font-medium text-slate-400">
-              
-              </p>
+              <p className="text-[11px] font-medium text-slate-400"></p>
             </div>
 
             <button className="rounded-md bg-indigo-600 px-3 py-1.5 text-[11px] font-bold text-white">
