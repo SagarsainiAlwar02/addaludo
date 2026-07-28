@@ -5,7 +5,7 @@ export default function Support() {
   const navigate = useNavigate();
 
   const whatsappNumber = "919983776947";
-  const callNumber = "8239093073";
+  const callNumber = "8239092073";
   
   const whatsappLink = `https://api.whatsapp.com/send?phone=${whatsappNumber}&text=Hello%20Support`;
   const callLink = `tel:${callNumber}`;
