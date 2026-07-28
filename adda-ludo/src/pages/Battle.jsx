@@ -268,7 +268,6 @@ const Battle = () => {
       }
     }
 
-    // Sort by recent updates
     realRunningAndPendingBattles.sort(
       (a, b) =>
         new Date(b.updatedAt || b.createdAt || 0) -
@@ -277,7 +276,7 @@ const Battle = () => {
 
     const merged = [...realRunningAndPendingBattles, ...FAKE_RUNNING_BATTLES];
 
-    // Priority sorting: Keep logged in user's active/pending battle ALWAYS at the TOP
+    // Logged in user ki active/pending battle top par rakhega
     merged.sort((a, b) => {
       const aIsMine = !a.isFake && (getCreatorId(a) === myId || getOpponentId(a) === myId);
       const bIsMine = !b.isFake && (getCreatorId(b) === myId || getOpponentId(b) === myId);
@@ -508,16 +507,16 @@ const Battle = () => {
   return (
     <div className="min-h-screen bg-[#eef3ff] px-3 pb-28 pt-14 text-slate-950">
       <div className="mx-auto max-w-md">
-        {/* Banner Box - Compact Padding & Gaps */}
-        <div className="mb-3 overflow-hidden rounded-xl bg-gradient-to-br from-[#111827] via-[#202b65] to-[#06b6d4] p-1.5 shadow-md">
-          <div className="flex items-center justify-center py-0.5">
-            <p className="text-[10px] font-black uppercase tracking-[0.2em] text-cyan-100">
+        {/* Banner Box - Original Style */}
+        <div className="mb-4 overflow-hidden rounded-2xl bg-gradient-to-br from-[#111827] via-[#202b65] to-[#06b6d4] p-2 shadow-md">
+          <div className="flex items-center justify-center pt-1 pb-1">
+            <p className="text-[10px] font-black uppercase tracking-[0.25em] text-cyan-100">
               Adda Ludo
             </p>
           </div>
 
-          <div className="mt-0.5 rounded-lg bg-black/30 px-2.5 py-1 text-center text-[10px] font-bold leading-tight text-white ring-1 ring-white/10 shadow-inner">
-            कृपया कुछ घण्टों के लिए सपोर्ट बंद है तब तक सपोर्ट के लिए इस no 7689017559 पर कॉल करे 🙏 Thanks
+          <div className="mt-1 rounded-xl bg-black/30 px-3 py-2 text-center text-[11px] font-bold leading-relaxed text-white ring-1 ring-white/10 shadow-inner">
+            कृपया कुछ घण्टों के लिए सपोर्ट बंद है तब तक सपोर्ट के लिए इस no 7689017559 पर कॉल करे 🙏 Thanks 
           </div>
         </div>
 
