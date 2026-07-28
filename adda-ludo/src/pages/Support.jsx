@@ -4,8 +4,11 @@ import { useNavigate } from "react-router-dom";
 export default function Support() {
   const navigate = useNavigate();
 
-  const supportNumber = "919983776947";
-  const whatsappLink = `https://api.whatsapp.com/send?phone=${supportNumber}&text=Hello%20Support`;
+  const whatsappNumber = "919983776947";
+  const callNumber = "8239093073";
+  
+  const whatsappLink = `https://api.whatsapp.com/send?phone=${whatsappNumber}&text=Hello%20Support`;
+  const callLink = `tel:${callNumber}`;
 
   return (
     <div className="min-h-screen bg-white px-4 pt-16 pb-24 font-sans max-w-[480px] mx-auto">
@@ -37,19 +40,28 @@ export default function Support() {
           <div className="w-full text-left mt-2">
             <h3 className="text-2xl font-black text-slate-800 tracking-tight">We're here to help</h3>
             <p className="text-sm font-semibold text-slate-500 mt-2 mb-6 leading-relaxed">
-              Click on Whatsapp and Describe your problem and take solution quickly.
+              Click on WhatsApp or Call to describe your problem and get a solution quickly.
             </p>
           </div>
 
-          {/* Core Action Trigger WhatsApp Button */}
-          <a
-            href={whatsappLink}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="w-full bg-[#12cc66] text-white text-center py-3 rounded-xl font-black text-base shadow-sm hover:bg-[#0eb659] active:scale-[0.99] transition-transform block mb-5"
-          >
-            WhatsApp
-          </a>
+          {/* Action Buttons: WhatsApp & Call Side-by-Side */}
+          <div className="w-full flex gap-3 mb-5">
+            <a
+              href={whatsappLink}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="flex-1 bg-[#12cc66] hover:bg-[#0eb659] text-white text-center py-3 rounded-xl font-black text-base shadow-sm active:scale-[0.99] transition-transform block"
+            >
+              WhatsApp
+            </a>
+
+            <a
+              href={callLink}
+              className="flex-1 bg-blue-600 hover:bg-blue-700 text-white text-center py-3 rounded-xl font-black text-base shadow-sm active:scale-[0.99] transition-transform block"
+            >
+              Call
+            </a>
+          </div>
 
           <p className="text-xs font-black text-slate-400 uppercase tracking-wider self-start">
             Available 24 X 7
