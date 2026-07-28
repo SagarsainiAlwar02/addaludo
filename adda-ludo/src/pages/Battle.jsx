@@ -506,7 +506,7 @@ const Battle = () => {
           </div>
 
           <div className="mt-1 rounded-xl bg-black/30 px-3 py-2 text-center text-[11px] font-bold leading-relaxed text-white ring-1 ring-white/10 shadow-inner">
-            ADDA LUDO में आपका स्वागत है, सबसे Fast ⏩ विथड्रॉ है, 👉 मात्र 2-3 Min में, 👈 आपका विश्वास बनाये रखे 🙏 Support का No.बदल दिया गया है 9983776947 
+            कृपया कुछ घण्टों के लिए सपोर्ट  बंद है तब तक सपोर्ट के लिए इस no 7689017559 पर कॉल करे 🙏 Thanks 
           </div>
         </div>
 
