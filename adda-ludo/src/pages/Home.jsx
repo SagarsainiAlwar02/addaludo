@@ -180,7 +180,7 @@ export default function Home({ user }) {
           {/* Text Container */}
           <div className="flex-1 pr-1">
             <h3 className="text-xs sm:text-sm font-black tracking-wide text-white uppercase leading-snug">
-              Fastest Withdrawal And
+               Withdrawal in 5 Minutes And
             </h3>
             <p className="text-xs sm:text-sm font-black tracking-wide text-yellow-400 uppercase mt-0.5 leading-snug">
               Support Service 24*7
