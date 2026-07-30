@@ -1,4 +1,4 @@
-import React from "react";
+huimport React from "react";
 import { useNavigate } from "react-router-dom";
 
 export default function Support() {
@@ -40,7 +40,7 @@ export default function Support() {
           <div className="w-full text-left mt-2">
             <h3 className="text-2xl font-black text-slate-800 tracking-tight">We're here to help</h3>
             <p className="text-sm font-semibold text-slate-500 mt-2 mb-6 leading-relaxed">
-              Click on WhatsApp or Call to describe your problem and get a solution quickly.
+             ⚠️सुचना:- कृपया धयान दे Support  No अब परमानेंट अब ये ही रहेगा किसी और no. पर मैसेज ना करे !
             </p>
           </div>
 
