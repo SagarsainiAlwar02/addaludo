@@ -16,7 +16,7 @@ export default function Home({ user }) {
       text: "Fast withdrawal • Safe play",
       button: "Play Now",
       route: "/battle",
-      tag: "LIVE GAMING PLATFORM",
+      tag: "LIVE",
     },
     {
       title: "Welcome",
