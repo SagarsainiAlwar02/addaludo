@@ -462,7 +462,7 @@ export default function Kyc() {
           <Seal progress={progress} color={COLORS.brand} icon={<ShieldIcon />} />
           <div>
             <span style={styles.eyebrow}>Identity verification</span>
-            <h2 style={styles.headTitle}>Confirm it's you</h2>
+            <h2 style={styles.headTitle}>Offline KYC </h2>
             <p style={styles.headDesc}>Takes under a minute. Unlocks withdrawals and premium matches.</p>
           </div>
         </div>
