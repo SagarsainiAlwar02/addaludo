@@ -182,12 +182,11 @@ app.post("/api/otp/send", async (req, res) => {
     console.log(" OTP GENERATED FOR:", phone, "-> OTP:", otp);
 
     // ================= MSGBRIDGE SMS API =================
-   // ================= NEW SMS API =================
     try {
       const message = `Your OTP for login is ${otp}. Valid for 10 minutes. Do not share this with anyone. - MSGBRG`;
-      const smsUrl = `http://135.181.19.87/Login/V2/apikey.php?apikey=YpKLhXCdJFTt5oFn&senderid=MSGBRD&templateid=1607100000000384742&number=${phone}&message=${encodeURIComponent(
+      const smsUrl = `http://msgbridge.in/api/sendhttp?number=${phone}&message=${encodeURIComponent(
         message
-      )}`;
+      )}&apikey=434814a5-118b-4288-865d-fbf79c8e35cc`;
 
       const smsRes = await fetch(smsUrl);
       const smsResponseText = await smsRes.text();
