@@ -47,13 +47,21 @@ export const sendOtp = asyncHandler(async (req, res) => {
     console.log(`[DEV] OTP for ${phone}: ${otp}`);
   } else {
     try {
-      const message = `Your OTP for login is ${otp}. Valid for 10 minutes. Do not share this with anyone. - MSGBRG`;
-      const smsUrl = `http://135.181.19.87/Login/V2/apikey.php?apikey=YpKLhXCdJFTt5oFn&senderid=MSGBRD&templateid=1607100000000384742&number=${phone}&message=${encodeURIComponent(message)}`;
+      const smsRes = await fetch("https://meraotp.in/api/sendSMS", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          apiKey: process.env.MERAOTP_API_KEY,
+          mobileNo: phone,
+          messageType: "AUTH_OTP",
+          brandName: "ADDA",
+          otp,
+          senderId: "MRAOTP",
+        }),
+      });
+      const smsResponse = await smsRes.json();
 
-      const smsRes = await fetch(smsUrl);
-      const smsResponseText = await smsRes.text();
-
-      console.log(`SMS sent to ${phone}: ${smsResponseText}`);
+      console.log(`SMS sent to ${phone}: ${JSON.stringify(smsResponse)}`);
     } catch (smsErr) {
       console.log(`SMS GATEWAY WARNING (Fallback Mode): ${smsErr.message}`);
     }
