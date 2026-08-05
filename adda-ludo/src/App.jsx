@@ -192,7 +192,7 @@
         console.log("Maintenance check failed:", err);
         setMaintenanceState({
           loading: false,
-          enabled: true,
+          enabled: false,
         });
       }
     }, []);
