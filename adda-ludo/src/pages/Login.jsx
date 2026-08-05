@@ -1,18 +1,19 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import api, { getError } from "../api.js";
 
 export default function Login({ onLogin }) {
   const [phone, setPhone] = useState("");
-  const [otp, setOtp] = useState("");
+  const [otp, setOtp] = useState(["", "", "", "", "", ""]);
   const [verificationId, setVerificationId] = useState("");
   const [referralCode, setReferralCode] = useState("");
-  const [step, setStep] = useState(1);
+  const [showOtp, setShowOtp] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
-  const [successMessage, setSuccessMessage] = useState(""); // Track OTP success text cleanly
+  const [successMessage, setSuccessMessage] = useState("");
   const [timer, setTimer] = useState(0);
 
+  const otpRef = useRef([]);
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -46,14 +47,14 @@ export default function Login({ onLogin }) {
       setLoading(true);
       setError("");
       setSuccessMessage("");
-      setOtp("");
+      setOtp(["", "", "", "", "", ""]);
       setVerificationId("");
 
       const res = await api.post("/auth/otp/send", { phone });
 
       const vId = res.data?.data?.verificationId || `v_id_${phone}`;
       setVerificationId(vId);
-      setStep(2);
+      setShowOtp(true);
       setTimer(30);
       setSuccessMessage("OTP sent successfully");
     } catch (err) {
@@ -64,8 +65,10 @@ export default function Login({ onLogin }) {
   };
 
   const verifyOTP = async () => {
-    if (!otp) {
-      setError("Enter OTP");
+    const otpCode = otp.join("");
+
+    if (otpCode.length !== 6) {
+      setError("Enter 6-digit OTP");
       return;
     }
 
@@ -79,7 +82,7 @@ export default function Login({ onLogin }) {
       setError("");
 
       const res = await api.post("/auth/otp/verify", {
-        otp,
+        otp: otpCode,
         phone,
         referralCode: finalReferralCode,
       });
@@ -89,7 +92,9 @@ export default function Login({ onLogin }) {
       const user = data?.user;
 
       if (!token) {
-        setError("Login successful, but authorization token was missing from backend response.");
+        setError(
+          "Login successful, but authorization token was missing from backend response."
+        );
         return;
       }
 
@@ -107,148 +112,291 @@ export default function Login({ onLogin }) {
     }
   };
 
-  return (
-    <div className="min-h-screen flex justify-center bg-[#f8ecd2]">
-      <div className="relative w-full max-w-[650px] min-h-screen overflow-hidden bg-gradient-to-b from-[#14061f] via-[#2a0c45] to-[#09040d] px-5 py-8">
-        <div className="relative z-10 flex flex-col items-center">
-          <img
-            src="/logo.png"
-            alt="AddaLudo"
-            className="mt-4 w-full max-w-[250px] object-contain mx-auto"
-          />
+  const handleOtpChange = (value, index) => {
+    if (!/^\d*$/.test(value)) return;
 
-          <div className="mt-7 w-full rounded-[28px] border border-white/20 bg-white/95 p-6 shadow-2xl">
-            <div className="mb-6 text-center">
-              <h1 className="text-4xl font-black text-[#1a1036]">Login</h1>
-              <p className="mt-2 text-sm font-medium text-gray-500">
-                Play Ludo • Win Cash • Instant Withdraw
-              </p>
+    const temp = [...otp];
+    temp[index] = value.slice(-1);
+    setOtp(temp);
+
+    if (value && index < 5) {
+      otpRef.current[index + 1]?.focus();
+    }
+  };
+
+  const handleBackspace = (e, index) => {
+    if (e.key === "Backspace" && !otp[index] && index > 0) {
+      otpRef.current[index - 1]?.focus();
+    }
+  };
+
+  const handleChangeNumber = () => {
+    setShowOtp(false);
+    setOtp(["", "", "", "", "", ""]);
+    setError("");
+    setSuccessMessage("");
+  };
+
+  return (
+    <div style={styles.page}>
+      <div style={styles.card}>
+        {!showOtp ? (
+          <>
+            <img src="/logo.png" alt="AddaLudo" style={styles.logoImage} />
+
+            <h2 style={styles.title}>Welcome Back</h2>
+
+            <p style={styles.subtitle}>Login using your mobile number</p>
+
+            <div style={styles.mobileBox}>
+              <div style={styles.country}>+91</div>
+
+              <input
+                style={styles.input}
+                type="tel"
+                placeholder="Enter Mobile Number"
+                value={phone}
+                maxLength={10}
+                onChange={(e) => {
+                  const value = e.target.value.replace(/\D/g, "");
+                  if (value.length <= 10) setPhone(value);
+                }}
+                autoComplete="tel"
+              />
             </div>
 
-            {step === 1 && (
-              <>
-                <label className="mb-2 block text-sm font-bold text-gray-700">
-                  Mobile Number
-                </label>
+            <div style={styles.referBox}>
+              <input
+                style={styles.input}
+                type="text"
+                placeholder="Enter Refer Code (Optional)"
+                value={referralCode}
+                onChange={(e) => {
+                  const code = e.target.value.toUpperCase();
+                  setReferralCode(code);
+                  localStorage.setItem("pendingReferralCode", code);
+                }}
+              />
+            </div>
 
-                <div className="mb-4 flex items-center rounded-2xl border-2 border-gray-200 bg-white px-4 py-4">
-                  <span className="border-r border-gray-300 pr-3 text-lg font-bold">
-                    +91
-                  </span>
+            <button style={styles.button} onClick={sendOTP} disabled={loading}>
+              {loading ? "Sending..." : "Continue"}
+            </button>
 
-                  <input
-                    type="text"
-                    placeholder="Enter mobile number"
-                    value={phone}
-                    onChange={(e) => setPhone(e.target.value.replace(/\D/g, ""))}
-                    maxLength={10}
-                    className="w-full bg-transparent px-3 text-lg font-semibold outline-none"
-                    autoComplete="tel"
-                  />
-                </div>
+            <p style={styles.note}>
+              By continuing you agree to our Terms &amp; Conditions and Privacy
+              Policy.
+            </p>
+          </>
+        ) : (
+          <>
+            <button style={styles.changeBtn} onClick={handleChangeNumber}>
+              ← Change Number
+            </button>
 
-                <label className="mb-2 block text-sm font-bold text-gray-700">
-                  Referral Code Optional
-                </label>
+            <img src="/logo.png" alt="AddaLudo" style={styles.logoImage} />
 
+            <h2 style={styles.title}>Verify OTP</h2>
+
+            <p style={styles.subtitle}>OTP sent to +91 {phone}</p>
+
+            <div style={styles.otpRow}>
+              {otp.map((digit, index) => (
                 <input
-                  type="text"
-                  placeholder="Enter referral code"
-                  value={referralCode}
-                  onChange={(e) => {
-                    const code = e.target.value.toUpperCase();
-                    setReferralCode(code);
-                    localStorage.setItem("pendingReferralCode", code);
-                  }}
-                  maxLength={20}
-                  className="mb-5 w-full rounded-2xl border-2 border-gray-200 px-4 py-4 text-lg font-bold uppercase outline-none"
-                />
-
-                <button
-                  onClick={sendOTP}
-                  disabled={loading}
-                  className="w-full rounded-2xl bg-gradient-to-r from-orange-500 to-red-500 py-4 text-lg font-black text-white shadow-lg disabled:opacity-60"
-                >
-                  {loading ? "Sending..." : "Send OTP"}
-                </button>
-              </>
-            )}
-
-            {step === 2 && (
-              <>
-                <div className="mb-4 rounded-2xl bg-green-50 px-4 py-3 text-center">
-                  <p className="text-sm font-bold text-green-700">
-                    +91 {phone}
-                  </p>
-                  {referralCode && (
-                    <p className="mt-1 text-xs font-bold text-cyan-700">
-                      Referral Applied: {referralCode}
-                    </p>
-                  )}
-                </div>
-
-                <label className="mb-2 block text-sm font-bold text-gray-700 text-center">
-                  Enter 6-Digit OTP
-                </label>
-
-                <input
-                  type="text"
-                  placeholder="Enter OTP"
-                  value={otp}
-                  onChange={(e) => setOtp(e.target.value.replace(/\D/g, ""))}
-                  maxLength={6}
-                  className="mb-4 w-full rounded-2xl border-2 border-gray-200 px-4 py-4 text-center text-2xl font-black tracking-[10px] outline-none"
+                  key={index}
+                  ref={(el) => (otpRef.current[index] = el)}
+                  style={styles.otpInput}
+                  value={digit}
+                  maxLength={1}
+                  onChange={(e) => handleOtpChange(e.target.value, index)}
+                  onKeyDown={(e) => handleBackspace(e, index)}
                   autoComplete="one-time-code"
                 />
+              ))}
+            </div>
 
-                <button
-                  onClick={verifyOTP}
-                  disabled={loading}
-                  className="w-full rounded-2xl bg-gradient-to-r from-green-500 to-emerald-500 py-4 text-lg font-black text-white shadow-lg disabled:opacity-60"
-                >
-                  {loading ? "Verifying..." : "Verify OTP"}
-                </button>
+            <button style={styles.button} onClick={verifyOTP} disabled={loading}>
+              {loading ? "Verifying..." : "Verify OTP"}
+            </button>
 
-                <div className="mt-4 flex items-center justify-between">
-                  <button
-                    onClick={sendOTP}
-                    disabled={timer > 0 || loading}
-                    className="text-sm font-bold text-red-500 disabled:text-gray-400"
-                  >
-                    {timer > 0 ? `Resend in ${timer}s` : "Resend OTP"}
-                  </button>
+            <p
+              style={{
+                ...styles.resend,
+                ...(timer > 0 ? { cursor: "default" } : {}),
+              }}
+              onClick={() => {
+                if (timer === 0 && !loading) sendOTP();
+              }}
+            >
+              {timer > 0
+                ? `Resend OTP in 00:${String(timer).padStart(2, "0")}`
+                : "Resend OTP"}
+            </p>
+          </>
+        )}
 
-                  <button
-                    onClick={() => {
-                      setStep(1);
-                      setOtp("");
-                      setError("");
-                      setSuccessMessage("");
-                    }}
-                    className="text-sm font-bold text-gray-500 hover:underline"
-                  >
-                    Change Number
-                  </button>
-                </div>
-              </>
-            )}
+        {successMessage && !error && showOtp && (
+          <p style={styles.successMsg}>{successMessage}</p>
+        )}
 
-            {/* Success Notification Alert */}
-            {successMessage && !error && (
-              <p className="mt-4 rounded-xl bg-green-50 px-3 py-3 text-center text-sm font-bold text-green-600">
-                {successMessage}
-              </p>
-            )}
-
-            {/* Error Notification Alert */}
-            {error && (
-              <p className="mt-4 rounded-xl bg-red-50 px-3 py-3 text-center text-sm font-bold text-red-500">
-                {error}
-              </p>
-            )}
-          </div>
-        </div>
+        {error && <p style={styles.errorMsg}>{error}</p>}
       </div>
     </div>
   );
 }
+
+const styles = {
+  page: {
+    minHeight: "100vh",
+    display: "flex",
+    justifyContent: "center",
+    alignItems: "center",
+    background: "#ffffff",
+    padding: "20px",
+    fontFamily: "Poppins, Arial, sans-serif",
+  },
+
+  card: {
+    width: "100%",
+    maxWidth: "400px",
+    background: "#fff",
+    borderRadius: "22px",
+    padding: "35px",
+    boxShadow: "0 15px 40px rgba(0,0,0,.12)",
+    textAlign: "center",
+    position: "relative",
+  },
+
+  logoImage: {
+    width: "220px",
+    height: "auto",
+    display: "block",
+    margin: "0 auto 25px",
+    objectFit: "contain",
+  },
+
+  title: {
+    margin: 0,
+    fontSize: "30px",
+    fontWeight: "700",
+    color: "#111827",
+  },
+
+  subtitle: {
+    marginTop: "8px",
+    marginBottom: "30px",
+    color: "#6b7280",
+    fontSize: "15px",
+  },
+
+  mobileBox: {
+    display: "flex",
+    alignItems: "center",
+    border: "1px solid #d1d5db",
+    borderRadius: "12px",
+    overflow: "hidden",
+    marginBottom: "15px",
+  },
+
+  referBox: {
+    display: "flex",
+    alignItems: "center",
+    border: "1px solid #d1d5db",
+    borderRadius: "12px",
+    overflow: "hidden",
+    marginBottom: "20px",
+  },
+
+  country: {
+    width: "70px",
+    height: "52px",
+    display: "flex",
+    justifyContent: "center",
+    alignItems: "center",
+    background: "#f9fafb",
+    borderRight: "1px solid #e5e7eb",
+    fontWeight: "700",
+    color: "#111827",
+  },
+
+  input: {
+    flex: 1,
+    border: "none",
+    outline: "none",
+    padding: "15px",
+    fontSize: "16px",
+    background: "#fff",
+  },
+
+  button: {
+    width: "100%",
+    padding: "15px",
+    border: "none",
+    borderRadius: "12px",
+    background: "linear-gradient(135deg,#2563eb,#1d4ed8)",
+    color: "#fff",
+    fontSize: "16px",
+    fontWeight: "700",
+    cursor: "pointer",
+    marginTop: "5px",
+  },
+
+  note: {
+    marginTop: "20px",
+    color: "#6b7280",
+    fontSize: "13px",
+    lineHeight: "1.6",
+  },
+
+  changeBtn: {
+    position: "absolute",
+    left: "20px",
+    top: "20px",
+    border: "none",
+    background: "transparent",
+    color: "#2563eb",
+    fontSize: "14px",
+    fontWeight: "700",
+    cursor: "pointer",
+  },
+
+  otpRow: {
+    display: "flex",
+    justifyContent: "space-between",
+    gap: "10px",
+    marginBottom: "25px",
+  },
+
+  otpInput: {
+    width: "52px",
+    height: "58px",
+    border: "2px solid #d1d5db",
+    borderRadius: "12px",
+    textAlign: "center",
+    fontSize: "24px",
+    fontWeight: "700",
+    outline: "none",
+  },
+
+  resend: {
+    marginTop: "18px",
+    color: "#2563eb",
+    fontWeight: "600",
+    cursor: "pointer",
+    fontSize: "14px",
+  },
+
+  successMsg: {
+    marginTop: "18px",
+    color: "#16a34a",
+    fontWeight: "600",
+    fontSize: "14px",
+  },
+
+  errorMsg: {
+    marginTop: "18px",
+    color: "#dc2626",
+    fontWeight: "600",
+    fontSize: "14px",
+  },
+};
