@@ -363,12 +363,12 @@ const styles = {
   otpRow: {
     display: "flex",
     justifyContent: "space-between",
-    gap: "10px",
+    gap: "6px",
     marginBottom: "25px",
   },
 
   otpInput: {
-    width: "52px",
+    width: "42px",
     height: "58px",
     border: "2px solid #d1d5db",
     borderRadius: "12px",
