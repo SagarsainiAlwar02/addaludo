@@ -13,9 +13,11 @@ const calculatePrizeAmount = (amount) => {
   let platformFee = 0;
 
   if (amt >= 50 && amt <= 500) {
-    platformFee = amt * 0.05 * 2;
+    // Slab 1: total commission = 10% of the bet (5% per user)
+    platformFee = amt * 0.1;
   } else if (amt > 500 && amt <= 100000) {
-    platformFee = amt * 0.025 * 2;
+    // Slab 2: total commission = 5% of the bet (2.5% per user)
+    platformFee = amt * 0.05;
   }
 
   return Math.floor(totalPool - platformFee);
@@ -320,6 +322,12 @@ const Battle = () => {
       fetchBattles();
       navigate(`/room-code/${battleId}`);
     } catch (err) {
+      // Dummy (admin social-proof) contest: it just disappears, no notification.
+      if (err?.response?.data?.code === "DUMMY_CONTEST") {
+        fetchBattles();
+        return;
+      }
+
       const errMsg = getError(err).toLowerCase();
       if (errMsg.includes("insufficient") || errMsg.includes("balance") || errMsg.includes("fund")) {
         alert("Insufficient balance");

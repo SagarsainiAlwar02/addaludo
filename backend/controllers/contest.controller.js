@@ -158,14 +158,15 @@ export const joinContest = asyncHandler(async (req, res) => {
     return notFoundResponse(res, "Contest not found", "CONTEST_NOT_FOUND");
   }
 
-  // Dummy contest: delete and tell user to pick another
+  // Dummy (admin social-proof) contest: a user clicked it.
+  // Delete it silently — no notification, it just disappears for everyone.
   if (contest.isDummy) {
     await Contest.deleteOne({ _id: contest._id });
-    return badRequestResponse(
-      res,
-      "This contest is no longer available. Try another one.",
-      "DUMMY_CONTEST"
-    );
+    emitContestUpdate("contest-deleted", {
+      id: contest._id,
+      contestId: contest.contestId,
+    });
+    return badRequestResponse(res, "Contest no longer available", "DUMMY_CONTEST");
   }
 
   if (contest.status !== "open") {
