@@ -143,6 +143,24 @@ export const joinContest = asyncHandler(async (req, res) => {
   const username = req.user.name || "Player";
   const { contestId } = req.params;
 
+  const contest = await Contest.findOne({ contestId });
+  if (!contest) {
+    return notFoundResponse(res, "Contest not found", "CONTEST_NOT_FOUND");
+  }
+
+  // Dummy (admin social-proof) contest: a user clicked it.
+  // Delete it silently — no notification, it just disappears for everyone.
+  // This check runs BEFORE any other restriction so a dummy always
+  // disappears on click, no matter the user's state.
+  if (contest.isDummy) {
+    await Contest.deleteOne({ _id: contest._id });
+    emitContestUpdate("contest-deleted", {
+      id: contest._id,
+      contestId: contest.contestId,
+    });
+    return badRequestResponse(res, "Contest no longer available", "DUMMY_CONTEST");
+  }
+
   // Running battle restriction: no new bets while an active contest is pending.
   const hasActive = await hasActiveUnsubmittedContest(userId);
   if (hasActive) {
@@ -151,22 +169,6 @@ export const joinContest = asyncHandler(async (req, res) => {
       "You have an active battle. Upload its result before joining a new one.",
       "ACTIVE_CONTEST_EXISTS"
     );
-  }
-
-  const contest = await Contest.findOne({ contestId });
-  if (!contest) {
-    return notFoundResponse(res, "Contest not found", "CONTEST_NOT_FOUND");
-  }
-
-  // Dummy (admin social-proof) contest: a user clicked it.
-  // Delete it silently — no notification, it just disappears for everyone.
-  if (contest.isDummy) {
-    await Contest.deleteOne({ _id: contest._id });
-    emitContestUpdate("contest-deleted", {
-      id: contest._id,
-      contestId: contest.contestId,
-    });
-    return badRequestResponse(res, "Contest no longer available", "DUMMY_CONTEST");
   }
 
   if (contest.status !== "open") {
