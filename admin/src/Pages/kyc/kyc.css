@@ -24,6 +24,39 @@
   color: #f8fafc;
 }
 
+/* ===================== FILTERS ===================== */
+.kyc-filters {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 14px;
+}
+
+.kyc-filter-btn {
+  padding: 8px 16px;
+  border-radius: 20px;
+  border: 1px solid #263449;
+  background: #111c33;
+  color: #94a3b8;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.kyc-filter-btn:hover {
+  border-color: #3b82f6;
+  color: #e2e8f0;
+}
+
+.kyc-filter-btn.active {
+  background: linear-gradient(135deg, #2563eb, #1d4ed8);
+  border-color: #2563eb;
+  color: white;
+  box-shadow: 0 4px 12px rgba(37, 99, 235, 0.3);
+}
+
 /* ===================== TOOLBAR ===================== */
 .toolbar-row {
   display: flex;
@@ -160,6 +193,11 @@
 .status-badge.rejected {
   background: rgba(239, 68, 68, 0.15);
   color: #ef4444;
+}
+
+.status-badge.not_submitted {
+  background: rgba(148, 163, 184, 0.15);
+  color: #94a3b8;
 }
 
 .status-badge.inline {

@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import API, { getError } from "../../api";
+import API, { getData, getError } from "../../api";
 import "./AdminControl.css";
 
 const AdminControl = () => {
@@ -7,6 +7,8 @@ const AdminControl = () => {
   const [admins, setAdmins] = useState([]);
   const [agentReport, setAgentReport] = useState([]);
   const [loading, setLoading] = useState(false);
+  const [adminError, setAdminError] = useState("");
+  const [reportError, setReportError] = useState("");
 
   const [form, setForm] = useState({
     name: "",
@@ -22,14 +24,23 @@ const AdminControl = () => {
 
   const money = (num) => `₹${Number(num || 0).toLocaleString("en-IN")}`;
 
+  // Handle both wrapped ({ admins }) and bare-array responses defensively
+  const pickList = (data, key) => {
+    if (Array.isArray(data)) return data;
+    return Array.isArray(data?.[key]) ? data[key] : [];
+  };
+
   // ================= GET ADMINS =================
   const fetchAdmins = async () => {
     try {
       const res = await API.get("/admin/admin-list");
-      setAdmins(Array.isArray(res.data) ? res.data : []);
+      const data = getData(res);
+      setAdmins(pickList(data, "admins"));
+      setAdminError("");
     } catch (err) {
-      console.log("Admin list error:", err);
+      console.log("Admin list error:", getError(err));
       setAdmins([]);
+      setAdminError(getError(err));
     }
   };
 
@@ -38,17 +49,36 @@ const AdminControl = () => {
     try {
       setLoading(true);
       const res = await API.get("/admin/agent-report");
-      setAgentReport(Array.isArray(res.data) ? res.data : []);
+      const data = getData(res);
+      setAgentReport(pickList(data, "agentReport"));
+      setReportError("");
     } catch (err) {
-      console.log("Agent report error:", err);
+      console.log("Agent report error:", getError(err));
       setAgentReport([]);
-      alert(getError(err));
+      setReportError(getError(err));
     } finally {
       setLoading(false);
     }
   };
 
+  // ================= GET WEBSITE SETTINGS =================
+  const fetchSettings = async () => {
+    try {
+      const res = await API.get("/admin/settings");
+      const data = getData(res);
+      setSettings({
+        websiteName: data?.websiteName || "",
+        supportNumber: data?.supportNumber || ""
+      });
+    } catch (err) {
+      console.log("Settings fetch error:", getError(err));
+    }
+  };
+
   useEffect(() => {
+    if (tab === "website") {
+      fetchSettings();
+    }
     if (tab === "data") {
       fetchAdmins();
       fetchAgentReport();
@@ -192,6 +222,13 @@ const AdminControl = () => {
               Refresh
             </button>
           </div>
+
+          {(adminError || reportError) && (
+            <div style={{ marginBottom: "15px", padding: "12px", borderRadius: "8px", background: "rgba(239,68,68,0.12)", border: "1px solid rgba(239,68,68,0.4)", color: "#fca5a5", fontSize: "13.5px" }}>
+              {adminError && <div>⚠️ Admin list error: {adminError}</div>}
+              {reportError && <div>⚠️ Agent report error: {reportError}</div>}
+            </div>
+          )}
 
           {loading ? (
             <p>Loading report...</p>

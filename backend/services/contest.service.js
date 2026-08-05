@@ -84,12 +84,14 @@ export const hasActiveUnsubmittedContest = async (userId) => {
 
 /**
  * Expire old open contests that have no opponent after 5 minutes.
+ * Dummy (social proof) contests are kept alive.
  */
 export const expireOldOpenContests = async () => {
   const expiryDate = new Date(Date.now() - OPEN_CONTEST_EXPIRE_MS);
 
   const result = await Contest.deleteMany({
     status: "open",
+    isDummy: { $ne: true },
     createdAt: { $lte: expiryDate },
   });
 

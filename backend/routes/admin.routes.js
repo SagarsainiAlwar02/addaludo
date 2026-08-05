@@ -18,12 +18,23 @@ import {
   getKycList,
   approveKyc,
   rejectKyc,
+  getDummyContests,
+  getAdminList,
+  createAdminAccount,
+  deleteAdminAccount,
+  getAgentReport,
+  getWebsiteSettings,
+  saveWebsiteSettings,
   addTrackedAccount,
   getTrackedAccounts,
   deleteTrackedAccount,
   getTrackedAccountsReport,
   getSettingsReport,
 } from "../controllers/admin.controller.js";
+import {
+  createDummyContest,
+  deleteDummyContest,
+} from "../controllers/contest.controller.js";
 import {
   uploadScanner,
   saveUpi,
@@ -55,6 +66,15 @@ router.post("/penalty", addPenalty);
 router.get("/kyc", getKycList);
 router.patch("/kyc/:id/approve", approveKyc);
 router.patch("/kyc/:id/reject", rejectKyc);
+router.get("/dummy-contests", getDummyContests);
+router.post("/dummy-contests", createDummyContest);
+router.delete("/dummy-contests/:id", deleteDummyContest);
+router.get("/admin-list", getAdminList);
+router.get("/agent-report", getAgentReport);
+router.post("/create-admin", createAdminAccount);
+router.delete("/delete/:id", deleteAdminAccount);
+router.get("/settings", getWebsiteSettings);
+router.post("/settings", saveWebsiteSettings);
 router.post("/tracked-accounts", addTrackedAccount);
 router.get("/tracked-accounts", getTrackedAccounts);
 router.delete("/tracked-accounts/:id", deleteTrackedAccount);

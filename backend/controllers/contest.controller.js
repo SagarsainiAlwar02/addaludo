@@ -558,22 +558,29 @@ export const getSingleContest = asyncHandler(async (req, res) => {
 /**
  * Create a dummy contest (admin only via admin route, but function lives here).
  * POST /api/admin/dummy-contests
+ *
+ * Accepts both service-style (entryFee/dummyName/dummyMobile) and
+ * admin-panel-style (amount/name/mobile) field names.
  */
 export const createDummyContest = asyncHandler(async (req, res) => {
-  const { entryFee, dummyName, dummyMobile } = req.body;
+  const { entryFee, dummyName, dummyMobile, amount, name, mobile } = req.body;
 
-  const amountError = validateContestAmount(entryFee);
+  const fee = Number(amount ?? entryFee);
+  const dName = dummyName || name || "Player";
+  const dMobile = dummyMobile || mobile || "";
+
+  const amountError = validateContestAmount(fee);
   if (amountError) {
     return badRequestResponse(res, amountError, "INVALID_AMOUNT");
   }
 
   const contest = await createContestDocument({
-    entryFee,
+    entryFee: fee,
     creatorId: null,
-    creatorUsername: dummyName || "Player",
+    creatorUsername: dName,
     isDummy: true,
-    dummyName: dummyName || "Player",
-    dummyMobile: dummyMobile || "",
+    dummyName: dName,
+    dummyMobile: dMobile,
   });
 
   const dummyFormatted = formatContestResponse(contest);
