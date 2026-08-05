@@ -1,0 +1,131 @@
+/* Dashboard Specific Styles */
+.dashboard-body {
+    display: block; /* Flex hata kar normal layout */
+    background: #0b0e11;
+    height: auto;
+    margin-bottom: 70px; /* Space for bottom nav */
+}
+
+.navbar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 15px 20px;
+    background: #1c1f26;
+    border-bottom: 2px solid #ff4b2b;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+}
+
+.wallet {
+    background: #2d323e;
+    padding: 5px 15px;
+    border-radius: 20px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.add-cash {
+    background: #28a745;
+    border: none;
+    color: white;
+    border-radius: 50%;
+    width: 25px;
+    height: 25px;
+    cursor: pointer;
+    font-weight: bold;
+}
+
+.main-container {
+    padding: 20px;
+}
+
+h2 {
+    font-size: 20px;
+    margin-bottom: 20px;
+    border-left: 4px solid #ff4b2b;
+    padding-left: 10px;
+}
+
+/* Match Card Styles */
+.match-card {
+    background: #1a2c56;
+    border-radius: 12px;
+    padding: 15px;
+    margin-bottom: 20px;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+}
+
+.match-header {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 15px;
+}
+
+.game-name {
+    font-weight: bold;
+    color: #ff4b2b;
+}
+
+.status {
+    background: rgba(40, 167, 69, 0.2);
+    color: #28a745;
+    font-size: 12px;
+    padding: 2px 8px;
+    border-radius: 4px;
+}
+
+.match-details {
+    display: flex;
+    justify-content: space-between;
+    text-align: center;
+    margin-bottom: 15px;
+}
+
+.detail-item p {
+    font-size: 12px;
+    color: #aaa;
+    margin: 0;
+}
+
+.join-btn {
+    width: 100%;
+    background: linear-gradient(to right, #c6c4c4, #ff416c);
+    color: white;
+    border: none;
+    padding: 10px;
+    border-radius: 8px;
+    font-weight: bold;
+    cursor: pointer;
+}
+
+/* Bottom Navigation */
+.bottom-nav {
+    position: fixed;
+    bottom: 0;
+    width: 100%;
+    background: #1c1f26;
+    display: flex;
+    justify-content: space-around;
+    padding: 10px 0;
+    border-top: 1px solid #333;
+}
+
+.bottom-nav a {
+    text-decoration: none;
+    color: #aaa;
+    text-align: center;
+    font-size: 12px;
+}
+
+.bottom-nav i {
+    font-size: 20px;
+    display: block;
+    margin-bottom: 2px;
+}
+
+.bottom-nav a:hover {
+    color: #ff4b2b;
+}

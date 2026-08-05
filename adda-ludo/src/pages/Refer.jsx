@@ -1,7 +1,5 @@
 import React, { useEffect, useState } from "react";
-import axios from "axios";
-
-const API = import.meta.env.VITE_API_URL || "http://localhost:5000/api";
+import api, { getData, getError } from "../api.js";
 
 export default function Refer() {
   const [refCode, setRefCode] = useState("");
@@ -20,26 +18,24 @@ export default function Refer() {
     try {
       setLoading(true);
       setError("");
-      const token = localStorage.getItem("token");
 
-      if (!token) {
+      if (!localStorage.getItem("token")) {
         setError("Please login again");
         return;
       }
 
-      const res = await axios.get(`${API}/user/profile`, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
+      const res = await api.get("/user/referrals");
+      const data = getData(res);
 
-      setRefCode(res.data.referralCode || "");
-      setReferrals(res.data.referralStats?.referrals || 0);
-      setEarned(res.data.referralStats?.earned || 0);
+      setRefCode(data?.referralCode || "");
+      setReferrals(data?.referredCount || 0);
+      setEarned(data?.referralBalance || 0);
 
       const oldUser = JSON.parse(localStorage.getItem("user")) || {};
-      localStorage.setItem("user", JSON.stringify({ ...oldUser, ...res.data }));
+      localStorage.setItem("user", JSON.stringify({ ...oldUser, ...data }));
     } catch (err) {
-      console.log("Referral load error:", err.response?.data || err.message);
-      setError(err.response?.data?.msg || "Referral data load failed");
+      console.log("Refer fetch error:", err);
+      setError(getError(err));
     } finally {
       setLoading(false);
     }

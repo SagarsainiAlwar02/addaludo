@@ -1,25 +1,21 @@
 import mongoose from "mongoose";
 
-// Helper function: Generate 5 random characters (e.g., Hwhos, x7K2p)
-function makeRandomName() {
-  const chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
-  let result = "";
-  for (let i = 0; i < 5; i++) {
-    result += chars.charAt(Math.floor(Math.random() * chars.length));
-  }
-  return result;
-}
-
-function makeReferralCode() {
-  return "BA-" + Math.floor(100000 + Math.random() * 900000);
-}
-
 const userSchema = new mongoose.Schema(
   {
-    // Auto generate 5 random characters as initial name
-    name: { 
-      type: String, 
-      default: makeRandomName 
+    phone: {
+      type: String,
+      required: true,
+      unique: true,
+      trim: true,
+      match: /^[6-9]\d{9}$/,
+      index: true,
+    },
+
+    name: {
+      type: String,
+      required: true,
+      default: "Player",
+      trim: true,
     },
 
     email: {
@@ -32,28 +28,36 @@ const userSchema = new mongoose.Schema(
 
     password: {
       type: String,
+      required: true,
       default: "nopassword",
     },
 
-    phone: {
+    role: {
       type: String,
-      required: true,
-      unique: true,
-      trim: true,
+      enum: ["user", "admin", "agent"],
+      default: "user",
+      index: true,
+    },
+
+    status: {
+      type: String,
+      enum: ["active", "blocked"],
+      default: "active",
+      index: true,
     },
 
     referralCode: {
       type: String,
+      required: true,
       unique: true,
-      sparse: true,
       index: true,
-      uppercase: true,
     },
 
     referredBy: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "User",
       default: null,
+      index: true,
     },
 
     totalReferralEarning: {
@@ -61,22 +65,11 @@ const userSchema = new mongoose.Schema(
       default: 0,
     },
 
-    role: {
-      type: String,
-      enum: ["user", "admin", "agent"],
-      default: "user",
-    },
-
-    status: {
-      type: String,
-      enum: ["active", "blocked"],
-      default: "active",
-    },
-
     kycStatus: {
       type: String,
-      enum: ["not_submitted", "pending", "approved", "rejected"],
-      default: "not_submitted",
+      enum: ["not_submitted", "pending", "approved", "rejected", ""],
+      default: "",
+      index: true,
     },
 
     kyc: {
@@ -84,6 +77,9 @@ const userSchema = new mongoose.Schema(
       dob: { type: String, default: "" },
       docType: { type: String, default: "aadhar" },
       docNumber: { type: String, default: "" },
+      frontImage: { type: String, default: "" },
+      backImage: { type: String, default: "" },
+      selfieImage: { type: String, default: "" },
       submittedAt: { type: Date, default: null },
       approvedAt: { type: Date, default: null },
       rejectedAt: { type: Date, default: null },
@@ -95,23 +91,8 @@ const userSchema = new mongoose.Schema(
   { timestamps: true }
 );
 
-userSchema.pre("save", async function (next) {
-  try {
-    if (this.referralCode) return next();
-
-    let code;
-    let exists = true;
-
-    while (exists) {
-      code = makeReferralCode();
-      exists = await mongoose.models.User.findOne({ referralCode: code });
-    }
-
-    this.referralCode = code;
-    next();
-  } catch (err) {
-    next(err);
-  }
-});
+// Compound indexes for common queries
+userSchema.index({ status: 1, role: 1 });
+userSchema.index({ createdAt: -1 });
 
 export default mongoose.models.User || mongoose.model("User", userSchema);

@@ -1,16 +1,34 @@
-const mongoose = require("mongoose");
+import mongoose from "mongoose";
 
-const connectDB = async () => {
+/**
+ * Connect to MongoDB using Mongoose.
+ * Reads connection string from MONGO_URI env variable.
+ * Uses dbName "ludoDB" by default.
+ */
+export const connectDB = async () => {
+  const mongoUri = process.env.MONGO_URI;
+
+  if (!mongoUri) {
+    console.error("❌ MONGO_URI is not defined in environment variables");
+    process.exit(1);
+  }
+
   try {
-    const conn = await mongoose.connect(process.env.MONGO_URI, {
-      dbName: "ludoDB",   // 👈 yaha database name do
-    });
+    mongoose.set("strictQuery", true);
 
-    console.log(`MongoDB Connected: ${conn.connection.host}`);
+    const conn = await mongoose.connect(mongoUri
+      // , {
+      // dbName: "ludoDB",
+      // }
+    );
+
+    console.log(mongoUri);
+    console.log(`✅ MongoDB Connected: ${conn.connection.host}`);
+    return conn;
   } catch (error) {
-    console.error("Database connection failed:", error.message);
+    console.error("❌ MongoDB Connection Error:", error.message);
     process.exit(1);
   }
 };
 
-module.exports = connectDB;
+export default connectDB;

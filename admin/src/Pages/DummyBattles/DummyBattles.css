@@ -1,0 +1,149 @@
+.dummy-wrap {
+  font-family: inherit;
+}
+
+.dummy-title {
+  font-size: 1.6rem;
+  font-weight: 800;
+  color: #2a1520;
+  margin-bottom: 4px;
+}
+
+.dummy-subtitle {
+  font-size: 0.85rem;
+  color: #7a3d58;
+  margin-bottom: 20px;
+}
+
+.dummy-card {
+  background: #ffffff;
+  border: 1px solid #f0c2d8;
+  border-radius: 14px;
+  padding: 18px 20px;
+  margin-bottom: 22px;
+}
+
+.dummy-card-title {
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: #2a1520;
+  margin-bottom: 14px;
+}
+
+.dummy-form-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr auto;
+  gap: 10px;
+  align-items: end;
+}
+
+.dummy-field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.dummy-label {
+  font-size: 0.72rem;
+  font-weight: 700;
+  color: #7a3d58;
+  text-transform: uppercase;
+}
+
+.dummy-input {
+  border: 1px solid #f0c2d8;
+  border-radius: 8px;
+  padding: 10px 12px;
+  font-size: 0.9rem;
+  color: #2a1520;
+  outline: none;
+}
+
+.dummy-input:focus {
+  border-color: #ec4899;
+}
+
+.dummy-btn {
+  background: linear-gradient(135deg, #ec4899, #db2777);
+  color: #fff;
+  border: none;
+  border-radius: 8px;
+  padding: 11px 18px;
+  font-weight: 700;
+  font-size: 0.9rem;
+  cursor: pointer;
+}
+
+.dummy-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.dummy-count-line {
+  font-size: 0.85rem;
+  color: #7a3d58;
+  margin-bottom: 10px;
+}
+
+.dummy-table {
+  width: 100%;
+  border-collapse: collapse;
+  background: #fff;
+  border-radius: 12px;
+  overflow: hidden;
+}
+
+.dummy-th {
+  text-align: left;
+  font-size: 0.75rem;
+  color: #7a3d58;
+  padding: 10px 14px;
+  background: #fce4ee;
+  font-weight: 700;
+}
+
+.dummy-td {
+  padding: 12px 14px;
+  font-size: 0.87rem;
+  color: #2a1520;
+  border-top: 1px solid #f5dceb;
+}
+
+.dummy-badge {
+  background: #fef3c7;
+  color: #92400e;
+  font-size: 0.72rem;
+  font-weight: 700;
+  padding: 4px 10px;
+  border-radius: 999px;
+}
+
+.dummy-remove-btn {
+  background: #fff;
+  color: #dc2626;
+  border: 1px solid #fca5a5;
+  border-radius: 8px;
+  padding: 6px 12px;
+  font-size: 0.78rem;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.dummy-empty {
+  text-align: center;
+  padding: 28px 0;
+  color: #a56a83;
+  font-size: 0.9rem;
+}
+
+@media (max-width: 768px) {
+  .dummy-form-row {
+    grid-template-columns: 1fr;
+  }
+
+  .dummy-table {
+    display: block;
+    overflow-x: auto;
+    white-space: nowrap;
+  }
+}

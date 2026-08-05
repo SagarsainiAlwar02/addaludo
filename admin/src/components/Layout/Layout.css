@@ -1,0 +1,73 @@
+.admin-layout {
+  display: flex;
+  min-height: 100vh;
+  background: #fbe6ef;
+  width: 100%;
+  max-width: 100%;
+}
+
+.main-content {
+  flex: 1;
+  min-width: 0;
+  background: #fbe6ef;
+  min-height: 100vh;
+  padding: 24px;
+  color: #3d1f2e;
+
+  /* page scroll block nahi karega */
+  overflow-x: visible;
+}
+
+.mobile-topbar {
+  display: none;
+}
+
+@media (max-width: 768px) {
+  .admin-layout {
+    display: block;
+    width: 100%;
+    max-width: 100%;
+    overflow-x: visible;
+  }
+
+  .main-content {
+    width: 100%;
+    max-width: 100%;
+    min-width: 0;
+    padding: 14px;
+    padding-top: 75px;
+    overflow-x: visible;
+    box-sizing: border-box;
+  }
+
+  .mobile-topbar {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    background: #ffffff;
+    border-bottom: 1px solid #f0c2d8;
+    padding: 12px 14px;
+    z-index: 900;
+  }
+
+  .mobile-topbar h3 {
+    margin: 0;
+    color: #2a1520;
+    font-size: 18px;
+  }
+
+  .menu-btn {
+    width: 42px;
+    height: 42px;
+    border: none;
+    border-radius: 12px;
+    background: linear-gradient(135deg, #ec4899, #db2777);
+    color: white;
+    font-size: 22px;
+    cursor: pointer;
+  }
+}

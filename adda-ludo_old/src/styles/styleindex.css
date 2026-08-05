@@ -1,0 +1,152 @@
+:root {
+    --primary-red: #cdbcbc;
+    --green-btn: #27ae60;
+    --bg-light: #f8f9fa;
+    --dark-blue: #1e272e;
+    --gradient-banner: linear-gradient(180deg, #2d3436 0%, #d63031 100%);
+}
+
+body {
+    margin: 0;
+    font-family: 'Segoe UI', Arial, sans-serif;
+    background-color: white;
+    padding-bottom: 100px;
+}
+
+/* Header Styles */
+.header-main {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 10px 15px;
+    gap: 10px;
+}
+
+.logo-section { display: flex; align-items: center; gap: 5px; }
+.brand-name { font-weight: bold; font-size: 14px; color: #333; }
+
+.download-btn {
+    background-color: var(--green-btn);
+    color: white;
+    border: none;
+    padding: 8px 15px;
+    border-radius: 6px;
+    font-weight: bold;
+    font-size: 13px;
+}
+
+.user-stats { display: flex; gap: 10px; }
+.stat-item {
+    background: #f1f2f6;
+    padding: 5px 10px;
+    border-radius: 4px;
+    font-size: 13px;
+    font-weight: bold;
+    color: #2f3542;
+    border: 1px solid #dfe4ea;
+}
+
+.top-divider { height: 10px; background-color: #2d3436; margin-top: 5px; }
+
+/* Banner Section */
+.banner-slider {
+    margin: 15px;
+    border-radius: 15px;
+    background: var(--gradient-banner);
+    padding: 20px;
+    color: white;
+}
+
+.welcome-text strong { font-size: 20px; }
+.welcome-text span { font-size: 11px; opacity: 0.8; margin-left: 10px; }
+
+.offer-box h2 { font-size: 24px; margin: 25px 0 5px 0; }
+.offer-box p { font-size: 14px; margin-bottom: 20px; opacity: 0.9; }
+
+.action-btn {
+    width: 100%;
+    background: rgba(255, 255, 255, 0.1);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    color: white;
+    padding: 12px;
+    border-radius: 12px;
+    font-size: 18px;
+    font-weight: bold;
+}
+
+.pagination { text-align: center; margin-top: 25px; }
+.dot { height: 8px; width: 8px; background: rgba(255,255,255,0.3); border-radius: 50%; display: inline-block; margin: 0 4px; }
+.dot.active { width: 15px; border-radius: 10px; background: white; }
+
+/* Games Layout */
+.games-section { padding: 0 15px; }
+.section-title {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin: 20px 0;
+}
+
+.rules-pill {
+    background: #2d3436;
+    color: white;
+    border: none;
+    padding: 6px 15px;
+    border-radius: 5px;
+    font-weight: bold;
+}
+
+.game-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+
+.game-card { position: relative; }
+.game-card img { width: 100%; border-radius: 12px; }
+
+.badge {
+    position: absolute;
+    top: 5px;
+    left: 5px;
+    font-size: 9px;
+    padding: 2px 8px;
+    border-radius: 50px;
+    color: white;
+    font-weight: bold;
+}
+.live { background: rgba(0,0,0,0.5); border: 0.5px solid #fff; }
+.soon { background: rgba(255,255,255,0.7); color: #333; }
+
+/* Navigation */
+.footer-nav {
+    position: fixed;
+    bottom: 20px;
+    left: 0;
+    right: 0;
+    padding: 0 20px;
+}
+
+.nav-holder {
+    background: white;
+    height: 60px;
+    border-radius: 40px;
+    display: flex;
+    justify-content: space-around;
+    align-items: center;
+    box-shadow: 0 0 20px rgba(0,0,0,0.1);
+    border: 1px solid #eee;
+}
+
+.nav-holder a { color: #2f3542; font-size: 20px; }
+
+.home-circle {
+    background: #00cec9;
+    width: 60px;
+    height: 60px;
+    border-radius: 50%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    border: 5px solid white;
+    margin-top: -40px;
+    box-shadow: 0 4px 10px rgba(0,206,201,0.3);
+}
+
+.home-circle a { color: white; }

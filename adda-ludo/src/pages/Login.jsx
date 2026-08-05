@@ -1,12 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import axios from "axios";
-
-const API_URL =
-  import.meta.env.VITE_API_URL?.replace(/\/$/, "") ||
-  (window.location.hostname === "localhost"
-    ? "http://localhost:5000/api"
-    : "https://api.addaludo.com/api");
+import api, { getError } from "../api.js";
 
 export default function Login({ onLogin }) {
   const [phone, setPhone] = useState("");
@@ -55,35 +49,15 @@ export default function Login({ onLogin }) {
       setOtp("");
       setVerificationId("");
 
-      const res = await axios.post(`${API_URL}/otp/send`, {
-        countryCode: "91",
-        mobileNumber: phone,
-        messageText: "Your verification code is ##var1##",
-      });
+      const res = await api.post("/auth/otp/send", { phone });
 
-      console.log("OTP SEND API RESPONSE DATA:", res.data);
-
-      // FIXED: Fallback to res.status === 200 if res.data.success is missing from your backend
-      if (res.data?.success || res.status === 200) {
-        // Fallback to a placeholder or phone number if backend verificationId string isn't generated
-        const vId = res.data?.verificationId || res.data?.data?.verificationId || `v_id_${phone}`;
-        
-        setVerificationId(vId);
-        setStep(2); // 🟢 Forces component to show the OTP entry field layout
-        setTimer(30);
-        setSuccessMessage("OTP sent successfully");
-      } else {
-        setError(res.data?.error || res.data?.msg || res.data?.message || "Failed to send OTP");
-      }
+      const vId = res.data?.data?.verificationId || `v_id_${phone}`;
+      setVerificationId(vId);
+      setStep(2);
+      setTimer(30);
+      setSuccessMessage("OTP sent successfully");
     } catch (err) {
-      console.log("OTP SEND ERROR DETAILS:", err.response?.data || err.message);
-      setError(
-        err.response?.data?.error || 
-        err.response?.data?.msg || 
-        err.response?.data?.message || 
-        err.message || 
-        "Failed to send OTP"
-      );
+      setError(getError(err));
     } finally {
       setLoading(false);
     }
@@ -104,25 +78,15 @@ export default function Login({ onLogin }) {
       setLoading(true);
       setError("");
 
-      const res = await axios.post(`${API_URL}/otp/verify`, {
-        verificationId,
-        code: otp,
-        otp: otp,
-        mobileNumber: phone,
-        phone: phone,
+      const res = await api.post("/auth/otp/verify", {
+        otp,
+        phone,
         referralCode: finalReferralCode,
       });
 
-      console.log("OTP VERIFY API RESPONSE DATA:", res.data);
-
-      // FIXED: Fallback checking options for valid responses
-      if (res.data?.success === false) {
-        setError(res.data?.error || res.data?.msg || "Invalid OTP");
-        return;
-      }
-
-      const token = res.data?.token || res.data?.data?.token;
-      const user = res.data?.user || res.data?.data?.user;
+      const data = res.data?.data || res.data;
+      const token = data?.token;
+      const user = data?.user;
 
       if (!token) {
         setError("Login successful, but authorization token was missing from backend response.");
@@ -130,21 +94,14 @@ export default function Login({ onLogin }) {
       }
 
       localStorage.setItem("token", token);
-      localStorage.setItem("user", JSON.stringify(user || { mobileNumber: phone }));
+      localStorage.setItem("user", JSON.stringify(user || { phone }));
       localStorage.removeItem("pendingReferralCode");
 
-      if (onLogin) onLogin(user || { mobileNumber: phone });
+      if (onLogin) onLogin(user || { phone });
 
       navigate("/");
     } catch (err) {
-      console.log("OTP VERIFY ERROR DETAILS:", err.response?.data || err.message);
-      setError(
-        err.response?.data?.error || 
-        err.response?.data?.msg || 
-        err.response?.data?.message || 
-        err.message || 
-        "Invalid OTP"
-      );
+      setError(getError(err));
     } finally {
       setLoading(false);
     }

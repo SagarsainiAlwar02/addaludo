@@ -1,0 +1,115 @@
+/* Wallet Page Styles */
+.balance-card {
+    background: linear-gradient(135deg, #404041, #e6e4e5ef);
+    padding: 30px;
+    border-radius: 15px;
+    text-align: center;
+    margin-bottom: 25px;
+}
+
+.balance-card h1 {
+    font-size: 40px;
+    margin: 10px 0;
+    color: white;
+}
+
+.balance-breakdown {
+    font-size: 13px;
+    opacity: 0.9;
+}
+
+.add-money-section {
+    background: #f7f7f9;
+    padding: 20px;
+    border-radius: 12px;
+}
+
+.amount-input {
+    display: flex;
+    align-items: center;
+    background: #3e475a;
+    border-radius: 8px;
+    padding: 10px;
+    margin: 15px 0;
+}
+
+.amount-input input {
+    background: transparent;
+    border: none;
+    margin: 0;
+    font-size: 20px;
+}
+
+.quick-amounts {
+    display: flex;
+    justify-content: space-between;
+    gap: 10px;
+}
+
+/* --- Modern Dark UPI Button --- */
+.upi-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+    width: 100%;
+    padding: 14px;
+    margin-top: 20px;
+    
+    /* Dark Gradient background */
+    background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%);
+    color: #ffffff;
+    
+    /* Professional Border */
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 12px;
+    
+    font-size: 16px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    
+    /* Subtle Shadow */
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
+}
+
+/* Lightning Bolt Icon Styling */
+.upi-btn i {
+    font-size: 20px;
+    color: #38bdf8; /* Electric Blue */
+    filter: drop-shadow(0 0 5px rgba(56, 189, 248, 0.6));
+}
+
+/* Hover Effects */
+.upi-btn:hover {
+    background: linear-gradient(135deg, #334155 0%, #1e293b 100%);
+    border-color: #38bdf8;
+    transform: translateY(-2px);
+    box-shadow: 0 0 15px rgba(56, 189, 248, 0.2);
+}
+
+/* Click Animation */
+.upi-btn:active {
+    transform: translateY(0);
+}
+
+.history-section {
+    margin-top: 30px;
+}
+
+.transaction {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background: #1c1f26;
+    padding: 15px;
+    margin-bottom: 10px;
+    border-radius: 8px;
+}
+
+.tx-amount.positive { color: #28a745; font-weight: bold; }
+.tx-amount.negative { color: #ff4b2b; font-weight: bold; }
+.tx-info p { margin: 0; font-size: 14px; }
+.tx-info small { color: #888; }

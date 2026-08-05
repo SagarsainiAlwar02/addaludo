@@ -1,0 +1,87 @@
+.admin-container {
+  padding: 25px;
+  background: #0f172a;
+  min-height: 100vh;
+  color: white;
+}
+
+/* TABS */
+.tabs {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 20px;
+  flex-wrap: wrap;
+}
+
+.tabs button {
+  padding: 10px 16px;
+  border: none;
+  border-radius: 8px;
+  background: #1e293b;
+  color: #cbd5f5;
+  cursor: pointer;
+}
+
+.active-tab {
+  background: #2563eb !important;
+  color: white;
+}
+
+/* FORM */
+.form-box {
+  background: #1e293b;
+  padding: 20px;
+  border-radius: 12px;
+  max-width: 400px;
+}
+
+.form-box input,
+.form-box select {
+  width: 100%;
+  padding: 10px;
+  margin-bottom: 10px;
+  border-radius: 6px;
+  border: none;
+}
+
+/* BUTTON */
+.btn {
+  width: 100%;
+  padding: 10px;
+  border-radius: 6px;
+  border: none;
+}
+
+.save {
+  background: #22c55e;
+}
+
+/* TABLE */
+.admin-table {
+  width: 100%;
+  border-collapse: collapse;
+  background: #1e293b;
+  border-radius: 10px;
+}
+
+.admin-table th,
+.admin-table td {
+  padding: 12px;
+  text-align: center;
+}
+
+.admin-table th {
+  background: #020617;
+}
+
+.admin-table tr:hover {
+  background: #334155;
+}
+
+.delete {
+  background: red;
+  padding: 6px 10px;
+  border-radius: 5px;
+  border: none;
+  color: white;
+}

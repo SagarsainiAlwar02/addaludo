@@ -1,13 +1,8 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { ArrowLeft } from "lucide-react";
-import axios from "axios";
 import { useNavigate, useParams } from "react-router-dom";
-
-const API_BASE =
-  import.meta.env.VITE_API_URL?.replace(/\/$/, "") ||
-  (window.location.hostname === "localhost"
-    ? "http://localhost:5000/api"
-    : "https://api.addaludo.com/api");
+import api, { getData, getError } from "../api.js";
+import socket from "../socket.js";
 
 function getUserId() {
   try {
@@ -43,26 +38,28 @@ export default function RoomCode() {
   const [pageLoading, setPageLoading] = useState(true);
   const [now, setNow] = useState(Date.now());
 
-  const token = localStorage.getItem("token");
   const myId = getUserId();
 
-  const authHeader = () => ({
-    headers: { Authorization: `Bearer ${token}` },
+  const mapContest = (c) => ({
+    ...c,
+    battleId: c.contestId,
+    amount: c.entryFee,
   });
 
   const fetchBattle = async () => {
     try {
-      const res = await axios.get(`${API_BASE}/battle/${battleId}`, authHeader());
-      setBattle(res.data.battle);
-        const serverRoomCode = res.data.battle?.ludoKingRoomCode || "";
+      const res = await api.get(`/contests/${battleId}`);
+      const data = getData(res);
+      const contest = data?.contest;
+      setBattle(contest ? mapContest(contest) : null);
 
-setRoomCode((prev) => {
-  if (serverRoomCode) return serverRoomCode;
-  return prev;
-});
-
+      const serverRoomCode = contest?.ludoKingRoomCode || "";
+      setRoomCode((prev) => {
+        if (serverRoomCode) return serverRoomCode;
+        return prev;
+      });
     } catch (err) {
-      alert(err.response?.data?.msg || "Battle load failed");
+      alert(getError(err));
       navigate("/battle");
     } finally {
       setPageLoading(false);
@@ -70,18 +67,28 @@ setRoomCode((prev) => {
   };
 
   useEffect(() => {
-    if (!token) {
+    if (!localStorage.getItem("token")) {
       navigate("/login");
       return;
     }
 
     fetchBattle();
 
-    const interval = setInterval(fetchBattle, 3000);
+    if (!socket.connected) {
+      socket.connect();
+    }
+    socket.emit("join-contest", battleId);
+
+    const handleContestUpdate = () => {
+      fetchBattle();
+    };
+
+    socket.on("contest-updated", handleContestUpdate);
+
     const timerInterval = setInterval(() => setNow(Date.now()), 1000);
 
     return () => {
-      clearInterval(interval);
+      socket.off("contest-updated", handleContestUpdate);
       clearInterval(timerInterval);
     };
     // eslint-disable-next-line
@@ -95,7 +102,7 @@ setRoomCode((prev) => {
   const myResultSubmitted = useMemo(() => {
     return (battle?.results || []).some((item) => {
       const itemUser = String(item?.user?._id || item?.user || "");
-      return itemUser === myId;
+      return itemUser === myId && item.result;
     });
   }, [battle, myId]);
 
@@ -118,16 +125,12 @@ setRoomCode((prev) => {
     try {
       setLoading(true);
 
-      await axios.post(
-        `${API_BASE}/battle/room-code/${battleId}`,
-        { roomCode: code },
-        authHeader()
-      );
+      await api.post(`/contests/room-code/${battleId}`, { roomCode: code });
 
       await fetchBattle();
       alert("Room code saved");
     } catch (err) {
-      alert(err.response?.data?.msg || "Room code save failed");
+      alert(getError(err));
     } finally {
       setLoading(false);
     }
@@ -160,27 +163,19 @@ setRoomCode((prev) => {
         formData.append("screenshot", screenshot);
       }
 
-      const res = await axios.post(`${API_BASE}/battle/result/${battleId}`, formData, {
-        headers: {
-          Authorization: `Bearer ${token}`,
-          "Content-Type": "multipart/form-data",
-        },
+      const res = await api.post(`/contests/result/${battleId}`, formData, {
+        headers: { "Content-Type": "multipart/form-data" },
       });
 
       await fetchBattle();
 
-      if (selectedResult === "win") {
-        alert(res.data?.msg || "You Won ✅ Result submitted.");
-      } else if (selectedResult === "loss") {
-        alert(res.data?.msg || "Loss submitted.");
-      } else {
-        alert(res.data?.msg || "Cancel request submitted.");
-      }
+      const msg = res.data?.message || "Result submitted.";
+      alert(msg);
 
       setSelectedResult("");
       setScreenshot(null);
     } catch (err) {
-      alert(err.response?.data?.msg || "Result submit failed");
+      alert(getError(err));
     } finally {
       setLoading(false);
     }

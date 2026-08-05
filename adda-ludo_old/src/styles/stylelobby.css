@@ -1,0 +1,161 @@
+/* --- 1. CORE VARIABLES --- */
+:root {
+    --bg-main: #0b0e11;        /* Darkest background */
+    --bg-panel: #151a21;       /* Lighter panel background */
+    --accent: #d90429;         /* Funbattle Signature Red */
+    --success: #02c076;        /* Winner/Join Green */
+    --border: #2b3139;         /* Subtle borders */
+    --text-muted: #848d9a;
+}
+
+/* --- 2. LAYOUT ENGINE --- */
+* { box-sizing: border-box; }
+body {
+    margin: 0;
+    font-family: 'Inter', -apple-system, sans-serif;
+    background-color: var(--bg-main);
+    color: #ffffff;
+}
+
+.dashboard-wrapper {
+    display: flex;
+    min-height: 100vh;
+}
+
+/* --- 3. SIDEBAR (Fixed Navigation) --- */
+.sidebar {
+    width: 260px;
+    background: var(--bg-panel);
+    border-right: 1px solid var(--border);
+    padding: 25px;
+    position: sticky;
+    top: 0;
+    height: 100vh;
+}
+
+.logo {
+    color: var(--accent);
+    font-size: 24px;
+    font-weight: 800;
+    margin-bottom: 40px;
+    text-align: center;
+    letter-spacing: 1px;
+}
+
+.nav-links { list-style: none; padding: 0; }
+.nav-links a {
+    text-decoration: none;
+    color: var(--text-muted);
+    padding: 14px 18px;
+    display: block;
+    border-radius: 10px;
+    margin-bottom: 8px;
+    transition: 0.3s;
+}
+
+.nav-links a:hover, .nav-links a.active {
+    background: rgba(217, 4, 41, 0.1);
+    color: var(--accent);
+}
+
+/* --- 4. MAIN CONTENT & STATS --- */
+.main-content { flex: 1; padding: 35px; }
+
+.stat-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 20px;
+    margin-bottom: 35px;
+}
+
+.stat-card {
+    background: var(--bg-panel);
+    padding: 22px;
+    border-radius: 14px;
+    border: 1px solid var(--border);
+}
+
+.stat-card h3 { 
+    margin: 0; font-size: 13px; color: var(--text-muted); text-transform: uppercase; 
+}
+
+.stat-card .value { font-size: 28px; font-weight: 700; margin-top: 10px; display: block; }
+
+/* --- 5. TOURNAMENT LOBBY AREA --- */
+.tournament-card {
+    background: var(--bg-panel);
+    padding: 30px;
+    border-radius: 18px;
+    border: 1px solid var(--border);
+}
+
+.create-box {
+    display: flex;
+    gap: 15px;
+    background: var(--bg-main);
+    padding: 18px;
+    border-radius: 12px;
+    margin: 20px 0;
+}
+
+.create-box input {
+    flex: 1;
+    background: transparent;
+    border: none;
+    color: white;
+    font-size: 16px;
+    outline: none;
+}
+
+.create-box button {
+    background: var(--accent);
+    color: white;
+    border: none;
+    padding: 12px 28px;
+    border-radius: 8px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: 0.2s;
+}
+
+.create-box button:hover { transform: scale(1.03); background: #ff1f44; }
+
+/* --- 6. CHALLENGE LIST --- */
+.challenge-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background: #1c2128;
+    padding: 18px 25px;
+    border-radius: 12px;
+    margin-bottom: 12px;
+    border: 1px solid transparent;
+}
+
+.challenge-item:hover { border-color: var(--accent); }
+
+.status-badge {
+    padding: 4px 10px;
+    border-radius: 4px;
+    font-size: 11px;
+    font-weight: bold;
+    background: #f1c40f;
+    color: #000;
+    margin-right: 12px;
+}
+
+.challenge-item button {
+    background: transparent;
+    color: var(--success);
+    border: 2px solid var(--success);
+    padding: 8px 22px;
+    border-radius: 6px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: 0.3s;
+}
+
+.challenge-item button:hover {
+    background: var(--success);
+    color: white;
+}

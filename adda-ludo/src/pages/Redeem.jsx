@@ -1,12 +1,9 @@
-import React, { useEffect, useMemo, useState } from "react";
-import axios from "axios";
+import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-
-const API_BASE = import.meta.env.VITE_API_URL || "http://localhost:5000/api";
+import api, { getData, getError } from "../api.js";
 
 export default function Redeem() {
   const navigate = useNavigate();
-  const token = localStorage.getItem("token");
 
   const MIN_AMOUNT = 200;
   const MAX_AMOUNT = 10000;
@@ -18,48 +15,32 @@ export default function Redeem() {
   const [pageLoading, setPageLoading] = useState(true);
   const [message, setMessage] = useState("");
 
-  const authHeader = useMemo(
-    () => ({
-      headers: { Authorization: `Bearer ${token}` },
-    }),
-    [token]
-  );
-
   const loadRedeemData = async () => {
     try {
       setPageLoading(true);
       setMessage("");
 
-      const res = await axios.get(`${API_BASE}/redeem`, authHeader);
+      const res = await api.get("/user/referrals");
+      const data = getData(res);
 
-      const balance =
-        res.data?.referralBalance ??
-        res.data?.referBalance ??
-        0;
-
-      const earned =
-        res.data?.totalReferralEarning ??
-        res.data?.totalEarned ??
-        balance;
-
-      setReferBalance(Number(balance || 0));
-      setTotalEarned(Number(earned || 0));
+      setReferBalance(Number(data?.referralBalance || 0));
+      setTotalEarned(Number(data?.totalReferralEarning || 0));
     } catch (err) {
-      setMessage(err.response?.data?.msg || "Redeem balance load nahi hua");
+      setMessage(getError(err));
     } finally {
       setPageLoading(false);
     }
   };
 
   useEffect(() => {
-    if (!token) {
+    if (!localStorage.getItem("token")) {
       navigate("/login", { replace: true });
       return;
     }
 
     loadRedeemData();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [token]);
+  }, []);
 
   const handleRedeem = async () => {
     const redeemAmount = Number(amount);
@@ -75,23 +56,18 @@ export default function Redeem() {
       setLoading(true);
       setMessage("");
 
-      const res = await axios.post(
-        `${API_BASE}/redeem/withdraw`,
-        {
-          amount: redeemAmount,
-          type: "refer_redeem",
-        },
-        authHeader
-      );
+      await api.post("/transactions/redeem-referral", {
+        amount: redeemAmount,
+      });
 
-      alert(res.data?.msg || "Referral earning wallet me add ho gayi");
+      alert("Referral earning wallet me add ho gayi");
 
       setAmount("");
       await loadRedeemData();
 
       window.dispatchEvent(new Event("walletUpdated"));
     } catch (err) {
-      setMessage(err.response?.data?.msg || "Redeem failed");
+      setMessage(getError(err));
     } finally {
       setLoading(false);
     }
