@@ -186,12 +186,13 @@
         setMaintenanceState({
           loading: false,
           enabled: data?.maintenanceMode === true,
+          enabled: data?.maintenanceMode === true,
         });
       } catch (err) {
         console.log("Maintenance check failed:", err);
         setMaintenanceState({
           loading: false,
-          enabled: false,
+          enabled: true,
         });
       }
     }, []);
