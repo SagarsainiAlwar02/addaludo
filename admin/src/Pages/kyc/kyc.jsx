@@ -4,9 +4,21 @@ import "./kyc.css";
 
 const ITEMS_PER_PAGE = 40;
 
+const STATUS_FILTERS = [
+  { value: "all", label: "All" },
+  { value: "pending", label: "Pending" },
+  { value: "approved", label: "Approved" },
+  { value: "rejected", label: "Rejected" },
+  { value: "not_submitted", label: "Not Submitted" },
+];
+
+// Normalize the empty-string default kycStatus to "not_submitted"
+const normalizeStatus = (s) => (!s ? "not_submitted" : s);
+
 const Kyc = () => {
   const [users, setUsers] = useState([]);
   const [search, setSearch] = useState("");
+  const [statusFilter, setStatusFilter] = useState("all");
   const [selected, setSelected] = useState(null);
   const [loading, setLoading] = useState(true);
   const [currentPage, setCurrentPage] = useState(1);
@@ -20,7 +32,7 @@ const Kyc = () => {
   const fetchKyc = async () => {
     try {
       setLoading(true);
-      const res = await API.get("/admin/kyc");
+      const res = await API.get("/admin/kyc?limit=1000");
       const data = getData(res);
       setUsers(Array.isArray(data?.users) ? data.users : []);
     } catch (err) {
@@ -35,10 +47,10 @@ const Kyc = () => {
     fetchKyc();
   }, []);
 
-  // Reset to page 1 whenever search changes
+  // Reset to page 1 whenever search or filter changes
   useEffect(() => {
     setCurrentPage(1);
-  }, [search]);
+  }, [search, statusFilter]);
 
   const approve = async (id) => {
     try {
@@ -67,16 +79,19 @@ const Kyc = () => {
 
   const filtered = users.filter((u) => {
     const q = search.toLowerCase();
+    const matchStatus =
+      statusFilter === "all" || normalizeStatus(u.kycStatus) === statusFilter;
 
-    return (
+    const matchSearch =
       String(u.name || "").toLowerCase().includes(q) ||
       String(u.phone || "").includes(q) ||
       String(u.email || "").toLowerCase().includes(q) ||
       String(u.kyc?.name || "").toLowerCase().includes(q) ||
       String(u.kyc?.docType || "").toLowerCase().includes(q) ||
       String(u.kyc?.docNumber || "").toLowerCase().includes(q) ||
-      String(u.kycStatus || "").toLowerCase().includes(q)
-    );
+      normalizeStatus(u.kycStatus).toLowerCase().includes(q);
+
+    return matchStatus && matchSearch;
   });
 
   // ---------- PAGINATION LOGIC ----------
@@ -112,6 +127,18 @@ const Kyc = () => {
   return (
     <div className="kyc-admin-container">
       <h1>KYC Management</h1>
+
+      <div className="kyc-filters">
+        {STATUS_FILTERS.map((f) => (
+          <button
+            key={f.value}
+            className={`kyc-filter-btn ${statusFilter === f.value ? "active" : ""}`}
+            onClick={() => setStatusFilter(f.value)}
+          >
+            {f.label}
+          </button>
+        ))}
+      </div>
 
       <div className="toolbar-row">
         <input
@@ -157,8 +184,8 @@ const Kyc = () => {
                   <td className="capitalize">{u.kyc?.docType || "-"}</td>
                   <td className="mono">{u.kyc?.docNumber || "-"}</td>
                   <td>
-                    <span className={`status-badge ${u.kycStatus}`}>
-                      {u.kycStatus || "-"}
+                    <span className={`status-badge ${normalizeStatus(u.kycStatus)}`}>
+                      {normalizeStatus(u.kycStatus)}
                     </span>
                   </td>
                   <td>
@@ -274,8 +301,8 @@ const Kyc = () => {
             </p>
             <p>
               <b>Status:</b>{" "}
-              <span className={`status-badge inline ${selected.kycStatus}`}>
-                {selected.kycStatus || "-"}
+              <span className={`status-badge inline ${normalizeStatus(selected.kycStatus)}`}>
+                {normalizeStatus(selected.kycStatus)}
               </span>
             </p>
             <p>

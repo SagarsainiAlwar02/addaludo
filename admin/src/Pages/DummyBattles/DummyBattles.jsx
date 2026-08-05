@@ -135,7 +135,7 @@ export default function DummyBattles() {
               <tr key={b._id}>
                 <td className="dummy-td">{b.dummyName || "-"}</td>
                 <td className="dummy-td">{b.dummyMobile || "-"}</td>
-                <td className="dummy-td">₹{b.amount}</td>
+                <td className="dummy-td">₹{b.entryFee || b.amount}</td>
                 <td className="dummy-td">
                   <span className="dummy-badge">{b.status}</span>
                 </td>
