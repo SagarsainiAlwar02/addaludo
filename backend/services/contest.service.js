@@ -20,23 +20,30 @@ const OPEN_CONTEST_EXPIRE_MS = 5 * 60 * 1000; // 5 minutes
 
 /**
  * Calculate prize and commission for an entry fee.
- * 50-500: 10% total commission (5% per player)
- * 501-100000: 5% total commission (2.5% per player)
+ * Commission is charged on the ENTRY FEE (what each user's wallet pays):
+ * - Slab 1 (50-500):       10% total  = 5% from each user's wallet
+ * - Slab 2 (550-100000):    5% total  = 2.5% from each user's wallet
+ * Winner takes the full pool minus the total commission.
+ * The prize floor matches the frontend (Math.floor(totalPool - platformFee)).
+ * (Amounts are multiples of 50, so there is no gap between the slabs.)
  */
 export const calculatePrize = (entryFee) => {
   const fee = Number(entryFee || 0);
   if (!fee || fee < 50) return { prize: 0, commission: 0 };
 
   const pool = fee * 2;
-  let commission = 0;
+  let platformFee = 0;
 
   if (fee >= 50 && fee <= 500) {
-    commission = Math.floor(pool * 0.1);
+    // 5% per user x 2 users = 10% of the entry fee
+    platformFee = fee * 0.05 * 2;
   } else if (fee > 500 && fee <= 100000) {
-    commission = Math.floor(pool * 0.05);
+    // 2.5% per user x 2 users = 5% of the entry fee
+    platformFee = fee * 0.025 * 2;
   }
 
-  const prize = Math.max(0, pool - commission);
+  const prize = Math.max(0, Math.floor(pool - platformFee));
+  const commission = Math.max(0, pool - prize);
 
   return { prize, commission };
 };

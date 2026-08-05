@@ -9,10 +9,10 @@ import {
   forbiddenResponse,
 } from "../utils/apiResponse.js";
 import {
-  calculatePrize,
   validateContestAmount,
   expireOldOpenContests,
   cancelOtherOpenContests,
+  hasActiveUnsubmittedContest,
   createContestDocument,
   lockEntryFees,
   autoSettleIfPossible,
@@ -45,6 +45,31 @@ export const createContest = asyncHandler(async (req, res) => {
 
   // Clean up stale open contests
   await expireOldOpenContests();
+
+  // Running battle restriction: no new bets while an active contest is pending.
+  const hasActive = await hasActiveUnsubmittedContest(userId);
+  if (hasActive) {
+    return badRequestResponse(
+      res,
+      "You have an active battle. Upload its result before creating a new one.",
+      "ACTIVE_CONTEST_EXISTS"
+    );
+  }
+
+  // Unique amounts: both open bets must have different amounts.
+  const sameAmountContest = await Contest.findOne({
+    "players.userId": userId,
+    "players.role": "creator",
+    status: "open",
+    entryFee: amount,
+  }).select("contestId entryFee status");
+  if (sameAmountContest) {
+    return badRequestResponse(
+      res,
+      `You already have an open battle of ₹${amount}. Choose a different amount.`,
+      "SAME_AMOUNT_OPEN"
+    );
+  }
 
   // Max 2 open contests per user
   const searchingCount = await Contest.countDocuments({
@@ -118,6 +143,16 @@ export const joinContest = asyncHandler(async (req, res) => {
   const username = req.user.name || "Player";
   const { contestId } = req.params;
 
+  // Running battle restriction: no new bets while an active contest is pending.
+  const hasActive = await hasActiveUnsubmittedContest(userId);
+  if (hasActive) {
+    return badRequestResponse(
+      res,
+      "You have an active battle. Upload its result before joining a new one.",
+      "ACTIVE_CONTEST_EXISTS"
+    );
+  }
+
   const contest = await Contest.findOne({ contestId });
   if (!contest) {
     return notFoundResponse(res, "Contest not found", "CONTEST_NOT_FOUND");
@@ -165,6 +200,8 @@ export const joinContest = asyncHandler(async (req, res) => {
   contest.timerStartedAt = null;
   await contest.save();
 
+  // Auto-removal on join: cancel the creator's AND the joiner's other open battles.
+  await cancelOtherOpenContests(creator.userId, contest.contestId);
   await cancelOtherOpenContests(userId, contest.contestId);
 
   const joinFormatted = formatContestResponse(contest);

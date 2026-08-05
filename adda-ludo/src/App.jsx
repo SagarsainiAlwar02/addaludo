@@ -35,38 +35,6 @@ function ProtectedRoute({ children, isAuthenticated }) {
   return isAuthenticated ? children : <Navigate to="/login" replace />;
 }
 
-function AppStatusScreen({ title, message, showRetry = false, onRetry }) {
-  return (
-    // <div className="min-h-screen bg-[#f4f6f8] px-4 py-10">
-    //   <main className="mx-auto flex min-h-[calc(100vh-80px)] w-full max-w-[600px] items-center justify-center">
-    //     <section className="w-full rounded-lg border border-slate-200 bg-white p-6 text-center shadow-sm sm:p-8">
-    //       <div className="mx-auto mb-5 flex h-14 w-14 items-center justify-center rounded-full bg-cyan-50 text-2xl text-cyan-600">
-    //         <i className="fa-solid fa-screwdriver-wrench"></i>
-    //       </div>
-    //       <h1 className="mb-2 text-3xl font-extrabold text-slate-900">
-    //         {title}
-    //       </h1>
-    //       <p className="mx-auto max-w-[420px] text-sm leading-6 text-slate-600">
-    //         {message}
-    //       </p>
-    //       {showRetry && (
-    //         <button
-    //           type="button"
-    //           onClick={onRetry}
-    //           className="mt-6 rounded-md bg-slate-900 px-5 py-2.5 text-sm font-bold text-white shadow-sm active:scale-95"
-    //         >
-    //           Check Again
-    //         </button>
-    //       )}
-    //     </section>
-    //   </main>
-    // </div>
-    <div>
-
-    </div>
-  );
-}
-
 function MaintenancePage() {
   return (
     <>
@@ -172,34 +140,28 @@ function App() {
       return null;
     }
   });
-  const [maintenanceState, setMaintenanceState] = useState({
-    loading: true,
-    enabled: false,
-  });
+  const [maintenanceEnabled, setMaintenanceEnabled] = useState(false);
 
   const isAuthenticated = !!user && !!localStorage.getItem("token");
 
+  // Background maintenance check: the app (login page) renders immediately and
+  // this resolves in the background. If maintenance is on, we swap to the
+  // maintenance page after ~1s; otherwise the login page stays as it was.
   const checkMaintenanceMode = useCallback(async () => {
     try {
-      const response = await fetch(`${API_BASE}/maintenance`, {
-        cache: "no-store",
-      });
+      // Wait for the API response AND at least ~1s, so the login page is
+      // always shown first before any possible maintenance swap.
+      const [response] = await Promise.all([
+        fetch(`${API_BASE}/maintenance`, {
+          cache: "no-store",
+        }),
+        new Promise((resolve) => setTimeout(resolve, 1000)),
+      ]);
       const data = await response.json();
-
-      // wait 3 seconds for testing purposes
-      
-      await new Promise((resolve) => setTimeout(resolve, 3000));
-      setMaintenanceState({
-        loading: false,
-        enabled: data?.maintenanceMode === true,
-        enabled: data?.maintenanceMode === true,
-      });
+      setMaintenanceEnabled(data?.maintenanceMode === true);
     } catch (err) {
       console.log("Maintenance check failed:", err);
-      setMaintenanceState({
-        loading: false,
-        enabled: false,
-      });
+      setMaintenanceEnabled(false);
     }
   }, []);
 
@@ -245,17 +207,7 @@ function App() {
     </ProtectedRoute>
   );
 
-  if (maintenanceState.loading) {
-    return (
-      // <AppStatusScreen
-      //   title="Checking Status"
-      //   message="Please wait while we confirm the latest service status."
-      // />
-      <AppStatusScreen />
-    );
-  }
-
-  if (maintenanceState.enabled) {
+  if (maintenanceEnabled) {
     return <MaintenancePage />;
   }
 
