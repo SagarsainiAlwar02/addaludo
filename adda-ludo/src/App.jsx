@@ -1,3 +1,35 @@
+import "./App.css";
+
+function MaintenancePage() {
+  return (
+    <main className="maintenance-page">
+      <section className="maintenance-panel" aria-labelledby="maintenance-title">
+        <p className="maintenance-label">Temporary Notice</p>
+        <h1 id="maintenance-title">Site Under Maintenance</h1>
+
+        <div className="maintenance-message">
+          <p>The site menu is currently being updated.</p>
+          <p>Everything should be working again in 3-4 hours.</p>
+        </div>
+
+        <div className="maintenance-message maintenance-message-hindi" lang="hi">
+          <p>साइट पर अभी मेनू अपडेट किया जा रहा है।</p>
+          <p>यह 3-4 घंटे में ठीक हो जाएगा।</p>
+        </div>
+      </section>
+    </main>
+  );
+}
+
+function App() {
+  return <MaintenancePage />;
+}
+
+export default App;
+
+/*
+  Frontend routes are temporarily commented out while the maintenance page is active.
+
   import React, { useState, useEffect } from "react";
   import { BrowserRouter as Router, Routes, Route, Navigate } from "react-router-dom";
 
@@ -110,10 +142,7 @@
           <Route path="/room-code/:battleId" element={protectedPage(<RoomCode />)} />
           <Route path="/wallet" element={protectedPage(<Wallet />)} />
 
-          {/* ✅ Winning coin withdraw page */}
           <Route path="/withdraw" element={protectedPage(<Withdraw />)} />
-
-          {/* ✅ Referral earning redeem page */}
           <Route path="/redeem" element={protectedPage(<Redeem />)} />
 
           <Route path="/refer" element={protectedPage(<Refer />)} />
@@ -129,9 +158,4 @@
       </Router>
     );
   }
-
-  export default App;
-
-
-
-
+*/
