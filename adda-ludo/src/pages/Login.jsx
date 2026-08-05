@@ -180,7 +180,7 @@ export default function Login({ onLogin }) {
             </div>
 
             <button style={styles.button} onClick={sendOTP} disabled={loading}>
-              {loading ? "Sending..." : "Continue"}
+              {loading ? "Sending..." : "Send OTP"}
             </button>
 
             <p style={styles.note}>
