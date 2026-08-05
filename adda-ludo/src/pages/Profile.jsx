@@ -1,12 +1,10 @@
 import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import axios from "axios";
+import api, { getData, getError } from "../api.js";
 import { 
   History, Wallet, Gift, Headphones, LogOut, Pencil, Check, 
   Trophy, Gamepad2, ShieldCheck, ChevronRight, Phone
 } from "lucide-react";
-
-const API_URL = import.meta.env.VITE_API_URL || "http://localhost:5000/api";
 
 // 5 random characters generator function
 const generateRandomName = () => {
@@ -33,20 +31,20 @@ export default function Profile({ onLogout }) {
   useEffect(() => {
     const fetchProfile = async () => {
       try {
-        const token = localStorage.getItem("token");
-        const res = await axios.get(`${API_URL}/user/profile`, { 
-          headers: { Authorization: `Bearer ${token}` } 
-        });
+        const res = await api.get("/user/profile");
+        const data = getData(res);
+        const user = data?.user || {};
 
-        // Use database name if present; otherwise generate a 5-character random string (e.g., Hwhos)
-        const finalUserName = res.data.name || generateRandomName();
+        const finalUserName = user.name || generateRandomName();
+        const stats = data?.stats || {};
+        const wallet = data?.wallet || {};
 
         setProfile({ 
           userName: finalUserName, 
-          phone: res.data.phone || "", 
-          totalWon: res.data.totalWon || 0, 
-          matches: res.data.matches || 0, 
-          kycStatus: res.data.kycStatus || "not_submitted" 
+          phone: user.phone || "", 
+          totalWon: stats.totalWon || wallet.winnings || 0, 
+          matches: `${stats.wonMatches || 0}/${stats.totalMatches || 0}`, 
+          kycStatus: user.kycStatus || "not_submitted" 
         });
         
         setTempName(finalUserName);
@@ -64,18 +62,13 @@ export default function Profile({ onLogout }) {
     }
 
     try {
-      const token = localStorage.getItem("token");
-      await axios.patch(
-        `${API_URL}/user/profile/name`, 
-        { name: tempName }, 
-        { headers: { Authorization: `Bearer ${token}` } }
-      );
+      await api.patch("/user/profile", { name: tempName });
       
       setProfile(prev => ({ ...prev, userName: tempName }));
       setIsEditing(false);
       alert("Name Updated!");
     } catch (err) { 
-      alert("Update failed"); 
+      alert(getError(err)); 
     }
   };
 

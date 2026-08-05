@@ -1,12 +1,9 @@
 import React, { useEffect, useState } from "react";
-import axios from "axios";
 import { useNavigate } from "react-router-dom";
-
-const API_BASE = import.meta.env.VITE_API_URL || "http://localhost:5000/api";
+import api, { getData, getError } from "../api.js";
 
 export default function Withdraw() {
-  const navigate = useNavigate();
-  const token = localStorage.getItem("token");
+  const navigate = useNavigate();
 
   const MIN_WITHDRAW = 200;
 
@@ -26,53 +23,50 @@ export default function Withdraw() {
     ifsc: "",
   });
 
-  const authHeader = {
-    headers: { Authorization: `Bearer ${token}` },
-  };
+  const loadData = async () => {
+    try {
+      setPageLoading(true);
+      const res = await api.get("/user/profile");
+      const data = getData(res);
+      const w = data?.wallet || {};
+      setWinningBalance(Number(w.winnings || 0));
+    } catch (err) {
+      setMessage(getError(err));
+    } finally {
+      setPageLoading(false);
+    }
+  };
 
-  const loadData = async () => {
-    try {
-      setPageLoading(true);
-      const res = await axios.get(`${API_BASE}/redeem`, authHeader);
-      setWinningBalance(Number(res.data.winningBalance || 0));
-    } catch (err) {
-      setMessage(err.response?.data?.msg || "Withdraw data load nahi hua");
-    } finally {
-      setPageLoading(false);
-    }
-  };
+  useEffect(() => {
+    if (!localStorage.getItem("token")) {
+      navigate("/login");
+      return;
+    }
 
-  useEffect(() => {
-    if (!token) {
-      navigate("/login");
-      return;
-    }
-
-    loadData();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+    loadData();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const bankRequired = Number(amount) > 2000;
 
   const submitWithdraw = async () => {
     const withdrawAmount = Number(amount);
 
-    // ✅ KYC CHECK START
-    try {
-      const profileRes = await axios.get(`${API_BASE}/user/profile`, authHeader);
+    // KYC CHECK
+    try {
+      const profileRes = await api.get("/user/profile");
+      const profileData = getData(profileRes);
+      const kycStatus = profileData?.user?.kycStatus || "not_submitted";
 
-      const kycStatus = profileRes.data?.kycStatus || "not_submitted";
-
-      if (kycStatus !== "approved") {
-        alert("Withdraw ke liye KYC complete karna jaruri hai.");
-        navigate("/kyc");
-        return;
-      }
-    } catch (err) {
-      alert("KYC status check nahi hua. Please login again.");
-      return;
-    }
-    // ✅ KYC CHECK END
+      if (kycStatus !== "approved") {
+        alert("Withdraw ke liye KYC complete karna jaruri hai.");
+        navigate("/kyc");
+        return;
+      }
+    } catch (err) {
+      alert("KYC status check nahi hua. Please login again.");
+      return;
+    }
 
     if (!withdrawAmount) return setMessage("Amount enter karo");
 
@@ -124,17 +118,14 @@ export default function Withdraw() {
       setLoading(true);
       setMessage("");
 
-      const res = await axios.post(
-        `${API_BASE}/redeem/withdraw`,
-        {
-          amount: withdrawAmount,
-          method: finalMethod,
-          details: withdrawDetails,
-        },
-        authHeader
-      );
+      const res = await api.post("/transactions/withdraw", {
+        amount: withdrawAmount,
+        method: finalMethod,
+        details: withdrawDetails,
+      });
 
-      alert(res.data.msg || "Withdraw request submitted successfully");
+      const msg = res.data?.message || "Withdraw request submitted successfully";
+      alert(msg);
 
       setAmount("");
       setMethod("upi");
@@ -147,18 +138,19 @@ export default function Withdraw() {
         ifsc: "",
       });
 
-      await loadData();
-    } catch (err) {
-      if (err.response?.data?.kycRequired) {
-        alert(err.response?.data?.msg || "Withdraw ke liye KYC jaruri hai.");
-        navigate("/kyc");
-        return;
-      }
+      await loadData();
+    } catch (err) {
+      const errMsg = getError(err);
+      if (errMsg.toLowerCase().includes("kyc")) {
+        alert("Withdraw ke liye KYC jaruri hai.");
+        navigate("/kyc");
+        return;
+      }
 
-      setMessage(err.response?.data?.msg || "Withdraw failed");
-    } finally {
-      setLoading(false);
-    }
+      setMessage(errMsg);
+    } finally {
+      setLoading(false);
+    }
   };
 
   if (pageLoading) {

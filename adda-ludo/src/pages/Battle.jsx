@@ -1,11 +1,7 @@
 import React, { useEffect, useMemo, useState, useCallback } from "react";
-import axios from "axios";
 import { useNavigate } from "react-router-dom";
-import { io } from "socket.io-client";
-
-const API_BASE =
-  import.meta.env.VITE_API_URL?.replace(/\/$/, "") ||
-  "http://localhost:5000/api";
+import api, { getData, getError } from "../api.js";
+import socket from "../socket.js";
 
 const MAX_SEARCHING_BATTLES = 2;
 
@@ -40,7 +36,7 @@ const FAKE_OPPONENT_NAMES = [
 ];
 
 const FAKE_BATTLE_AMOUNTS = [
-3000, 650, 2000, 3500, 500, 1000, 150, 1400, 100, 1450, 3250, 2050, 1500, 600, 2000, 200, 100, 2250, 150, 7000, 5500, 950, 50, 1050
+  1600, 500, 1000, 200, 350, 4000, 100, 1450, 3250, 2050, 1500, 600, 2000, 200, 100, 2250, 150, 7000, 5500, 950, 50, 1050
 ];
 
 const randomFrom = (arr) => arr[Math.floor(Math.random() * arr.length)];
@@ -96,13 +92,6 @@ const Battle = () => {
     }
   }, []);
 
-  const authHeader = useCallback(
-    () => ({
-      headers: { Authorization: `Bearer ${token}` },
-    }),
-    [token]
-  );
-
   const calculatePrize = useCallback((amount) => calculatePrizeAmount(amount), []);
 
   const hasMyResult = useCallback(
@@ -113,22 +102,29 @@ const Battle = () => {
     [myId]
   );
 
+  const mapContest = (c) => ({
+    ...c,
+    battleId: c.contestId,
+    amount: c.entryFee,
+    createdBy: c.createdBy,
+    opponent: c.opponent,
+  });
+
   const fetchBattles = useCallback(async () => {
     if (!token) return;
 
     try {
-      axios.get(`${API_BASE}/battle/open`, authHeader()).then((openRes) => {
-        setOpenBattles(Array.isArray(openRes.data?.battles) ? openRes.data.battles : []);
-      }).catch(e => console.log("Open fetch err:", e.message));
+      const openRes = await api.get("/contests/open");
+      const openData = getData(openRes);
+      setOpenBattles(Array.isArray(openData?.contests) ? openData.contests.map(mapContest) : []);
 
-      axios.get(`${API_BASE}/battle/my`, authHeader()).then((myRes) => {
-        setMyBattles(Array.isArray(myRes.data?.battles) ? myRes.data.battles : []);
-      }).catch(e => console.log("My fetch err:", e.message));
-
+      const myRes = await api.get("/contests/my-contests");
+      const myData = getData(myRes);
+      setMyBattles(Array.isArray(myData?.contests) ? myData.contests.map(mapContest) : []);
     } catch (err) {
-      console.log("Fetch error:", err.response?.data || err.message);
+      console.log("Fetch error:", getError(err));
     }
-  }, [token, authHeader]);
+  }, [token]);
 
   useEffect(() => {
     if (!token) {
@@ -138,53 +134,23 @@ const Battle = () => {
 
     fetchBattles();
 
-    const socketUrl = import.meta.env.VITE_API_URL ? import.meta.env.VITE_API_URL.replace(/\/api$/, "") : "http://localhost:5000";
-    const socket = io(socketUrl, {
-      transports: ["websocket"],
-      upgrade: false
-    });
+    if (!socket.connected) {
+      socket.connect();
+    }
+    socket.emit("join-open-contests");
 
-    socket.on("newBattle", (newBattleData) => {
-      setOpenBattles((prev) => {
-        const exists = prev.some(b => b.battleId === newBattleData.battleId || b._id === newBattleData._id);
-        if (exists) return prev;
-        return [newBattleData, ...prev];
-      });
+    const handleContestUpdate = () => {
+      fetchBattles();
+    };
 
-      const creatorId = getCreatorId(newBattleData);
-      if (creatorId === myId) {
-        setMyBattles((prev) => {
-          if (prev.some(b => b.battleId === newBattleData.battleId)) return prev;
-          return [newBattleData, ...prev];
-        });
-      }
-    });
-
-    socket.on("battleUpdated", (updatedBattleData) => {
-      setOpenBattles((prev) =>
-        prev.map((b) => (b.battleId === updatedBattleData.battleId || b._id === updatedBattleData._id ? updatedBattleData : b))
-      );
-
-      const creatorId = getCreatorId(updatedBattleData);
-      const opponentId = getOpponentId(updatedBattleData);
-      if (creatorId === myId || opponentId === myId) {
-        setMyBattles((prev) => {
-          const exists = prev.some(b => b.battleId === updatedBattleData.battleId || b._id === updatedBattleData._id);
-          if (exists) {
-            return prev.map((b) => (b.battleId === updatedBattleData.battleId || b._id === updatedBattleData._id ? updatedBattleData : b));
-          }
-          return [updatedBattleData, ...prev];
-        });
-      }
-    });
-
-    socket.on("battleDeleted", (deletedBattleId) => {
-      setOpenBattles((prev) => prev.filter((b) => b.battleId !== deletedBattleId && b._id !== deletedBattleId));
-      setMyBattles((prev) => prev.filter((b) => b.battleId !== deletedBattleId && b._id !== deletedBattleId));
-    });
+    socket.on("contest-created", handleContestUpdate);
+    socket.on("contest-updated", handleContestUpdate);
+    socket.on("contest-deleted", handleContestUpdate);
 
     return () => {
-      socket.disconnect();
+      socket.off("contest-created", handleContestUpdate);
+      socket.off("contest-updated", handleContestUpdate);
+      socket.off("contest-deleted", handleContestUpdate);
     };
   }, [token, navigate, myId, fetchBattles]);
 
@@ -274,20 +240,8 @@ const Battle = () => {
         new Date(a.updatedAt || a.createdAt || 0)
     );
 
-    const merged = [...realRunningAndPendingBattles, ...FAKE_RUNNING_BATTLES];
-
-    // Logged in user ki active/pending battle top par rakhega
-    merged.sort((a, b) => {
-      const aIsMine = !a.isFake && (getCreatorId(a) === myId || getOpponentId(a) === myId);
-      const bIsMine = !b.isFake && (getCreatorId(b) === myId || getOpponentId(b) === myId);
-
-      if (aIsMine && !bIsMine) return -1;
-      if (!aIsMine && bIsMine) return 1;
-      return 0;
-    });
-
-    return merged;
-  }, [allBattles, myId]);
+    return [...realRunningAndPendingBattles, ...FAKE_RUNNING_BATTLES];
+  }, [allBattles]);
 
   const validateAmount = () => {
     const amt = Number(betAmount);
@@ -325,6 +279,8 @@ const Battle = () => {
 
     const amt = Number(betAmount);
 
+    // SINGLE USER SAME AMOUNT VALIDATION
+    // Check if the current user already has an active open battle with the exact same amount
     const isSameAmountByMe = mySearchingBattles.some(
       (battle) => Number(battle.amount) === amt
     );
@@ -336,19 +292,15 @@ const Battle = () => {
 
     try {
       setActionLoading(true);
-      await axios.post(`${API_BASE}/battle/create`, { amount: amt }, authHeader());
+      await api.post("/contests/create", { amount: amt });
       setBetAmount("");
       fetchBattles();
     } catch (err) {
-      const errMsg = err.response?.data?.msg || "";
-      if (
-        errMsg.toLowerCase().includes("insufficient") ||
-        errMsg.toLowerCase().includes("balance") ||
-        errMsg.toLowerCase().includes("fund")
-      ) {
+      const errMsg = getError(err).toLowerCase();
+      if (errMsg.includes("insufficient") || errMsg.includes("balance") || errMsg.includes("fund")) {
         alert("Insufficient balance");
-      } else if (errMsg) {
-        alert(errMsg);
+      } else {
+        alert(getError(err));
       }
     } finally {
       setActionLoading(false);
@@ -363,25 +315,16 @@ const Battle = () => {
 
     try {
       setActionLoading(true);
-      const res = await axios.post(`${API_BASE}/battle/join/${battleId}`, {}, authHeader());
-      const joinedId = res.data?.battle?.battleId || battleId;
+      await api.post(`/contests/join/${battleId}`);
 
       fetchBattles();
-      navigate(`/room-code/${joinedId}`);
+      navigate(`/room-code/${battleId}`);
     } catch (err) {
-      if (err.response?.data?.dummy) {
-        fetchBattles();
-        return;
-      }
-      const errMsg = err.response?.data?.msg || "";
-      if (
-        errMsg.toLowerCase().includes("insufficient") ||
-        errMsg.toLowerCase().includes("balance") ||
-        errMsg.toLowerCase().includes("fund")
-      ) {
+      const errMsg = getError(err).toLowerCase();
+      if (errMsg.includes("insufficient") || errMsg.includes("balance") || errMsg.includes("fund")) {
         alert("Insufficient balance");
-      } else if (errMsg) {
-        alert(errMsg);
+      } else {
+        alert(getError(err));
       }
     } finally {
       setActionLoading(false);
@@ -391,13 +334,12 @@ const Battle = () => {
   const startBattle = async (battleId) => {
     try {
       setActionLoading(true);
-      const res = await axios.post(`${API_BASE}/battle/start/${battleId}`, {}, authHeader());
-      const startedId = res.data?.battle?.battleId || battleId;
+      await api.post(`/contests/accept/${battleId}`);
 
       fetchBattles();
-      navigate(`/room-code/${startedId}`);
+      navigate(`/room-code/${battleId}`);
     } catch (err) {
-      console.log("Start error:", err.message);
+      console.log("Start error:", getError(err));
     } finally {
       setActionLoading(false);
     }
@@ -406,10 +348,10 @@ const Battle = () => {
   const rejectBattle = async (battleId) => {
     try {
       setActionLoading(true);
-      await axios.post(`${API_BASE}/battle/reject/${battleId}`, {}, authHeader());
+      await api.post(`/contests/reject/${battleId}`);
       fetchBattles();
     } catch (err) {
-      console.log("Reject error:", err.message);
+      console.log("Reject error:", getError(err));
     } finally {
       setActionLoading(false);
     }
@@ -418,10 +360,10 @@ const Battle = () => {
   const cancelBattle = async (battleId) => {
     try {
       setActionLoading(true);
-      await axios.patch(`${API_BASE}/battle/cancel/${battleId}`, {}, authHeader());
+      await api.post(`/contests/cancel/${battleId}`);
       fetchBattles();
     } catch (err) {
-      console.log("Cancel error:", err.message);
+      console.log("Cancel error:", getError(err));
     } finally {
       setActionLoading(false);
     }
@@ -507,7 +449,7 @@ const Battle = () => {
   return (
     <div className="min-h-screen bg-[#eef3ff] px-3 pb-28 pt-14 text-slate-950">
       <div className="mx-auto max-w-md">
-        {/* Banner Box - Original Style */}
+        {/* Banner Box */}
         <div className="mb-4 overflow-hidden rounded-2xl bg-gradient-to-br from-[#111827] via-[#202b65] to-[#06b6d4] p-2 shadow-md">
           <div className="flex items-center justify-center pt-1 pb-1">
             <p className="text-[10px] font-black uppercase tracking-[0.25em] text-cyan-100">
@@ -516,7 +458,7 @@ const Battle = () => {
           </div>
 
           <div className="mt-1 rounded-xl bg-black/30 px-3 py-2 text-center text-[11px] font-bold leading-relaxed text-white ring-1 ring-white/10 shadow-inner">
-            ADDA LUDO में आपका स्वागत है 👉 Fast withdrawal ⏩ ( 2-3 Min ) .Thanks 🙏!
+            ADDA LUDO में आपका स्वागत है, सबसे Fast ⏩ विथड्रॉ है, 👉 मात्र 2-3 Min में, 👈 आपका विश्वास बनाये रखे 🙏 whatsapp support 8239092073
           </div>
         </div>
 
@@ -524,7 +466,9 @@ const Battle = () => {
           <div className="mb-3 flex items-center justify-between">
             <div>
               <h2 className="text-base font-bold">Create Battle</h2>
-              <p className="text-[11px] font-medium text-slate-400"></p>
+              <p className="text-[11px] font-medium text-slate-400">
+              
+              </p>
             </div>
 
             <button className="rounded-md bg-indigo-600 px-3 py-1.5 text-[11px] font-bold text-white">

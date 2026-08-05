@@ -1,8 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import axios from "axios";
-
-const API_BASE = import.meta.env.VITE_API_URL || "http://localhost:5000/api";
+import api, { getData } from "../api.js";
 
 export default function HeaderMain() {
   const navigate = useNavigate();
@@ -12,38 +10,30 @@ export default function HeaderMain() {
   useEffect(() => {
     const fetchBalances = async () => {
       try {
-        const token = localStorage.getItem("token");
-        if (!token) {
+        if (!localStorage.getItem("token")) {
           setBalance("0.00");
           setReferBalance("0.00");
           return;
         }
 
-        const headers = {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        };
-
-        const [walletRes, redeemRes] = await Promise.all([
-          axios.get(`${API_BASE}/wallet`, headers),
-          axios.get(`${API_BASE}/redeem`, headers),
+        const [profileRes, referralRes] = await Promise.all([
+          api.get("/user/profile"),
+          api.get("/user/referrals"),
         ]);
 
-        // ✅ FIX: bonus ko dobara add nahi karna
-        // wallet.balance me admin bonus already add ho chuka hota hai
+        const w = getData(profileRes)?.wallet || {};
         const total =
-          Number(walletRes.data.balance || 0) +
-          Number(walletRes.data.winnings || 0) +
-          Number(walletRes.data.bonus || 0);
+          Number(w.balance || 0) +
+          Number(w.winnings || 0) +
+          Number(w.bonus || 0);
 
-        const referralAmount =
-          Number(redeemRes.data?.referralBalance ?? redeemRes.data?.referBalance ?? 0);
+        const r = getData(referralRes) || {};
+        const referralAmount = Number(r.referralBalance || 0);
 
         setBalance(total.toFixed(2));
         setReferBalance(referralAmount.toFixed(2));
       } catch (err) {
-        console.log("HEADER WALLET ERROR:", err.response?.data || err.message);
+        console.log("HEADER WALLET ERROR:", err);
         setBalance("0.00");
         setReferBalance("0.00");
       }

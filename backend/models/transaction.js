@@ -23,11 +23,11 @@ const transactionSchema = new mongoose.Schema(
         "game_entry",
         "game_win",
         "refund",
-        "admin_adjust",
         "bonus",
         "penalty",
         "referral_commission",
         "referral_redeem",
+        "admin_adjust",
       ],
       required: true,
       index: true,
@@ -35,25 +35,62 @@ const transactionSchema = new mongoose.Schema(
 
     status: {
       type: String,
-      enum: ["pending", "success", "failed"],
+      enum: ["pending", "success", "failed", "rejected"],
       default: "success",
       index: true,
     },
 
-    note: { type: String, default: "" },
+    direction: {
+      type: String,
+      enum: ["in", "out", null],
+      default: null,
+    },
 
-    roomId: {
+    note: {
+      type: String,
+      default: "",
+    },
+
+    adminNote: {
+      type: String,
+      default: "",
+    },
+
+    contestId: {
       type: String,
       default: null,
       index: true,
     },
-        uniqueTransactionKey: {
+
+    paymentMethod: {
       type: String,
-      unique: true,
-      sparse: true,
+      enum: ["qr", "upi_bank", null],
+      default: null,
     },
 
-    balanceAfter: { type: Number, default: null },
+    utr: {
+      type: String,
+      trim: true,
+      sparse: true,
+      unique: true,
+      index: true,
+    },
+
+    screenshot: {
+      type: String,
+      default: "",
+    },
+
+    withdrawMethod: {
+      type: String,
+      enum: ["bank", "upi", "qr", null],
+      default: null,
+    },
+
+    details: {
+      type: Object,
+      default: {},
+    },
 
     approvedBy: {
       type: mongoose.Schema.Types.ObjectId,
@@ -62,23 +99,40 @@ const transactionSchema = new mongoose.Schema(
       index: true,
     },
 
-    approvedAt: { type: Date, default: null },
+    approvedAt: {
+      type: Date,
+      default: null,
+    },
+
+    uniqueTransactionKey: {
+      type: String,
+      sparse: true,
+      unique: true,
+      index: true,
+    },
+
+    balanceAfter: {
+      type: Number,
+      default: null,
+    },
   },
   { timestamps: true }
 );
 
-/* SAME battle par winner payment sirf 1 baar */
+// Common query indexes
+transactionSchema.index({ userId: 1, status: 1 });
+transactionSchema.index({ type: 1, status: 1, createdAt: -1 });
+// Prevent duplicate successful game_win for the same contest
 transactionSchema.index(
-  { roomId: 1, type: 1, status: 1 },
+  { contestId: 1, type: 1, status: 1 },
   {
     unique: true,
     partialFilterExpression: {
       type: "game_win",
       status: "success",
-      roomId: { $type: "string" },
+      contestId: { $type: "string" },
     },
   }
 );
-
 
 export default mongoose.models.Transaction || mongoose.model("Transaction", transactionSchema);

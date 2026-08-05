@@ -1,8 +1,6 @@
 import React, { useEffect, useMemo, useState } from "react";
-import axios from "axios";
 import { useNavigate } from "react-router-dom";
-
-const API_URL = import.meta.env.VITE_API_URL || "http://localhost:5000/api";
+import api, { getData, getError } from "../api.js";
 
 /* ---------------- design tokens ---------------- */
 const COLORS = {
@@ -298,25 +296,21 @@ export default function Kyc() {
   useEffect(() => {
     const fetchKycStatus = async () => {
       try {
-        const token = localStorage.getItem("token");
         const storedUser = JSON.parse(localStorage.getItem("user") || "{}");
 
-        if (!token) {
+        if (!localStorage.getItem("token")) {
           setKycStatus(storedUser.kycStatus || "not_submitted");
           return;
         }
 
-        const res = await axios.get(`${API_URL}/user/profile`, {
-          headers: { Authorization: `Bearer ${token}` },
-        });
-
-        const user = res.data?.user || res.data || {};
+        const res = await api.get("/user/profile");
+        const data = getData(res);
+        const user = data?.user || {};
         const status = user.kycStatus || "not_submitted";
         setKycStatus(status);
 
         localStorage.setItem("user", JSON.stringify({ ...storedUser, ...user, kycStatus: status }));
       } catch (err) {
-        console.log("KYC status fetch error:", err.response?.data || err.message);
         const storedUser = JSON.parse(localStorage.getItem("user") || "{}");
         setKycStatus(storedUser.kycStatus || "not_submitted");
       } finally {
@@ -379,25 +373,15 @@ export default function Kyc() {
 
     setLoading(true);
     try {
-      const token = localStorage.getItem("token");
-      if (!token) {
-        alert("Please login again");
-        navigate("/login");
-        return;
-      }
+      const res = await api.post("/user/kyc", {
+        name: form.name.trim(),
+        dob: form.dob,
+        docType: form.docType,
+        docNumber: form.docNumber.replace(/\s/g, ""),
+      });
 
-      const res = await axios.post(
-        `${API_URL}/kyc/submit`,
-        {
-          name: form.name.trim(),
-          dob: form.dob,
-          docType: form.docType,
-          docNumber: form.docNumber.replace(/\s/g, ""),
-        },
-        { headers: { Authorization: `Bearer ${token}` } }
-      );
-
-      const newStatus = res.data?.kycStatus || "pending";
+      const data = getData(res);
+      const newStatus = data?.kycStatus || "pending";
       setKycStatus(newStatus);
       setSuccess(true);
 
@@ -407,8 +391,7 @@ export default function Kyc() {
       setForm({ name: "", dob: "", docType: "aadhar", docNumber: "" });
       setTouched({});
     } catch (error) {
-      console.log("KYC submit error:", error.response?.data || error.message);
-      alert(error.response?.data?.msg || "Something went wrong!");
+      alert(getError(error));
     } finally {
       setLoading(false);
     }
@@ -462,7 +445,7 @@ export default function Kyc() {
           <Seal progress={progress} color={COLORS.brand} icon={<ShieldIcon />} />
           <div>
             <span style={styles.eyebrow}>Identity verification</span>
-            <h2 style={styles.headTitle}>Offline KYC </h2>
+            <h2 style={styles.headTitle}>Confirm it's you</h2>
             <p style={styles.headDesc}>Takes under a minute. Unlocks withdrawals and premium matches.</p>
           </div>
         </div>

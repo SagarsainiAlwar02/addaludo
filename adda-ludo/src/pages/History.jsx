@@ -1,7 +1,5 @@
 import React, { useEffect, useState, memo } from "react";
-import axios from "axios";
-
-const API_BASE = import.meta.env.VITE_API_URL || "http://localhost:5000/api";
+import api, { getData, getError } from "../api.js";
 
 // Fast dynamic styles tracking lookup map
 const STATUS_STYLES = {
@@ -108,26 +106,26 @@ export default function History() {
   const fetchHistory = async () => {
     try {
       setLoading(true);
-      const token = localStorage.getItem("token");
-      if (!token) return;
+      if (!localStorage.getItem("token")) return;
 
-      const res = await axios.get(`${API_BASE}/battle/my`, {
-        headers: { Authorization: `Bearer ${token}` }
-      });
+      const res = await api.get("/contests/my-contests");
+      const data = getData(res);
+      const allMatches = (data?.contests || []).map((c) => ({
+        ...c,
+        battleId: c.contestId,
+        amount: c.entryFee,
+      }));
 
-      const allMatches = res.data.battles || [];
-      
-      // 🔥 USER LOGIC FIX: Filter out cancelled matches where opponent didn't even join
       const filteredMatches = allMatches.filter(battle => {
         if (battle.status === "cancelled" && !battle.opponent) {
-          return false; // Chhupa do isko list se
+          return false;
         }
-        return true; // Baaki saare valid matches dikhao
+        return true;
       });
 
       setBattles(filteredMatches);
     } catch (err) {
-      console.log("History load error:", err.response?.data || err.message);
+      console.log("History load error:", getError(err));
     } finally {
       setLoading(false);
     }

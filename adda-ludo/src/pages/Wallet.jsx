@@ -1,14 +1,11 @@
 import React, { useEffect, useState } from "react";
-import axios from "axios";
 import { useNavigate } from "react-router-dom";
+import api, { getData, getError } from "../api.js";
 
-const API_BASE = import.meta.env.VITE_API_URL || "http://localhost:5000/api";
-const SERVER_BASE = API_BASE.replace(/\/api$/, "");
+const SERVER_BASE = (import.meta.env.VITE_API_URL || "http://localhost:5000/api").replace(/\/api$/, "");
 
 export default function Wallet() {
   const navigate = useNavigate();
-  const token = localStorage.getItem("token");
-
   const MIN_AMOUNT = 100;
   const MAX_AMOUNT = 100000;
 
@@ -41,58 +38,59 @@ export default function Wallet() {
   
   const [selectedMethod, setSelectedMethod] = useState(""); 
 
-  const authHeader = {
-    headers: { Authorization: `Bearer ${token}` },
-  };
-
   useEffect(() => {
-    if (!token) navigate("/login");
-  }, [token, navigate]);
+    if (!localStorage.getItem("token")) navigate("/login");
+  }, [navigate]);
 
   const loadWallet = async () => {
-    const res = await axios.get(`${API_BASE}/wallet`, authHeader);
+    const res = await api.get("/user/profile");
+    const data = getData(res);
+    const w = data?.wallet || {};
     setWallet({
-      balance: res.data.balance || 0,
-      winnings: res.data.winnings || 0,
-      bonus: res.data.bonus || 0,
-      locked: res.data.locked || 0,
+      balance: w.balance || 0,
+      winnings: w.winnings || 0,
+      bonus: w.bonus || 0,
+      locked: w.locked || 0,
     });
   };
 
-  // KYC Status Fetch Function
   const loadKycStatus = async () => {
     try {
-      const res = await axios.get(`${API_BASE}/user/profile`, authHeader);
-      setKycStatus(res.data?.kycStatus || "not_submitted");
+      const res = await api.get("/user/profile");
+      const data = getData(res);
+      setKycStatus(data?.user?.kycStatus || "not_submitted");
     } catch (err) {
-      console.log("KYC status check error:", err.response?.data || err.message);
+      console.log("KYC status check error:", getError(err));
     }
   };
 
   const loadDeposits = async () => {
     try {
-      const res = await axios.get(`${API_BASE}/deposit/my`, authHeader);
-      setDeposits(res.data.deposits || []);
+      const res = await api.get("/transactions/deposits");
+      const data = getData(res);
+      setDeposits(data?.deposits || []);
     } catch (err) {
-      console.log("Deposit load error:", err.response?.data || err.message);
+      console.log("Deposit load error:", getError(err));
     }
   };
 
   const loadWithdraws = async () => {
     try {
-      const res = await axios.get(`${API_BASE}/redeem/withdraw-history`, authHeader);
-      setWithdraws(res.data.withdraws || []);
+      const res = await api.get("/transactions/withdraws");
+      const data = getData(res);
+      setWithdraws(data?.withdraws || []);
     } catch (err) {
-      console.log("Withdraw load error:", err.response?.data || err.message);
+      console.log("Withdraw load error:", getError(err));
     }
   };
 
   const loadPaymentSettings = async () => {
     try {
-      const res = await axios.get(`${API_BASE}/admin/payment-settings`);
-      setPayment(res.data);
+      const res = await api.get("/payment/settings");
+      const data = getData(res);
+      setPayment(data?.settings || data);
     } catch (err) {
-      console.log("Payment setting load error:", err.response?.data || err.message);
+      console.log("Payment setting load error:", getError(err));
     }
   };
 
@@ -194,16 +192,15 @@ export default function Wallet() {
       const formData = new FormData();
       formData.append("amount", addAmount);
       formData.append("utr", utr.trim());
+      formData.append("paymentMethod", selectedMethod || "qr");
       formData.append("screenshot", screenshot);
 
-      const res = await axios.post(`${API_BASE}/deposit/create`, formData, {
-        headers: {
-          Authorization: `Bearer ${token}`,
-          "Content-Type": "multipart/form-data",
-        },
+      const res = await api.post("/transactions/deposit", formData, {
+        headers: { "Content-Type": "multipart/form-data" },
       });
 
-      alert(res.data.msg || "Deposit request submitted");
+      const msg = res.data?.message || "Deposit request submitted";
+      alert(msg);
       setShowPayment(false);
       setAmount("");
       setUtr("");
@@ -211,7 +208,7 @@ export default function Wallet() {
       setSelectedMethod("");
       await Promise.all([loadDeposits(), loadWallet()]);
     } catch (err) {
-      setError(err.response?.data?.msg || "Deposit request failed");
+      setError(getError(err));
     } finally {
       setLoading(false);
     }
@@ -417,6 +414,8 @@ export default function Wallet() {
                   {bank?.ifsc && <CopyRow label="IFSC Code" value={bank.ifsc} onCopy={copyText} />}
                 </div>
               )}
+
+              {error && <div style={styles.error}>{error}</div>}
 
               {/* PROOF UPLOADER FLOW */}
               {selectedMethod && (
