@@ -3,33 +3,13 @@
   background: #0f172a;
   min-height: 100vh;
   color: white;
+  overflow-x: clip;
 }
 
-/* TABS */
-.tabs {
-  display: flex;
-  gap: 10px;
-  margin-bottom: 20px;
-}
-
-.tabs button {
-  padding: 10px 18px;
-  border: none;
-  border-radius: 8px;
-  background: #1e293b;
-  color: #cbd5f5;
-  cursor: pointer;
-  transition: 0.3s;
-}
-
-.tabs button:hover {
-  background: #3b82f6;
-  color: white;
-}
-
-.active-tab {
-  background: #2563eb !important;
-  color: white !important;
+@media (max-width: 768px) {
+  .payment-container {
+    padding: 18px;
+  }
 }
 
 /* FORM */
@@ -86,8 +66,39 @@
   display: block;
   margin-bottom: 10px;
   padding: 8px;
-  width: 250px;
+  width: 100%;
+  max-width: 100%;
   border-radius: 6px;
   border: none;
   outline: none;
+  box-sizing: border-box;
+}
+
+/* UPI list rows */
+.upi-row {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 10px;
+  align-items: stretch;
+}
+
+.upi-row input {
+  flex: 1;
+  min-width: 0;
+  margin-bottom: 0;
+}
+
+.upi-remove {
+  width: 55px;
+  flex-shrink: 0;
+  border: none;
+  border-radius: 8px;
+  background: #ef4444;
+  color: #fff;
+  font-weight: 900;
+  cursor: pointer;
+}
+
+.upi-remove:hover {
+  background: #dc2626;
 }

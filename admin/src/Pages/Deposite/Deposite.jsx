@@ -1,11 +1,13 @@
 import React, { useEffect, useState } from "react";
+import { useSearchParams } from "react-router-dom";
 import API, { getData, getError, serverBase } from "../../api";
 import "./Deposite.css";
 
 const ITEMS_PER_PAGE = 40;
 
 const Deposit = () => {
-  const [tab, setTab] = useState("request");
+  const [searchParams] = useSearchParams();
+  const tab = searchParams.get("tab") || "request";
   const [deposits, setDeposits] = useState([]);
   const [loading, setLoading] = useState(false);
   const [searchMobile, setSearchMobile] = useState("");
@@ -112,22 +114,6 @@ const Deposit = () => {
     <div className="deposit-container">
       <h1>Deposit</h1>
 
-      <div className="tabs">
-        <button
-          className={tab === "request" ? "active-tab" : ""}
-          onClick={() => setTab("request")}
-        >
-          Pending Deposit ({requests.length})
-        </button>
-
-        <button
-          className={tab === "history" ? "active-tab" : ""}
-          onClick={() => setTab("history")}
-        >
-          Deposit History ({history.length})
-        </button>
-      </div>
-
       <div className="toolbar-row">
         <div className="search-box">
           <input
@@ -196,18 +182,18 @@ const Deposit = () => {
 
                 return (
                   <tr key={item._id}>
-                    <td className="mono">{item._id?.slice(-6)}</td>
-                    <td>{user.name || "-"}</td>
-                    <td>{user.phone || "-"}</td>
-                    <td className="amount-cell">₹{item.amount || 0}</td>
-                    <td>
+                    <td className="mono" data-label="ID">{item._id?.slice(-6)}</td>
+                    <td data-label="Name">{user.name || "-"}</td>
+                    <td data-label="Mobile">{user.phone || "-"}</td>
+                    <td className="amount-cell" data-label="Amount">₹{item.amount || 0}</td>
+                    <td data-label="Type">
                       <span className={`type-badge ${isBonus ? "bonus" : "deposit"}`}>
                         {isBonus ? "Bonus" : "Deposit"}
                       </span>
                     </td>
-                    <td className="mono">{item.utr || "-"}</td>
+                    <td className="mono" data-label="UTR">{item.utr || "-"}</td>
 
-                    <td>
+                    <td data-label="Screenshot">
                       {screenshotUrl ? (
                         <a href={screenshotUrl} target="_blank" rel="noreferrer">
                           <img
@@ -224,19 +210,19 @@ const Deposit = () => {
                       )}
                     </td>
 
-                    <td>
+                    <td data-label="Status">
                       <span className={`status-badge ${item.status}`}>
                         {item.status}
                       </span>
                     </td>
 
-                    <td>
+                    <td data-label="Approved / Rejected By">
                       {admin.name
                         ? `${admin.name} (${admin.role || "admin"})`
                         : "-"}
                     </td>
 
-                    <td>
+                    <td data-label="Action Date">
                       {item.approvedAt
                         ? new Date(item.approvedAt).toLocaleString()
                         : item.createdAt
@@ -245,7 +231,7 @@ const Deposit = () => {
                     </td>
 
                     {tab === "request" && (
-                      <td>
+                      <td data-label="Action">
                         <div className="action-buttons">
                           <button
                             className="approve"

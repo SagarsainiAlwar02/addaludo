@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import { useSearchParams } from "react-router-dom";
 import "./Users.css";
 import API, { getData, getError } from "../../api";
 
@@ -13,7 +14,9 @@ const getTotalBalance = (user) => {
 };
 
 const Users = () => {
-  const [filter, setFilter] = useState("all");
+  const [searchParams] = useSearchParams();
+  const filter = searchParams.get("filter") || "all";
+
   const [search, setSearch] = useState("");
   const [selectedUser, setSelectedUser] = useState(null);
   const [users, setUsers] = useState([]);
@@ -126,7 +129,6 @@ const Users = () => {
     }
   };
 
-
   return (
     <div className="users-container">
       <h1>Users</h1>
@@ -139,36 +141,6 @@ const Users = () => {
         className="search-input"
       />
 
-      <div className="filters">
-        <button
-          className={filter === "all" ? "active-filter" : ""}
-          onClick={() => setFilter("all")}
-        >
-          All Users
-        </button>
-
-        <button
-          className={filter === "active" ? "active-filter" : ""}
-          onClick={() => setFilter("active")}
-        >
-          Active
-        </button>
-
-        <button
-          className={filter === "blocked" ? "active-filter" : ""}
-          onClick={() => setFilter("blocked")}
-        >
-          Blocked
-        </button>
-
-        <button
-          className={filter === "mismatch" ? "active-filter" : ""}
-          onClick={() => setFilter("mismatch")}
-        >
-          Mismatch
-        </button>
-      </div>
-
       {filteredUsers.length > 0 && (
         <div className="result-count">
           Showing{" "}
@@ -178,8 +150,6 @@ const Users = () => {
           of <strong>{filteredUsers.length}</strong> users
         </div>
       )}
-
-      <p className="scroll-hint">← Swipe left/right to see full table →</p>
 
       <div className="table-scroll">
         <table className="user-table">
@@ -203,11 +173,11 @@ const Users = () => {
 
                 return (
                   <tr key={user._id}>
-                    <td className="user-id">{user._id}</td>
-                    <td>{user.name || "Player"}</td>
-                    <td>{phone}</td>
-                    <td>{user.referralCode || "-"}</td>
-                    <td>
+                    <td className="user-id" data-label="ID">{user._id}</td>
+                    <td data-label="Name">{user.name || "Player"}</td>
+                    <td data-label="Mobile">{phone}</td>
+                    <td data-label="Referral">{user.referralCode || "-"}</td>
+                    <td data-label="Balance">
                       <div className="balance-line">
                         Balance: ₹{Number(user?.wallet?.balance || 0)}
                       </div>
@@ -215,14 +185,12 @@ const Users = () => {
                         Winning: ₹{Number(user?.wallet?.winnings || 0)}
                       </div>
                     </td>
-                    <td>
+                    <td data-label="Status">
                       <span className={`status-badge ${status}`}>{status}</span>
                     </td>
 
-                    <td>
-
-
-                     <div className="action-buttons">
+                    <td data-label="Action">
+                      <div className="action-buttons">
                         <button
                           className="view"
                           onClick={() => setSelectedUser(user)}
@@ -251,8 +219,6 @@ const Users = () => {
                           Delete
                         </button>
                       </div>
-
-
                     </td>
                   </tr>
                 );

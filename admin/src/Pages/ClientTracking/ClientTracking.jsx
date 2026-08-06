@@ -165,14 +165,14 @@ export default function ClientTracking() {
             <tbody>
               {accounts.map((a) => (
                 <tr key={a.userId}>
-                  <td className="ct-td">{a.name || "-"}</td>
-                  <td className="ct-td">{a.phone}</td>
-                  <td className="ct-td">{a.matchesPlayed}</td>
-                  <td className="ct-td ct-green">{a.wins}</td>
-                  <td className="ct-td ct-red">{a.losses}</td>
-                  <td className="ct-td">{fmt(a.totalEntry)}</td>
-                  <td className="ct-td">{fmt(a.totalWinnings)}</td>
-                  <td className={`ct-td ${a.net >= 0 ? "ct-green" : "ct-red"}`}>
+                  <td className="ct-td" data-label="Name">{a.name || "-"}</td>
+                  <td className="ct-td" data-label="Mobile">{a.phone}</td>
+                  <td className="ct-td" data-label="Matches">{a.matchesPlayed}</td>
+                  <td className="ct-td ct-green" data-label="Wins">{a.wins}</td>
+                  <td className="ct-td ct-red" data-label="Losses">{a.losses}</td>
+                  <td className="ct-td" data-label="Entry Paid">{fmt(a.totalEntry)}</td>
+                  <td className="ct-td" data-label="Winnings">{fmt(a.totalWinnings)}</td>
+                  <td className={`ct-td ${a.net >= 0 ? "ct-green" : "ct-red"}`} data-label="Net">
                     {a.net >= 0 ? "+" : ""}{fmt(a.net)}
                   </td>
                 </tr>

@@ -1,11 +1,13 @@
 import React, { useEffect, useState } from "react";
+import { useSearchParams } from "react-router-dom";
 import "./Withdraw.css";
 import API, { getData, getError } from "../../api";
 
 const ITEMS_PER_PAGE = 40;
 
 const Withdrawal = () => {
-  const [tab, setTab] = useState("request");
+  const [searchParams] = useSearchParams();
+  const tab = searchParams.get("tab") || "request";
   const [selectedUser, setSelectedUser] = useState(null);
   const [withdraws, setWithdraws] = useState([]);
   const [loading, setLoading] = useState(false);
@@ -36,20 +38,26 @@ const Withdrawal = () => {
 
   const approve = async (item) => {
     try {
+      // Optimistically remove the row so it disappears from the pending list instantly
+      setWithdraws((prev) => prev.filter((w) => w._id !== item._id));
       await API.patch(`/admin/withdraws/${item._id}/approve`);
       alert("Withdraw approved");
-      fetchWithdraws();
     } catch (err) {
+      fetchWithdraws(); // restore the list if the API call failed
       alert(getError(err));
     }
   };
 
   const reject = async (item) => {
     try {
-      await API.patch(`/admin/withdraws/${item._id}/reject`);
+      // Optimistically remove the row so it disappears from the pending list instantly
+      setWithdraws((prev) => prev.filter((w) => w._id !== item._id));
+      await API.patch(`/admin/withdraws/${item._id}/reject`, {
+        adminNote: "Rejected from admin panel",
+      });
       alert("Withdraw rejected");
-      fetchWithdraws();
     } catch (err) {
+      fetchWithdraws(); // restore the list if the API call failed
       alert(getError(err));
     }
   };
@@ -101,21 +109,6 @@ const Withdrawal = () => {
   return (
     <div className="withdraw-container">
       <h1>Withdrawal</h1>
-
-      <div className="tabs">
-        <button
-          className={tab === "request" ? "active-tab" : ""}
-          onClick={() => setTab("request")}
-        >
-          Pending Withdraw ({requests.length})
-        </button>
-        <button
-          className={tab === "history" ? "active-tab" : ""}
-          onClick={() => setTab("history")}
-        >
-          Withdraw History ({history.length})
-        </button>
-      </div>
 
       <div className="toolbar-row">
         <div className="search-box">
@@ -175,33 +168,33 @@ const Withdrawal = () => {
 
                 return (
                   <tr key={item._id}>
-                    <td className="mono">{item._id?.slice(-6)}</td>
-                    <td>{user.name || "User"}</td>
-                    <td>{user.phone || "-"}</td>
-                    <td className="amount-cell">₹{item.amount || 0}</td>
-                    <td>
+                    <td className="mono" data-label="ID">{item._id?.slice(-6)}</td>
+                    <td data-label="User">{user.name || "User"}</td>
+                    <td data-label="Mobile">{user.phone || "-"}</td>
+                    <td className="amount-cell" data-label="Amount">₹{item.amount || 0}</td>
+                    <td data-label="Method">
                       <span className="method-badge">
                         {item.withdrawMethod || item.method || "Withdraw"}
                       </span>
                     </td>
-                    <td>
+                    <td data-label="Status">
                       <span className={`status-badge ${item.status}`}>
                         {item.status}
                       </span>
                     </td>
-                    <td>
+                    <td data-label="Approved / Rejected By">
                       {admin.name
                         ? `${admin.name} (${admin.role || "admin"})`
                         : "-"}
                     </td>
-                    <td>
+                    <td data-label="Action Date">
                       {item.approvedAt
                         ? new Date(item.approvedAt).toLocaleString()
                         : item.createdAt
                         ? new Date(item.createdAt).toLocaleString()
                         : "-"}
                     </td>
-                    <td>
+                    <td data-label="View">
                       <button
                         className="view"
                         onClick={() => setSelectedUser(item)}
@@ -210,7 +203,7 @@ const Withdrawal = () => {
                       </button>
                     </td>
                     {tab === "request" && (
-                      <td>
+                      <td data-label="Action">
                         <div className="action-buttons">
                           <button
                             className="approve"

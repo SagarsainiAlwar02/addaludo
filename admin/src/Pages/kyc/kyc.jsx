@@ -1,24 +1,19 @@
 import React, { useEffect, useState } from "react";
+import { useSearchParams } from "react-router-dom";
 import API, { getData, getError, serverBase } from "../../api";
 import "./kyc.css";
 
 const ITEMS_PER_PAGE = 40;
 
-const STATUS_FILTERS = [
-  { value: "all", label: "All" },
-  { value: "pending", label: "Pending" },
-  { value: "approved", label: "Approved" },
-  { value: "rejected", label: "Rejected" },
-  { value: "not_submitted", label: "Not Submitted" },
-];
-
 // Normalize the empty-string default kycStatus to "not_submitted"
 const normalizeStatus = (s) => (!s ? "not_submitted" : s);
 
 const Kyc = () => {
+  const [searchParams] = useSearchParams();
+  const statusFilter = searchParams.get("status") || "all";
+
   const [users, setUsers] = useState([]);
   const [search, setSearch] = useState("");
-  const [statusFilter, setStatusFilter] = useState("all");
   const [selected, setSelected] = useState(null);
   const [loading, setLoading] = useState(true);
   const [currentPage, setCurrentPage] = useState(1);
@@ -128,18 +123,6 @@ const Kyc = () => {
     <div className="kyc-admin-container">
       <h1>KYC Management</h1>
 
-      <div className="kyc-filters">
-        {STATUS_FILTERS.map((f) => (
-          <button
-            key={f.value}
-            className={`kyc-filter-btn ${statusFilter === f.value ? "active" : ""}`}
-            onClick={() => setStatusFilter(f.value)}
-          >
-            {f.label}
-          </button>
-        ))}
-      </div>
-
       <div className="toolbar-row">
         <input
           className="kyc-search"
@@ -179,31 +162,31 @@ const Kyc = () => {
             {paginatedList.length > 0 ? (
               paginatedList.map((u) => (
                 <tr key={u._id}>
-                  <td>{u.kyc?.name || u.name || "User"}</td>
-                  <td>{u.phone || "-"}</td>
-                  <td className="capitalize">{u.kyc?.docType || "-"}</td>
-                  <td className="mono">{u.kyc?.docNumber || "-"}</td>
-                  <td>
+                  <td data-label="User">{u.kyc?.name || u.name || "User"}</td>
+                  <td data-label="Mobile">{u.phone || "-"}</td>
+                  <td className="capitalize" data-label="Doc Type">{u.kyc?.docType || "-"}</td>
+                  <td className="mono" data-label="Doc Number">{u.kyc?.docNumber || "-"}</td>
+                  <td data-label="Status">
                     <span className={`status-badge ${normalizeStatus(u.kycStatus)}`}>
                       {normalizeStatus(u.kycStatus)}
                     </span>
                   </td>
-                  <td>
+                  <td data-label="Submitted">
                     {u.kyc?.submittedAt
                       ? new Date(u.kyc.submittedAt).toLocaleString()
                       : "-"}
                   </td>
-                  <td>
+                  <td data-label="Documents">
                     <span className={`doc-badge ${u.kyc?.frontImage || u.kyc?.backImage ? "uploaded" : "missing"}`}>
                       {u.kyc?.frontImage || u.kyc?.backImage ? "Uploaded" : "No Image"}
                     </span>
                   </td>
-                  <td>
+                  <td data-label="View">
                     <button className="view" onClick={() => setSelected(u)}>
                       View
                     </button>
                   </td>
-                  <td>
+                  <td data-label="Action">
                     {u.kycStatus === "pending" ? (
                       <div className="action-buttons">
                         <button className="approve" onClick={() => approve(u._id)}>

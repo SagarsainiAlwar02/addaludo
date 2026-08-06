@@ -1,4 +1,5 @@
 import React, { useEffect, useState, useCallback, useRef } from "react";
+import { useSearchParams } from "react-router-dom";
 import API from "../../api";
 import "./Dashboard.css";
 
@@ -143,9 +144,11 @@ function maskPhone(phone) {
 }
 
 const Dashboard = () => {
+  const [searchParams] = useSearchParams();
+  const filter = searchParams.get("filter") || "all";
+
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
-  const [filter, setFilter] = useState("all");
   const [lastUpdated, setLastUpdated] = useState(null);
   const firstLoad = useRef(true);
 
@@ -193,10 +196,6 @@ const Dashboard = () => {
         </div>
 
         <div className="dash-header-right">
-          <div className="filter-toggle">
-            <button className={filter === "all" ? "active" : ""} onClick={() => setFilter("all")}>All Time</button>
-            <button className={filter === "today" ? "active" : ""} onClick={() => setFilter("today")}>Today</button>
-          </div>
           <div className="live-updates-pill">
             <span className="dot-pulse" /> Live Updates
           </div>
@@ -213,8 +212,18 @@ const Dashboard = () => {
         <>
           <div className="card-grid">
             {CARD_DEFS.map((def) => {
-              const value = data?.[def.key] || 0;
-              const todayDelta = def.todayKey ? data?.today?.[def.todayKey] : null;
+              const isTodayView = filter === "today";
+              // In the Today view, the Total Users card shows today's new users
+              const value =
+                isTodayView && def.key === "totalUsers"
+                  ? data?.today?.newUsers || 0
+                  : data?.[def.key] || 0;
+              const title =
+                isTodayView && def.key === "totalUsers"
+                  ? "New Users Today"
+                  : def.title;
+              // In the Today view every value is already "today's" — skip the redundant delta chip
+              const todayDelta = isTodayView ? null : def.todayKey ? data?.today?.[def.todayKey] : null;
               const spark = def.sparkKey ? data?.sparklines?.[def.sparkKey] : null;
 
               return (
@@ -224,7 +233,7 @@ const Dashboard = () => {
                       <Icon name={def.icon} />
                     </div>
                     <div className="card-info">
-                      <h3>{def.title}</h3>
+                      <h3>{title}</h3>
                       <p>{def.isCount ? Number(value).toLocaleString("en-IN") : formatMoney(value)}</p>
                     </div>
                   </div>

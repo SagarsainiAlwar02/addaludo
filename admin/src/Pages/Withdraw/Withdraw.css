@@ -16,39 +16,6 @@
   color: #f8fafc;
 }
 
-/* ===================== TABS ===================== */
-.tabs {
-  display: flex;
-  gap: 10px;
-  margin-bottom: 20px;
-  flex-wrap: wrap;
-}
-
-.tabs button {
-  padding: 10px 20px;
-  border: 1px solid #1e293b;
-  border-radius: 10px;
-  background: #111c33;
-  color: #94a3b8;
-  cursor: pointer;
-  font-weight: 600;
-  font-size: 14px;
-  transition: all 0.25s ease;
-}
-
-.tabs button:hover {
-  background: #1e2c4d;
-  color: #e2e8f0;
-  border-color: #3b82f6;
-}
-
-.active-tab {
-  background: linear-gradient(135deg, #2563eb, #1d4ed8) !important;
-  color: white !important;
-  border-color: #2563eb !important;
-  box-shadow: 0 4px 14px rgba(37, 99, 235, 0.35);
-}
-
 /* ===================== TOOLBAR ===================== */
 .toolbar-row {
   display: flex;
@@ -115,6 +82,8 @@
   border-radius: 14px;
   border: 1px solid #1e293b;
   box-shadow: 0 8px 24px rgba(0, 0, 0, 0.25);
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior-x: contain;
 }
 
 /* ===================== TABLE ===================== */
@@ -407,8 +376,97 @@
     max-width: 100%;
   }
 
-  .tabs button {
-    flex: 1;
-    min-width: 145px;
+  /* table -> cards */
+  .table-wrapper {
+    overflow: visible;
+    border: none;
+    box-shadow: none;
+    border-radius: 0;
+  }
+
+  .withdraw-table {
+    width: 100%;
+    min-width: 0;
+    border-collapse: separate;
+    border-spacing: 0;
+  }
+
+  .withdraw-table,
+  .withdraw-table tbody,
+  .withdraw-table tr,
+  .withdraw-table td {
+    display: block;
+    box-sizing: border-box;
+  }
+
+  .withdraw-table thead {
+    display: none;
+  }
+
+  .withdraw-table tbody {
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+  }
+
+  .withdraw-table tr {
+    background: #111c33;
+    border: 1px solid #1e293b;
+    border-radius: 14px;
+    padding: 4px 14px 12px;
+    box-shadow: 0 4px 14px rgba(0, 0, 0, 0.25);
+  }
+
+  .withdraw-table td {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 12px;
+    text-align: right;
+    white-space: normal;
+    padding: 10px 4px;
+    border-top: 1px dashed #24344d;
+    word-break: break-word;
+  }
+
+  .withdraw-table td:first-child {
+    border-top: none;
+  }
+
+  .withdraw-table td::before {
+    content: attr(data-label);
+    font-weight: 700;
+    color: #93a4c3;
+    text-transform: uppercase;
+    font-size: 11px;
+    letter-spacing: 0.4px;
+    flex-shrink: 0;
+    text-align: left;
+  }
+
+  .withdraw-table td[data-label="Action"],
+  .withdraw-table td[data-label="View"] {
+    flex-direction: column;
+    align-items: stretch;
+    text-align: left;
+    gap: 10px;
+  }
+
+  .withdraw-table td[data-label="View"] .view {
+    width: 100%;
+    padding: 11px;
+    border-radius: 10px;
+  }
+
+  .withdraw-table .action-buttons {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+  }
+
+  .withdraw-table .action-buttons button {
+    padding: 11px 8px;
+    font-size: 13px;
+    border-radius: 10px;
   }
 }
