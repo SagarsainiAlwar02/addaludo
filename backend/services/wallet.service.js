@@ -458,6 +458,8 @@ export const lockWithdrawAmount = async (userId, amount) => {
 
 /**
  * Approve a withdraw: remove from locked (money leaves platform).
+ * Releases only what is actually locked, so older pending withdraws that
+ * were created before locking existed still approve cleanly.
  */
 export const approveWithdraw = async (userId, amount) => {
   amount = Number(amount || 0);
@@ -465,28 +467,25 @@ export const approveWithdraw = async (userId, amount) => {
 
   const wallet = await getOrCreateWallet(userId);
 
+  const release = Math.min(Number(wallet.locked || 0), amount);
+
   const updatedWallet = await Wallet.findOneAndUpdate(
-    {
-      userId,
-      locked: { $gte: amount },
-    },
+    { userId },
     {
       $inc: {
-        locked: -amount,
+        locked: -release,
       },
     },
     { new: true }
   );
-
-  if (!updatedWallet) {
-    throw Object.assign(new Error("Withdraw approval failed"), { code: "WITHDRAW_APPROVE_FAILED" });
-  }
 
   return updatedWallet;
 };
 
 /**
  * Reject a withdraw: move locked amount back to winnings.
+ * Always credits the full amount back to winnings and releases whatever is
+ * locked, so legacy withdraws (created before locking existed) also work.
  */
 export const rejectWithdraw = async (userId, amount) => {
   amount = Number(amount || 0);
@@ -494,23 +493,18 @@ export const rejectWithdraw = async (userId, amount) => {
 
   const wallet = await getOrCreateWallet(userId);
 
+  const release = Math.min(Number(wallet.locked || 0), amount);
+
   const updatedWallet = await Wallet.findOneAndUpdate(
-    {
-      userId,
-      locked: { $gte: amount },
-    },
+    { userId },
     {
       $inc: {
-        locked: -amount,
+        locked: -release,
         winnings: amount,
       },
     },
     { new: true }
   );
-
-  if (!updatedWallet) {
-    throw Object.assign(new Error("Withdraw rejection failed"), { code: "WITHDRAW_REJECT_FAILED" });
-  }
 
   return updatedWallet;
 };
