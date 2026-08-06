@@ -346,7 +346,7 @@ export const getUsers = asyncHandler(async (req, res) => {
  */
 export const blockUser = asyncHandler(async (req, res) => {
   const { id } = req.params;
-  const { status } = req.body;
+  const { status } = req.body || {};
 
   if (!["active", "blocked"].includes(status)) {
     return badRequestResponse(res, "Status must be active or blocked", "INVALID_STATUS");
@@ -437,7 +437,7 @@ export const getContestById = asyncHandler(async (req, res) => {
  */
 export const approveContest = asyncHandler(async (req, res) => {
   const { id } = req.params;
-  const { winnerId, adminNote } = req.body;
+  const { winnerId, adminNote } = req.body || {};
 
   if (!winnerId) {
     return badRequestResponse(res, "Winner ID required", "WINNER_ID_REQUIRED");
@@ -478,7 +478,7 @@ export const approveContest = asyncHandler(async (req, res) => {
  */
 export const rejectContest = asyncHandler(async (req, res) => {
   const { id } = req.params;
-  const { adminNote } = req.body;
+  const { adminNote } = req.body || {};
 
   const contest = await Contest.findById(id);
   if (!contest) {
@@ -583,7 +583,7 @@ export const approveDeposit = asyncHandler(async (req, res) => {
  */
 export const rejectDeposit = asyncHandler(async (req, res) => {
   const { id } = req.params;
-  const { adminNote } = req.body;
+  const { adminNote } = req.body || {};
   const adminId = req.user._id;
 
   const transaction = await Transaction.findOneAndUpdate(
@@ -686,7 +686,7 @@ export const approveWithdraw = asyncHandler(async (req, res) => {
  */
 export const rejectWithdraw = asyncHandler(async (req, res) => {
   const { id } = req.params;
-  const { adminNote } = req.body;
+  const { adminNote } = req.body || {};
   const adminId = req.user._id;
 
   const transaction = await Transaction.findOneAndUpdate(
@@ -732,7 +732,7 @@ export const rejectWithdraw = asyncHandler(async (req, res) => {
  * POST /api/admin/bonus
  */
 export const addBonus = asyncHandler(async (req, res) => {
-  let { userId, mobile, amount, note } = req.body;
+  let { userId, mobile, amount, note } = req.body || {};
   const adminId = req.user._id;
 
   const bonusAmount = Number(amount || 0);
@@ -767,7 +767,7 @@ export const addBonus = asyncHandler(async (req, res) => {
  * POST /api/admin/penalty
  */
 export const addPenalty = asyncHandler(async (req, res) => {
-  let { userId, mobile, amount, note } = req.body;
+  let { userId, mobile, amount, note } = req.body || {};
   const adminId = req.user._id;
 
   const penaltyAmount = Number(amount || 0);
@@ -868,7 +868,7 @@ export const approveKyc = asyncHandler(async (req, res) => {
  */
 export const rejectKyc = asyncHandler(async (req, res) => {
   const { id } = req.params;
-  const { reason } = req.body;
+  const { reason } = req.body || {};
 
   const user = await User.findByIdAndUpdate(
     id,
@@ -1145,7 +1145,7 @@ export const saveWebsiteSettings = asyncHandler(async (req, res) => {
  * POST /api/admin/tracked-accounts
  */
 export const addTrackedAccount = asyncHandler(async (req, res) => {
-  const { phone, note } = req.body;
+  const { phone, note } = req.body || {};
   const clean = cleanPhone(phone);
 
   if (!clean || clean.length !== 10) {

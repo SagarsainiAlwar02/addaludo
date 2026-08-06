@@ -141,9 +141,71 @@
     grid-template-columns: 1fr;
   }
 
+  /* table -> cards */
   .dummy-table {
     display: block;
-    overflow-x: auto;
-    white-space: nowrap;
+    overflow: visible;
+    white-space: normal;
+    border-collapse: separate;
+    border-spacing: 0;
+    background: transparent;
+  }
+
+  .dummy-table thead {
+    display: none;
+  }
+
+  .dummy-table tbody {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  .dummy-table tr {
+    display: block;
+    background: #ffffff;
+    border: 1px solid #f0c2d8;
+    border-radius: 14px;
+    padding: 4px 14px 12px;
+  }
+
+  .dummy-table td {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 12px;
+    text-align: right;
+    white-space: normal;
+    padding: 10px 4px;
+    border-top: 1px dashed #f5dceb;
+    word-break: break-word;
+  }
+
+  .dummy-table td:first-child {
+    border-top: none;
+  }
+
+  .dummy-table td::before {
+    content: attr(data-label);
+    font-weight: 700;
+    color: #7a3d58;
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.4px;
+    flex-shrink: 0;
+    text-align: left;
+  }
+
+  .dummy-table td[data-label="Action"] {
+    flex-direction: column;
+    align-items: stretch;
+    text-align: left;
+    gap: 8px;
+  }
+
+  .dummy-table td[data-label="Action"] .dummy-remove-btn {
+    width: 100%;
+    padding: 11px;
+    border-radius: 10px;
   }
 }

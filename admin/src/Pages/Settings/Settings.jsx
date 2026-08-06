@@ -1,9 +1,11 @@
 import React, { useState, useEffect } from "react";
+import { useSearchParams } from "react-router-dom";
 import API, { getError, getData } from "../../api";
 import "./Settings.css";
 
 const Settings = () => {
-  const [tab, setTab] = useState("bonus");
+  const [searchParams, setSearchParams] = useSearchParams();
+  const tab = searchParams.get("tab") || "bonus";
   const [loading, setLoading] = useState(false);
   const [reportLoading, setReportLoading] = useState(false);
 
@@ -105,7 +107,7 @@ const Settings = () => {
     alert("Bonus added successfully");
     setBonusData({ name: "", mobile: "", amount: "", reason: "" });
     await fetchReports();
-    setTab("bonusReport");
+    setSearchParams({ tab: "bonusReport" });
   } catch (err) {
     console.log("Bonus Error:", err);
     alert("Error adding bonus");
@@ -127,7 +129,7 @@ const addPenalty = async () => {
       alert("Penalty deducted successfully");
       setPenaltyData({ name: "", mobile: "", amount: "", reason: "" });
       await fetchReports();
-      setTab("penaltyReport");
+      setSearchParams({ tab: "penaltyReport" });
     } catch (err) {
       console.log("Penalty Error:", err);
       alert("Error adding penalty");
@@ -138,42 +140,6 @@ const addPenalty = async () => {
   return (
     <div className="settings-container">
       <h1>Settings</h1>
-
-      <div className="tabs">
-        <button
-          onClick={() => setTab("bonus")}
-          className={tab === "bonus" ? "active-tab" : ""}
-        >
-          Bonus
-        </button>
-
-        <button
-          onClick={() => setTab("penalty")}
-          className={tab === "penalty" ? "active-tab" : ""}
-        >
-          Penalty
-        </button>
-
-        <button
-          onClick={() => {
-            setTab("bonusReport");
-            fetchReports();
-          }}
-          className={tab === "bonusReport" ? "active-tab" : ""}
-        >
-          Bonus Report
-        </button>
-
-        <button
-          onClick={() => {
-            setTab("penaltyReport");
-            fetchReports();
-          }}
-          className={tab === "penaltyReport" ? "active-tab" : ""}
-        >
-          Penalty Report
-        </button>
-      </div>
 
       {tab === "bonus" && (
         <div className="form-box">

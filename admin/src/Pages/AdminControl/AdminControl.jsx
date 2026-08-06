@@ -1,9 +1,11 @@
 import React, { useEffect, useState } from "react";
+import { useSearchParams } from "react-router-dom";
 import API, { getData, getError } from "../../api";
 import "./AdminControl.css";
 
 const AdminControl = () => {
-  const [tab, setTab] = useState("website");
+  const [searchParams, setSearchParams] = useSearchParams();
+  const tab = searchParams.get("tab") || "website";
   const [admins, setAdmins] = useState([]);
   const [agentReport, setAgentReport] = useState([]);
   const [loading, setLoading] = useState(false);
@@ -104,7 +106,7 @@ const AdminControl = () => {
         role: "admin"
       });
 
-      setTab("data");
+      setSearchParams({ tab: "data" });
       fetchAdmins();
       fetchAgentReport();
     } catch (err) {
@@ -139,13 +141,6 @@ const AdminControl = () => {
   return (
     <div className="admin-container">
       <h1>Admin Control</h1>
-
-      <div className="tabs">
-        <button onClick={() => setTab("website")}>Website Settings</button>
-        <button onClick={() => setTab("add")}>Add Admin/Agent</button>
-        <button onClick={() => setTab("data")}>Admin/Agent Data</button>
-        <button onClick={() => setTab("permission")}>Permissions</button>
-      </div>
 
       {tab === "website" && (
         <div className="form-box">
@@ -233,7 +228,7 @@ const AdminControl = () => {
           {loading ? (
             <p>Loading report...</p>
           ) : (
-            <div style={{ overflowX: "auto", marginBottom: "30px" }}>
+            <div className="admin-table-wrap" style={{ marginBottom: "30px" }}>
               <table className="admin-table">
                 <thead>
                   <tr>
@@ -258,16 +253,16 @@ const AdminControl = () => {
                   ) : (
                     agentReport.map((r) => (
                       <tr key={r.adminId || r._id}>
-                        <td>{r.adminName || "Unknown Admin"}</td>
-                        <td>{r.adminEmail || r.adminPhone || "-"}</td>
-                        <td>{r.adminRole || "admin"}</td>
-                        <td>{money(r.totalDeposit)}</td>
-                        <td>{money(r.totalWithdraw)}</td>
-                        <td>{money(r.todayDeposit)}</td>
-                        <td>{money(r.todayWithdraw)}</td>
-                        <td>{money(r.totalBonus)}</td>
-                        <td>{money(r.totalPenalty)}</td>
-                        <td>{r.totalApprovedCount || 0}</td>
+                        <td data-label="Name">{r.adminName || "Unknown Admin"}</td>
+                        <td data-label="Email / Phone">{r.adminEmail || r.adminPhone || "-"}</td>
+                        <td data-label="Role">{r.adminRole || "admin"}</td>
+                        <td data-label="Total Deposit">{money(r.totalDeposit)}</td>
+                        <td data-label="Total Withdraw">{money(r.totalWithdraw)}</td>
+                        <td data-label="Today Deposit">{money(r.todayDeposit)}</td>
+                        <td data-label="Today Withdraw">{money(r.todayWithdraw)}</td>
+                        <td data-label="Total Bonus">{money(r.totalBonus)}</td>
+                        <td data-label="Total Penalty">{money(r.totalPenalty)}</td>
+                        <td data-label="Approved Count">{r.totalApprovedCount || 0}</td>
                       </tr>
                     ))
                   )}
@@ -278,7 +273,7 @@ const AdminControl = () => {
 
           <h3>Admin / Agent List</h3>
 
-          <div style={{ overflowX: "auto" }}>
+          <div className="admin-table-wrap">
             <table className="admin-table">
               <thead>
                 <tr>
@@ -297,10 +292,10 @@ const AdminControl = () => {
                 ) : (
                   admins.map((a) => (
                     <tr key={a._id}>
-                      <td>{a.name}</td>
-                      <td>{a.email}</td>
-                      <td>{a.role}</td>
-                      <td>
+                      <td data-label="Name">{a.name}</td>
+                      <td data-label="Email">{a.email}</td>
+                      <td data-label="Role">{a.role}</td>
+                      <td data-label="Action">
                         <button
                           className="delete"
                           onClick={() => deleteAdmin(a._id)}

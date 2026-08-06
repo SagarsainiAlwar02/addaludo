@@ -182,14 +182,68 @@
   }
 }
 
-@media (max-width: 600px) {
+@media (max-width: 768px) {
+  .ct-form-row {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
   .ct-summary-grid {
     grid-template-columns: repeat(2, 1fr);
   }
 
+  /* table -> cards */
   .ct-table {
     display: block;
-    overflow-x: auto;
-    white-space: nowrap;
+    overflow: visible;
+    white-space: normal;
+    border-collapse: separate;
+    border-spacing: 0;
+    background: transparent;
+  }
+
+  .ct-table thead {
+    display: none;
+  }
+
+  .ct-table tbody {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  .ct-table tr {
+    display: block;
+    background: #ffffff;
+    border: 1px solid #f0c2d8;
+    border-radius: 14px;
+    padding: 4px 14px 12px;
+  }
+
+  .ct-table td {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 12px;
+    text-align: right;
+    white-space: normal;
+    padding: 10px 4px;
+    border-top: 1px dashed #f5dceb;
+    word-break: break-word;
+  }
+
+  .ct-table td:first-child {
+    border-top: none;
+  }
+
+  .ct-table td::before {
+    content: attr(data-label);
+    font-weight: 700;
+    color: #7a3d58;
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.4px;
+    flex-shrink: 0;
+    text-align: left;
   }
 }

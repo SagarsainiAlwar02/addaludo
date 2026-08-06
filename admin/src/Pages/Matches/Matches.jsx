@@ -1,11 +1,13 @@
 import React, { useEffect, useMemo, useState } from "react";
+import { useSearchParams } from "react-router-dom";
 import API, { getData, getError, serverBase } from "../../api";
 import "./Matches.css";
 
 const PAGE_SIZE = 50;
 
 const Matches = () => {
-  const [tab, setTab] = useState("running");
+  const [searchParams] = useSearchParams();
+  const tab = searchParams.get("tab") || "running";
   const [selectedMatch, setSelectedMatch] = useState(null);
   const [matches, setMatches] = useState([]);
   const [loading, setLoading] = useState(false);
@@ -216,14 +218,6 @@ const filteredMatches = useMemo(() => {
       <h1>Matches</h1>
       <h3>Total Matches: {matches.length}</h3>
 
-      <div className="tabs">
-        {["running", "pending", "completed", "cancelled", "total"].map((t) => (
-          <button key={t} className={tab === t ? "active-tab" : ""} onClick={() => setTab(t)}>
-            {t === "running" ? "Running Match" : t === "pending" ? "Pending Match" : t === "completed" ? "Completed Match" : t === "cancelled" ? "Cancel Match" : "Total Match"}
-          </button>
-        ))}
-      </div>
-
       <div className="search-box">
         <input
           type="text"
@@ -244,6 +238,7 @@ const filteredMatches = useMemo(() => {
 
       {renderPagination()}
 
+      <div className="matches-scroll">
       <table className="match-table">
         <thead>
           <tr>
@@ -264,17 +259,17 @@ const filteredMatches = useMemo(() => {
           {paginatedMatches.length > 0 ? (
             paginatedMatches.map((match, index) => (
               <tr key={match._id}>
-                <td>{(currentPage - 1) * PAGE_SIZE + index + 1}</td>
-                <td>{match.contestId || match.battleId || match._id?.slice(-6)}</td>
-                <td>{match.ludoKingRoomCode || "-"}</td>
-                <td>{getUserName(match.createdBy)}</td>
-                <td>{getUserPhone(match.createdBy) || "-"}</td>
-                <td>{match.opponent ? getUserName(match.opponent) : "Waiting"}</td>
-                <td>{getUserPhone(match.opponent) || "-"}</td>
-                <td>₹{match.entryFee || match.amount || 0}</td>
-                <td>{match?.winner?.name || match?.winner?.username || "-"}</td>
-                <td className={getStatusGroup(match.status)}>{match.status || "-"}</td>
-                <td>
+                <td data-label="#">{(currentPage - 1) * PAGE_SIZE + index + 1}</td>
+                <td data-label="ID">{match.contestId || match.battleId || match._id?.slice(-6)}</td>
+                <td data-label="Room Code">{match.ludoKingRoomCode || "-"}</td>
+                <td data-label="Player 1">{getUserName(match.createdBy)}</td>
+                <td data-label="Mobile 1">{getUserPhone(match.createdBy) || "-"}</td>
+                <td data-label="Player 2">{match.opponent ? getUserName(match.opponent) : "Waiting"}</td>
+                <td data-label="Mobile 2">{getUserPhone(match.opponent) || "-"}</td>
+                <td data-label="Amount">₹{match.entryFee || match.amount || 0}</td>
+                <td data-label="Winner">{match?.winner?.name || match?.winner?.username || "-"}</td>
+                <td data-label="Status" className={getStatusGroup(match.status)}>{match.status || "-"}</td>
+                <td data-label="View">
                   <button className="view" type="button" onClick={(e) => { e.preventDefault(); e.stopPropagation(); openMatchDetails(match); }}>
                     View
                   </button>
@@ -286,6 +281,7 @@ const filteredMatches = useMemo(() => {
           )}
         </tbody>
       </table>
+      </div>
 
       {renderPagination()}
 

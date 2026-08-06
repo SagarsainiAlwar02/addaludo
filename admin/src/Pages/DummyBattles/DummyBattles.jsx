@@ -133,13 +133,13 @@ export default function DummyBattles() {
           <tbody>
             {battles.map((b) => (
               <tr key={b._id}>
-                <td className="dummy-td">{b.dummyName || "-"}</td>
-                <td className="dummy-td">{b.dummyMobile || "-"}</td>
-                <td className="dummy-td">₹{b.entryFee || b.amount}</td>
-                <td className="dummy-td">
+                <td className="dummy-td" data-label="Player">{b.dummyName || "-"}</td>
+                <td className="dummy-td" data-label="Mobile">{b.dummyMobile || "-"}</td>
+                <td className="dummy-td" data-label="Amount">₹{b.entryFee || b.amount}</td>
+                <td className="dummy-td" data-label="Status">
                   <span className="dummy-badge">{b.status}</span>
                 </td>
-                <td className="dummy-td">
+                <td className="dummy-td" data-label="Action">
                   <button className="dummy-remove-btn" onClick={() => handleRemove(b._id)}>
                     Remove
                   </button>

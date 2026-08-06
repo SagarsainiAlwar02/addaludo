@@ -1,9 +1,11 @@
 import React, { useState, useEffect } from "react";
+import { useSearchParams } from "react-router-dom";
 import API, { getError, serverBase } from "../../api";
 import "./PaymentControl.css";
 
 const PaymentControl = () => {
-  const [tab, setTab] = useState("scanner");
+  const [searchParams] = useSearchParams();
+  const tab = searchParams.get("tab") || "scanner";
 
   const [upiList, setUpiList] = useState([""]);
   const [account, setAccount] = useState({
@@ -137,29 +139,6 @@ const PaymentControl = () => {
     <div className="payment-container">
       <h1>Payment Control</h1>
 
-      <div className="tabs">
-        <button
-          onClick={() => setTab("scanner")}
-          className={tab === "scanner" ? "active-tab" : ""}
-        >
-          Upload Scanner
-        </button>
-
-        <button
-          onClick={() => setTab("upi")}
-          className={tab === "upi" ? "active-tab" : ""}
-        >
-          Upload UPI
-        </button>
-
-        <button
-          onClick={() => setTab("bank")}
-          className={tab === "bank" ? "active-tab" : ""}
-        >
-          Account Details
-        </button>
-      </div>
-
       {tab === "scanner" && (
         <div className="form-box">
           <h3>Upload QR Scanner</h3>
@@ -219,7 +198,7 @@ const PaymentControl = () => {
           <h3>Add UPI IDs</h3>
 
           {upiList.map((upi, index) => (
-            <div key={index} style={{ display: "flex", gap: "10px" }}>
+            <div key={index} className="upi-row">
               <input
                 type="text"
                 placeholder="Enter UPI ID"
@@ -229,16 +208,8 @@ const PaymentControl = () => {
 
               <button
                 type="button"
+                className="upi-remove"
                 onClick={() => removeUpi(index)}
-                style={{
-                  width: "55px",
-                  border: "none",
-                  borderRadius: "8px",
-                  background: "#ef4444",
-                  color: "#fff",
-                  fontWeight: "900",
-                  cursor: "pointer",
-                }}
               >
                 X
               </button>
