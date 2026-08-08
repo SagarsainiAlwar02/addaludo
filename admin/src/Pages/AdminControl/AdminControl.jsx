@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { useSearchParams } from "react-router-dom";
 import API, { getData, getError } from "../../api";
+import { PERMISSIONS, isAdmin } from "../../permissions";
 import "./AdminControl.css";
 
 const AdminControl = () => {
@@ -11,17 +12,28 @@ const AdminControl = () => {
   const [loading, setLoading] = useState(false);
   const [adminError, setAdminError] = useState("");
   const [reportError, setReportError] = useState("");
+  const [isAdminUser] = useState(() => isAdmin());
 
   const [form, setForm] = useState({
     name: "",
     email: "",
     password: "",
-    role: "admin"
+    role: "agent",
+    permissions: [],
+  });
+
+  const [editTarget, setEditTarget] = useState(null); // admin being edited
+  const [editForm, setEditForm] = useState({
+    name: "",
+    email: "",
+    password: "",
+    role: "agent",
+    permissions: [],
   });
 
   const [settings, setSettings] = useState({
     websiteName: "",
-    supportNumber: ""
+    supportNumber: "",
   });
 
   const money = (num) => `₹${Number(num || 0).toLocaleString("en-IN")}`;
@@ -87,6 +99,15 @@ const AdminControl = () => {
     }
   }, [tab]);
 
+  // ================= PERMISSION TOGGLES =================
+  const togglePerm = (key, setter, current) => {
+    setter(
+      current.includes(key)
+        ? current.filter((p) => p !== key)
+        : [...current, key]
+    );
+  };
+
   // ================= CREATE ADMIN =================
   const createAdmin = async () => {
     try {
@@ -103,7 +124,8 @@ const AdminControl = () => {
         name: "",
         email: "",
         password: "",
-        role: "admin"
+        role: "agent",
+        permissions: [],
       });
 
       setSearchParams({ tab: "data" });
@@ -116,11 +138,68 @@ const AdminControl = () => {
 
   // ================= DELETE ADMIN =================
   const deleteAdmin = async (id) => {
+    if (!id) {
+      alert("Admin/Agent record not found - refresh karke dobara try karo");
+      return;
+    }
+
     try {
       const ok = window.confirm("Kya tum is admin/agent ko delete karna chahte ho?");
       if (!ok) return;
 
       await API.delete(`/admin/delete/${id}`);
+      alert("Admin / Agent Deleted");
+      fetchAdmins();
+      fetchAgentReport();
+    } catch (err) {
+      alert(getError(err));
+    }
+  };
+
+  // ================= EDIT ADMIN =================
+  const openEdit = (admin) => {
+    // Admins store no permissions but implicitly have FULL access,
+    // so pre-tick every permission to reflect what the account can access.
+    const isAdminRecord = admin.role === "admin";
+    const currentPerms = isAdminRecord
+      ? PERMISSIONS.map((p) => p.key)
+      : Array.isArray(admin.permissions)
+      ? admin.permissions
+      : [];
+
+    setEditTarget(admin);
+    setEditForm({
+      name: admin.name || "",
+      email: admin.email || "",
+      password: "",
+      role: admin.role || "agent",
+      permissions: currentPerms,
+    });
+  };
+
+  // Report rows come from the aggregate endpoint (no permissions field),
+  // so resolve the full admin record from the loaded admin list by id.
+  const openEditFromReport = (row) => {
+    const full = admins.find((a) => String(a._id) === String(row.adminId));
+    if (full) {
+      openEdit(full);
+      return;
+    }
+    alert("Admin/Agent record not found - refresh karke dobara try karo");
+  };
+
+  const saveEdit = async () => {
+    try {
+      if (!editForm.name || !editForm.email) {
+        alert("Name aur Email required hai");
+        return;
+      }
+
+      await API.patch(`/admin/update/${editTarget._id}`, editForm);
+
+      alert("Admin / Agent Updated");
+
+      setEditTarget(null);
       fetchAdmins();
       fetchAgentReport();
     } catch (err) {
@@ -138,11 +217,14 @@ const AdminControl = () => {
     }
   };
 
+  // Agents (even with admin_control) can only ever see Website Settings
+  const effectiveTab = isAdminUser ? tab : "website";
+
   return (
     <div className="admin-container">
       <h1>Admin Control</h1>
 
-      {tab === "website" && (
+      {effectiveTab === "website" && (
         <div className="form-box">
           <h3>Website Settings</h3>
 
@@ -170,46 +252,103 @@ const AdminControl = () => {
         </div>
       )}
 
-      {tab === "add" && (
-        <div className="form-box">
-          <h3>Add Admin / Agent</h3>
+      {effectiveTab === "add" && (
+        <div className="add-admin-grid">
+          <div className="form-box">
+            <h3>Add Admin / Agent</h3>
 
-          <input
-            type="text"
-            placeholder="Name"
-            value={form.name}
-            onChange={(e) => setForm({ ...form, name: e.target.value })}
-          />
+            <input
+              type="text"
+              placeholder="Name"
+              value={form.name}
+              onChange={(e) => setForm({ ...form, name: e.target.value })}
+            />
 
-          <input
-            type="email"
-            placeholder="Email"
-            value={form.email}
-            onChange={(e) => setForm({ ...form, email: e.target.value })}
-          />
+            <input
+              type="email"
+              placeholder="Email"
+              value={form.email}
+              onChange={(e) => setForm({ ...form, email: e.target.value })}
+            />
 
-          <input
-            type="password"
-            placeholder="Password"
-            value={form.password}
-            onChange={(e) => setForm({ ...form, password: e.target.value })}
-          />
+            <input
+              type="password"
+              placeholder="Password"
+              value={form.password}
+              onChange={(e) => setForm({ ...form, password: e.target.value })}
+            />
 
-          <select
-            value={form.role}
-            onChange={(e) => setForm({ ...form, role: e.target.value })}
-          >
-            <option value="admin">Admin</option>
-            <option value="agent">Agent</option>
-          </select>
+            <select
+              value={form.role}
+              onChange={(e) => {
+                const role = e.target.value;
+                setForm({
+                  ...form,
+                  role,
+                  permissions: role === "admin" ? [] : form.permissions,
+                });
+              }}
+            >
+              <option value="admin">Admin</option>
+              <option value="agent">Agent</option>
+            </select>
 
-          <button className="btn save" onClick={createAdmin}>
-            Create
-          </button>
+            <button className="btn save" onClick={createAdmin}>
+              Create
+            </button>
+          </div>
+
+          <div className="perm-box">
+            <h3>
+              Permissions
+              {form.role === "agent" ? (
+                <span className="perm-hint"> (Agent ke liye)</span>
+              ) : (
+                <span className="perm-hint perm-hint-admin">
+                  {" "}
+                  (Admin ko sab access hai)
+                </span>
+              )}
+            </h3>
+
+            <div className="perm-grid">
+              {PERMISSIONS.map((p) => {
+                const checked = form.permissions.includes(p.key);
+                return (
+                  <label
+                    key={p.key}
+                    className={`perm-chip ${checked ? "checked" : ""} ${
+                      form.role === "admin" ? "disabled" : ""
+                    }`}
+                  >
+                    <input
+                      type="checkbox"
+                      checked={checked}
+                      disabled={form.role === "admin"}
+                      onChange={() =>
+                        togglePerm(p.key, (next) =>
+                          setForm({ ...form, permissions: next }),
+                          form.permissions
+                        )
+                      }
+                    />
+                    <span className="perm-chip-label">{p.label}</span>
+                  </label>
+                );
+              })}
+            </div>
+
+            {form.role === "admin" && (
+              <p className="perm-note">
+                Admin ko saari sections ka access automatically milta hai.
+                Permissions sirf Agent ke liye select karein.
+              </p>
+            )}
+          </div>
         </div>
       )}
 
-      {tab === "data" && (
+      {effectiveTab === "data" && (
         <div>
           <div style={{ marginBottom: "15px", display: "flex", justifyContent: "space-between", gap: "10px" }}>
             <h3>Admin / Agent Data Report</h3>
@@ -242,13 +381,14 @@ const AdminControl = () => {
                     <th>Total Bonus</th>
                     <th>Total Penalty</th>
                     <th>Approved Count</th>
+                    <th>Action</th>
                   </tr>
                 </thead>
 
                 <tbody>
                   {agentReport.length === 0 ? (
                     <tr>
-                      <td colSpan="10">No Agent/Admin Report Found</td>
+                      <td colSpan="11">No Agent/Admin Report Found</td>
                     </tr>
                   ) : (
                     agentReport.map((r) => (
@@ -263,6 +403,22 @@ const AdminControl = () => {
                         <td data-label="Total Bonus">{money(r.totalBonus)}</td>
                         <td data-label="Total Penalty">{money(r.totalPenalty)}</td>
                         <td data-label="Approved Count">{r.totalApprovedCount || 0}</td>
+                        <td data-label="Action">
+                          <div className="admin-actions">
+                            <button
+                              className="edit"
+                              onClick={() => openEditFromReport(r)}
+                            >
+                              Edit
+                            </button>
+                            <button
+                              className="delete"
+                              onClick={() => deleteAdmin(r.adminId)}
+                            >
+                              Delete
+                            </button>
+                          </div>
+                        </td>
                       </tr>
                     ))
                   )}
@@ -280,6 +436,7 @@ const AdminControl = () => {
                   <th>Name</th>
                   <th>Email</th>
                   <th>Role</th>
+                  <th>Permissions</th>
                   <th>Action</th>
                 </tr>
               </thead>
@@ -287,7 +444,7 @@ const AdminControl = () => {
               <tbody>
                 {admins.length === 0 ? (
                   <tr>
-                    <td colSpan="4">No Admin Found</td>
+                    <td colSpan="5">No Admin Found</td>
                   </tr>
                 ) : (
                   admins.map((a) => (
@@ -295,13 +452,33 @@ const AdminControl = () => {
                       <td data-label="Name">{a.name}</td>
                       <td data-label="Email">{a.email}</td>
                       <td data-label="Role">{a.role}</td>
+                      <td data-label="Permissions">
+                        {a.role === "admin"
+                          ? "All"
+                          : Array.isArray(a.permissions) && a.permissions.length > 0
+                          ? a.permissions
+                              .map((p) => {
+                                const def = PERMISSIONS.find((x) => x.key === p);
+                                return def ? def.label : p;
+                              })
+                              .join(", ")
+                          : "None"}
+                      </td>
                       <td data-label="Action">
-                        <button
-                          className="delete"
-                          onClick={() => deleteAdmin(a._id)}
-                        >
-                          Delete
-                        </button>
+                        <div className="admin-actions">
+                          <button
+                            className="edit"
+                            onClick={() => openEdit(a)}
+                          >
+                            Edit
+                          </button>
+                          <button
+                            className="delete"
+                            onClick={() => deleteAdmin(a._id)}
+                          >
+                            Delete
+                          </button>
+                        </div>
                       </td>
                     </tr>
                   ))
@@ -312,17 +489,124 @@ const AdminControl = () => {
         </div>
       )}
 
-      {tab === "permission" && (
-        <div className="form-box">
-          <h3>Set Permissions</h3>
+      {/* EDIT MODAL */}
+      {editTarget && (
+        <div className="edit-modal-overlay" onClick={() => setEditTarget(null)}>
+          <div
+            className="edit-modal"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="edit-modal-head">
+              <h3>Edit {editTarget.name}</h3>
+              <button
+                className="edit-modal-close"
+                onClick={() => setEditTarget(null)}
+              >
+                ×
+              </button>
+            </div>
 
-          <label><input type="checkbox" /> Dashboard</label>
-          <label><input type="checkbox" /> Users</label>
-          <label><input type="checkbox" /> Deposit</label>
-          <label><input type="checkbox" /> Withdraw</label>
-          <label><input type="checkbox" /> Matches</label>
+            <div className="edit-modal-body">
+              <div className="form-box">
+                <input
+                  type="text"
+                  placeholder="Name"
+                  value={editForm.name}
+                  onChange={(e) =>
+                    setEditForm({ ...editForm, name: e.target.value })
+                  }
+                />
 
-          <button className="btn save">Save Permissions</button>
+                <input
+                  type="email"
+                  placeholder="Email"
+                  value={editForm.email}
+                  onChange={(e) =>
+                    setEditForm({ ...editForm, email: e.target.value })
+                  }
+                />
+
+                <input
+                  type="password"
+                  placeholder="Password (blank = no change)"
+                  value={editForm.password}
+                  onChange={(e) =>
+                    setEditForm({ ...editForm, password: e.target.value })
+                  }
+                />
+
+                <select
+                  value={editForm.role}
+                  onChange={(e) => {
+                    const role = e.target.value;
+                    // Keep the current ticked permissions when switching roles,
+                    // so converting Admin -> Agent retains the full-access set
+                    // (admin can then untick what they want to revoke).
+                    setEditForm({
+                      ...editForm,
+                      role,
+                      permissions:
+                        role === "admin"
+                          ? PERMISSIONS.map((p) => p.key)
+                          : editForm.permissions,
+                    });
+                  }}
+                >
+                  <option value="admin">Admin</option>
+                  <option value="agent">Agent</option>
+                </select>
+              </div>
+
+              <div className="perm-box">
+                <h3>
+                  Permissions
+                  {editForm.role === "agent" ? (
+                    <span className="perm-hint"> (Current permissions)</span>
+                  ) : (
+                    <span className="perm-hint perm-hint-admin">
+                      {" "}
+                      (Admin = full access)
+                    </span>
+                  )}
+                </h3>
+
+                <div className="perm-grid">
+                  {PERMISSIONS.map((p) => {
+                    const checked = editForm.permissions.includes(p.key);
+                    return (
+                      <label
+                        key={p.key}
+                        className={`perm-chip ${checked ? "checked" : ""}`}
+                      >
+                        <input
+                          type="checkbox"
+                          checked={checked}
+                          onChange={() =>
+                            togglePerm(
+                              p.key,
+                              (next) =>
+                                setEditForm({ ...editForm, permissions: next }),
+                              editForm.permissions
+                            )
+                          }
+                        />
+                        <span className="perm-chip-label">{p.label}</span>
+                      </label>
+                    );
+                  })}
+                </div>
+                <p className="perm-note">
+                  {editForm.role === "admin"
+                    ? "Is account ko Agent banane ke liye role dropdown se 'Agent' chuno - phir jo permissions deni ho unhe tick rakhkho aur baaki untick karo."
+                    : "Ye account ki current permissions hain. Role 'Admin' karne par account ko full access mil jayega."}
+                </p>
+              </div>
+            </div>
+
+            <button className="btn save" onClick={saveEdit}>
+              Save Changes
+            </button>
+          </div>
         </div>
       )}
     </div>

@@ -15,6 +15,7 @@ import {
 } from "../controllers/contest.controller.js";
 import auth from "../middleware/auth.js";
 import adminAuth from "../middleware/adminAuth.js";
+import { requireAdmin } from "../middleware/permission.js";
 import { uploadResult } from "../middleware/upload.js";
 
 const router = Router();
@@ -29,7 +30,7 @@ router.post("/result/:contestId", auth, uploadResult, submitResult);
 router.post("/cancel/:contestId", auth, cancelContest);
 router.get("/my-contests", auth, getMyContests);
 router.get("/:contestId", auth, getSingleContest);
-router.post("/dummy", auth, adminAuth, createDummyContest);
-router.delete("/dummy/:id", auth, adminAuth, deleteDummyContest);
+router.post("/dummy", auth, adminAuth, requireAdmin, createDummyContest);
+router.delete("/dummy/:id", auth, adminAuth, requireAdmin, deleteDummyContest);
 
 export default router;

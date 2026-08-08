@@ -8,6 +8,7 @@ import TrackedAccount from "../models/trackedAccount.js";
 import Setting from "../models/setting.js";
 import asyncHandler from "../utils/asyncHandler.js";
 import { generateReferralCode } from "../utils/generateId.js";
+import { sanitizeForUser, sanitizePermissions } from "../utils/permissions.js";
 import {
   successResponse,
   badRequestResponse,
@@ -330,12 +331,15 @@ export const getUsers = asyncHandler(async (req, res) => {
 
   return successResponse(
     res,
-    {
-      users: usersWithWallet,
-      total,
-      page,
-      totalPages: Math.ceil(total / limit),
-    },
+    sanitizeForUser(
+      {
+        users: usersWithWallet,
+        total,
+        page,
+        totalPages: Math.ceil(total / limit),
+      },
+      req.user
+    ),
     "Users fetched"
   );
 });
@@ -399,12 +403,15 @@ export const getContests = asyncHandler(async (req, res) => {
 
   return successResponse(
     res,
-    {
-      contests: contests.map(formatContestResponse),
-      total,
-      page,
-      totalPages: Math.ceil(total / limit),
-    },
+    sanitizeForUser(
+      {
+        contests: contests.map(formatContestResponse),
+        total,
+        page,
+        totalPages: Math.ceil(total / limit),
+      },
+      req.user
+    ),
     "Contests fetched"
   );
 });
@@ -426,7 +433,7 @@ export const getContestById = asyncHandler(async (req, res) => {
 
   return successResponse(
     res,
-    { contest: formatContestResponse(contest) },
+    sanitizeForUser({ contest: formatContestResponse(contest) }, req.user),
     "Contest fetched"
   );
 });
@@ -527,12 +534,15 @@ export const getDeposits = asyncHandler(async (req, res) => {
 
   return successResponse(
     res,
-    {
-      deposits,
-      total,
-      page,
-      totalPages: Math.ceil(total / limit),
-    },
+    sanitizeForUser(
+      {
+        deposits,
+        total,
+        page,
+        totalPages: Math.ceil(total / limit),
+      },
+      req.user
+    ),
     "Deposits fetched"
   );
 });
@@ -637,12 +647,15 @@ export const getWithdraws = asyncHandler(async (req, res) => {
 
   return successResponse(
     res,
-    {
-      withdraws,
-      total,
-      page,
-      totalPages: Math.ceil(total / limit),
-    },
+    sanitizeForUser(
+      {
+        withdraws,
+        total,
+        page,
+        totalPages: Math.ceil(total / limit),
+      },
+      req.user
+    ),
     "Withdraws fetched"
   );
 });
@@ -827,12 +840,15 @@ export const getKycList = asyncHandler(async (req, res) => {
 
   return successResponse(
     res,
-    {
-      users,
-      total,
-      page,
-      totalPages: Math.ceil(total / limit),
-    },
+    sanitizeForUser(
+      {
+        users,
+        total,
+        page,
+        totalPages: Math.ceil(total / limit),
+      },
+      req.user
+    ),
     "KYC list fetched"
   );
 });
@@ -910,6 +926,10 @@ export const getDummyContests = asyncHandler(async (req, res) => {
  * GET /api/admin/admin-list
  */
 export const getAdminList = asyncHandler(async (req, res) => {
+  if (req.user.role !== "admin") {
+    return forbiddenResponse(res, "Only main admin can view admin list", "ADMIN_ONLY");
+  }
+
   const admins = await User.find({ role: { $in: ["admin", "agent"] } })
     .select("-password")
     .sort({ createdAt: -1 })
@@ -931,6 +951,7 @@ export const createAdminAccount = asyncHandler(async (req, res) => {
   const email = String(req.body.email || "").trim().toLowerCase();
   const password = String(req.body.password || "");
   const role = String(req.body.role || "admin").trim();
+  const permissions = sanitizePermissions(req.body.permissions);
 
   if (!name || !email || !password) {
     return badRequestResponse(res, "Name, Email aur Password required hai", "FIELDS_REQUIRED");
@@ -976,6 +997,7 @@ export const createAdminAccount = asyncHandler(async (req, res) => {
     phone,
     role,
     status: "active",
+    permissions: role === "agent" ? permissions : [],
     referralCode: generateReferralCode(),
   });
 
@@ -988,9 +1010,108 @@ export const createAdminAccount = asyncHandler(async (req, res) => {
         email: admin.email,
         role: admin.role,
         status: admin.status,
+        permissions: admin.permissions || [],
       },
     },
     `${role} created successfully`
+  );
+});
+
+/**
+ * Update an admin/agent account (name, email, password, role, permissions).
+ * PATCH /api/admin/update/:id (main admin only)
+ */
+export const updateAdminAccount = asyncHandler(async (req, res) => {
+  if (req.user.role !== "admin") {
+    return forbiddenResponse(res, "Only main admin can manage admin accounts", "ADMIN_ONLY");
+  }
+
+  const { id } = req.params;
+
+  const target = await User.findById(id);
+  if (!target || !["admin", "agent"].includes(target.role)) {
+    return notFoundResponse(res, "Admin / Agent not found", "ADMIN_NOT_FOUND");
+  }
+
+  const name = String(req.body.name || "").trim();
+  const email = String(req.body.email || "").trim().toLowerCase();
+  const password = req.body.password ? String(req.body.password) : "";
+  const role = String(req.body.role || target.role || "agent").trim();
+  const permissions = req.body.permissions !== undefined
+    ? sanitizePermissions(req.body.permissions)
+    : target.permissions || [];
+
+  if (!["admin", "agent"].includes(role)) {
+    return badRequestResponse(res, "Invalid role", "INVALID_ROLE");
+  }
+
+  // Can't demote yourself / remove your own admin role via this endpoint.
+  if (String(id) === String(req.user._id) && role !== "admin") {
+    return badRequestResponse(res, "You cannot change your own role", "CANNOT_CHANGE_SELF");
+  }
+
+  if (name) target.name = name;
+  if (email && email !== target.email) {
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+      return badRequestResponse(res, "Invalid email address", "INVALID_EMAIL");
+    }
+    const exists = await User.findOne({ email, _id: { $ne: id } });
+    if (exists) {
+      return badRequestResponse(res, "Email already exists", "EMAIL_EXISTS");
+    }
+    target.email = email;
+  }
+
+  if (password) {
+    if (password.length < 6) {
+      return badRequestResponse(res, "Password minimum 6 characters hona chahiye", "WEAK_PASSWORD");
+    }
+    target.password = await bcrypt.hash(password, 10);
+  }
+
+  target.role = role;
+  target.permissions = role === "agent" ? permissions : [];
+  await target.save();
+
+  return successResponse(
+    res,
+    {
+      admin: {
+        _id: target._id,
+        name: target.name,
+        email: target.email,
+        role: target.role,
+        status: target.status,
+        permissions: target.permissions || [],
+      },
+    },
+    "Admin / Agent updated successfully"
+  );
+});
+
+/**
+ * Get the currently logged-in admin/agent session (role + permissions).
+ * GET /api/admin/me
+ */
+export const getMe = asyncHandler(async (req, res) => {
+  const admin = await User.findById(req.user._id).select("-password").lean();
+  if (!admin) {
+    return notFoundResponse(res, "Admin / Agent not found", "ADMIN_NOT_FOUND");
+  }
+
+  return successResponse(
+    res,
+    {
+      admin: {
+        _id: admin._id,
+        name: admin.name,
+        email: admin.email,
+        role: admin.role,
+        status: admin.status,
+        permissions: admin.permissions || [],
+      },
+    },
+    "Session fetched"
   );
 });
 
@@ -1171,7 +1292,12 @@ export const addTrackedAccount = asyncHandler(async (req, res) => {
  */
 export const getTrackedAccounts = asyncHandler(async (req, res) => {
   const accounts = await TrackedAccount.find().sort({ createdAt: -1 }).lean();
-  return successResponse(res, { accounts }, "Tracked accounts fetched");
+  return successResponse(
+    res,
+    // Tracked phone numbers are the account identifiers -> stay visible with client_tracking
+    sanitizeForUser({ accounts }, req.user, ["phone"]),
+    "Tracked accounts fetched"
+  );
 });
 
 /**
@@ -1254,7 +1380,16 @@ export const getTrackedAccountsReport = asyncHandler(async (req, res) => {
     net: accounts.reduce((s, a) => s + a.net, 0),
   };
 
-  return successResponse(res, { accounts, summary, trackedList: tracked }, "Tracked accounts report fetched");
+  return successResponse(
+    res,
+    // Tracked phone numbers are the account identifiers -> stay visible with client_tracking
+    sanitizeForUser(
+      { accounts, summary, trackedList: tracked },
+      req.user,
+      ["phone"]
+    ),
+    "Tracked accounts report fetched"
+  );
 });
 
 /**
@@ -1287,8 +1422,15 @@ export const getSettingsReport = asyncHandler(async (req, res) => {
     createdAt: t.createdAt,
   });
 
-  return successResponse(res, {
-    bonus: bonusTxns.map(mapTxn),
-    penalty: penaltyTxns.map(mapTxn),
-  }, "Settings report fetched");
+  return successResponse(
+    res,
+    sanitizeForUser(
+      {
+        bonus: bonusTxns.map(mapTxn),
+        penalty: penaltyTxns.map(mapTxn),
+      },
+      req.user
+    ),
+    "Settings report fetched"
+  );
 });

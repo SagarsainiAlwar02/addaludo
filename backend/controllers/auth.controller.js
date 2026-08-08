@@ -215,6 +215,7 @@ export const adminLogin = asyncHandler(async (req, res) => {
         name: admin.name,
         email: admin.email,
         role: admin.role,
+        permissions: admin.permissions || [],
       },
     },
     "Admin login successful"
