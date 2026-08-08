@@ -17,3 +17,5 @@ uploads/*
 backend/ludoDB_dump/*
 backend/uploads/*
 backend/scripts/*
+ludoDB.transactions.json
+rejected_today_ludoDB.json

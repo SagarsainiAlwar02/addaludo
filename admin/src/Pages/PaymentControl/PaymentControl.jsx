@@ -20,7 +20,7 @@ const PaymentControl = () => {
   });
 
   const [upiLimit, setUpiLimit] = useState({
-    min: 2000,
+    min: 100,
     max: 100000,
   });
 
@@ -41,7 +41,7 @@ const PaymentControl = () => {
       setUpiList(data.upiList?.length ? data.upiList : [""]);
       setAccount(data.bank || { name: "", accountNumber: "", ifsc: "" });
       setScannerLimit(data.scanner || { min: 0, max: 2000 });
-      setUpiLimit(data.upiLimit || { min: 2000, max: 100000 });
+      setUpiLimit(data.upiLimit || { min: 100, max: 100000 });
       setScannerImage(data.scannerImage || "");
     } catch (err) {
       console.log(err);

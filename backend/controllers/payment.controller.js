@@ -26,7 +26,7 @@ const normalizeSetting = (setting) => ({
   scanner: setting.scanner || { image: "", min: 0, max: 2000, active: true },
   scannerImage: setting.scanner?.image || "",
   upiList: setting.upiList || [],
-  upiLimit: setting.upiLimit || { min: 2000, max: 100000 },
+  upiLimit: setting.upiLimit || { min: 100, max: 100000 },
   bank: setting.bank || { name: "", accountNumber: "", ifsc: "", active: true },
   active: setting.active,
 });
@@ -98,8 +98,8 @@ export const saveUpi = asyncHandler(async (req, res) => {
 
   if (upiLimit) {
     setting.upiLimit = {
-      min: Number(upiLimit.min || 2000),
-      max: Number(upiLimit.max || 100000),
+      min: Number(upiLimit.min) > 0 ? Number(upiLimit.min) : 100,
+      max: Number(upiLimit.max) > 0 ? Number(upiLimit.max) : 100000,
     };
   }
 
