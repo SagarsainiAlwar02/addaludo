@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import "./Sidebar.css";
+import { isAdmin, getAdminUser } from "../../permissions";
 
 /* ---------- inline icon set ---------- */
 const ICON_PATHS = {
@@ -66,6 +67,7 @@ const NAV = [
     label: "Dashboard",
     icon: "dashboard",
     path: "/dashboard",
+    perm: "dashboard",
     items: [
       { label: "All Time", to: "/dashboard", query: { filter: "all" }, isDefault: true },
       { label: "Today", to: "/dashboard", query: { filter: "today" } },
@@ -75,6 +77,7 @@ const NAV = [
     label: "Users",
     icon: "users",
     path: "/users",
+    perm: "user",
     items: [
       { label: "All Users", to: "/users", query: { filter: "all" }, isDefault: true },
       { label: "Active", to: "/users", query: { filter: "active" } },
@@ -86,6 +89,7 @@ const NAV = [
     label: "KYC",
     icon: "kyc",
     path: "/kyc",
+    perm: "kyc",
     items: [
       { label: "All", to: "/kyc", query: { status: "all" }, isDefault: true },
       { label: "Pending", to: "/kyc", query: { status: "pending" } },
@@ -98,6 +102,7 @@ const NAV = [
     label: "Deposit",
     icon: "deposit",
     path: "/deposit",
+    perm: "deposit",
     items: [
       { label: "Pending Deposit", to: "/deposit", query: { tab: "request" }, isDefault: true },
       { label: "Deposit History", to: "/deposit", query: { tab: "history" } },
@@ -107,6 +112,7 @@ const NAV = [
     label: "Withdraw",
     icon: "withdraw",
     path: "/withdraw",
+    perm: "withdraw",
     items: [
       { label: "Pending Withdraw", to: "/withdraw", query: { tab: "request" }, isDefault: true },
       { label: "Withdraw History", to: "/withdraw", query: { tab: "history" } },
@@ -116,6 +122,7 @@ const NAV = [
     label: "Matches",
     icon: "matches",
     path: "/matches",
+    perm: "matches",
     items: [
       { label: "Running Match", to: "/matches", query: { tab: "running" }, isDefault: true },
       { label: "Pending Match", to: "/matches", query: { tab: "pending" } },
@@ -124,11 +131,12 @@ const NAV = [
       { label: "Total Match", to: "/matches", query: { tab: "total" } },
     ],
   },
-  { label: "Dummy Battles", icon: "dummy", to: "/dummy-battles" },
+  { label: "Dummy Battles", icon: "dummy", to: "/dummy-battles", adminOnly: true },
   {
     label: "Settings",
     icon: "settings",
     path: "/settings",
+    perm: "setting",
     items: [
       { label: "Bonus", to: "/settings", query: { tab: "bonus" }, isDefault: true },
       { label: "Penalty", to: "/settings", query: { tab: "penalty" } },
@@ -140,6 +148,7 @@ const NAV = [
     label: "Payment Control",
     icon: "payment",
     path: "/payment",
+    perm: "payment_control",
     items: [
       { label: "Upload Scanner", to: "/payment", query: { tab: "scanner" }, isDefault: true },
       { label: "Upload UPI", to: "/payment", query: { tab: "upi" } },
@@ -150,15 +159,41 @@ const NAV = [
     label: "Admin Control",
     icon: "admin",
     path: "/admin-control",
+    perm: "admin_control",
     items: [
       { label: "Website Settings", to: "/admin-control", query: { tab: "website" }, isDefault: true },
-      { label: "Add Admin/Agent", to: "/admin-control", query: { tab: "add" } },
-      { label: "Admin/Agent Data", to: "/admin-control", query: { tab: "data" } },
-      { label: "Permissions", to: "/admin-control", query: { tab: "permission" } },
+      { label: "Add Admin/Agent", to: "/admin-control", query: { tab: "add" }, adminOnly: true },
+      { label: "Admin/Agent Data", to: "/admin-control", query: { tab: "data" }, adminOnly: true },
     ],
   },
-  { label: "Client Tracking", icon: "tracking", to: "/client-tracking" },
+  { label: "Client Tracking", icon: "tracking", to: "/client-tracking", perm: "client_tracking" },
 ];
+
+/**
+ * Build the navigation visible to the current user.
+ * - admin sees everything
+ * - agent sees only granted sections; adminOnly items stay hidden
+ */
+const buildVisibleNav = () => {
+  if (isAdmin()) return NAV;
+
+  const user = getAdminUser();
+  const perms = Array.isArray(user?.permissions) ? user.permissions : [];
+
+  return NAV
+    .filter((section) => {
+      if (section.adminOnly) return false;
+      if (!section.perm) return true; // direct links without perm requirement
+      return perms.includes(section.perm);
+    })
+    .map((section) => {
+      if (!section.items) return section;
+      return {
+        ...section,
+        items: section.items.filter((item) => !item.adminOnly),
+      };
+    });
+};
 
 const toURL = (to, query = {}) => {
   const params = new URLSearchParams(query).toString();
@@ -171,13 +206,15 @@ const Sidebar = ({ open, setOpen }) => {
 
   const [expanded, setExpanded] = useState(() => new Set());
 
+  const visibleNav = buildVisibleNav();
+
   // Auto-expand the section matching the current page
   useEffect(() => {
-    const current = NAV.find((s) => s.items && s.path === location.pathname);
+    const current = visibleNav.find((s) => s.items && s.path === location.pathname);
     if (current) {
       setExpanded((prev) => (prev.has(current.path) ? prev : new Set(prev).add(current.path)));
     }
-  }, [location.pathname]);
+  }, [location.pathname, visibleNav]);
 
   const closeMenu = () => setOpen(false);
 
@@ -253,7 +290,7 @@ const Sidebar = ({ open, setOpen }) => {
         </div>
 
         <nav className="sidebar-nav">
-          {NAV.map((section) => {
+          {visibleNav.map((section) => {
             // ---- direct link ----
             if (!section.items) {
               const active = location.pathname === section.to;

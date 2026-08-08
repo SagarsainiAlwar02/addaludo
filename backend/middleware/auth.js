@@ -19,7 +19,7 @@ const auth = async (req, res, next) => {
   }
 
   const user = await User.findById(decoded.id)
-    .select("_id name phone role status referralCode kycStatus")
+    .select("_id name phone role status referralCode kycStatus permissions")
     .lean();
 
   if (!user) {

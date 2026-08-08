@@ -39,6 +39,12 @@ const userSchema = new mongoose.Schema(
       index: true,
     },
 
+    permissions: {
+      type: [String],
+      default: [],
+      index: true,
+    },
+
     status: {
       type: String,
       enum: ["active", "blocked"],

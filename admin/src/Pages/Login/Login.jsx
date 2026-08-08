@@ -1,5 +1,6 @@
 import { useState } from "react";
 import API, { getError } from "../../api";
+import { firstAllowedPath } from "../../permissions";
 import "./Login.css";
 
 const Login = () => {
@@ -35,8 +36,8 @@ const Login = () => {
       localStorage.setItem("adminToken", token);
       localStorage.setItem("adminUser", JSON.stringify(admin));
 
-      // REDIRECT
-      window.location.href = "/dashboard";
+      // REDIRECT to the first section the user is allowed to see
+      window.location.href = firstAllowedPath(admin);
     } catch (err) {
       console.log(
         "LOGIN ERROR:",
