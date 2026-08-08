@@ -29,7 +29,7 @@ const paymentSettingSchema = new mongoose.Schema(
     upiLimit: {
       min: {
         type: Number,
-        default: 2000,
+        default: 100,
       },
       max: {
         type: Number,

@@ -40,8 +40,8 @@ const validateDepositAmount = (amount, method, settings) => {
     if (amount < min) return `Minimum QR deposit is ₹${min}`;
     if (amount > max) return `Maximum QR deposit is ₹${max}`;
   } else if (method === "upi_bank") {
-    const min = Number(settings?.upiLimit?.min || 2000);
-    const max = Number(settings?.upiLimit?.max || 100000);
+    const min = Number(settings?.upiLimit?.min ?? 100);
+    const max = Number(settings?.upiLimit?.max ?? 100000);
     if (amount < min) return `Minimum UPI/Bank deposit is ₹${min}`;
     if (amount > max) return `Maximum UPI/Bank deposit is ₹${max}`;
   }
