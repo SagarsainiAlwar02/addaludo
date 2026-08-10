@@ -466,7 +466,7 @@ const Battle = () => {
     <div className="min-h-screen bg-[#eef3ff] px-3 pb-28 pt-14 text-slate-950">
       <div className="mx-auto max-w-md">
         {/* Banner Box */}
-        <div className="mb-4 mt-2 text-white px-5 py-3 overflow-hidden rounded-lg bg-black shadow-md">
+        <div className="mb-4 mt-2 text-[12px] text-white px-5 py-3 overflow-hidden rounded-lg bg-black shadow-md">
           {/* <div className="flex items-center justify-center pt-1 pb-1">
             <p className="text-[10px] font-black uppercase tracking-[0.25em] text-cyan-100">
               Adda Ludo
