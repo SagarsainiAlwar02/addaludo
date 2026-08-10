@@ -236,14 +236,22 @@ const Battle = () => {
       }
     }
 
-    realRunningAndPendingBattles.sort(
-      (a, b) =>
+    // User's own battles (the ones showing the VIEW button) always go on top;
+    // other players' battles follow below. Within each group keep newest first.
+    realRunningAndPendingBattles.sort((a, b) => {
+      const aMine = getCreatorId(a) === myId || getOpponentId(a) === myId;
+      const bMine = getCreatorId(b) === myId || getOpponentId(b) === myId;
+
+      if (aMine !== bMine) return aMine ? -1 : 1;
+
+      return (
         new Date(b.updatedAt || b.createdAt || 0) -
         new Date(a.updatedAt || a.createdAt || 0)
-    );
+      );
+    });
 
     return [...realRunningAndPendingBattles, ...FAKE_RUNNING_BATTLES];
-  }, [allBattles]);
+  }, [allBattles, myId]);
 
   const validateAmount = () => {
     const amt = Number(betAmount);
@@ -598,64 +606,108 @@ function MatchCard({ battle, calculatePrize, onClick, myId }) {
   const status = String(battle?.status || "").toLowerCase();
   const isPending = status === "result_submitted" || status === "cancel_requested";
 
-  const isMine =
-    String(battle?.createdBy?._id || battle?.createdBy?.id || battle?.createdBy || "") === myId;
-
-  const isOpponent =
-    String(battle?.opponent?._id || battle?.opponent?.id || battle?.opponent || "") === myId;
+  const isMine = getCreatorId(battle) === myId;
+  const isOpponent = getOpponentId(battle) === myId;
 
   const isParticipant = !battle?.isFake && (isMine || isOpponent);
+
+  const creatorName = battle?.createdBy?.name || "Player";
+  const opponentName = battle?.opponent?.name || "Opponent";
+  const amount = battle?.amount || 0;
+  const prize = battle?.prize || calculatePrize(battle?.amount);
 
   return (
     <div
       onClick={onClick}
-      className={`cursor-pointer overflow-hidden rounded-xl bg-white shadow-md ring-1 active:scale-[0.99] ${
-        isPending ? "ring-orange-300 bg-orange-50/20" : "ring-indigo-200"
+      className={`cursor-pointer overflow-hidden rounded-xl bg-white shadow-md ring-1 transition active:scale-[0.99] ${
+        isPending ? "ring-orange-200" : "ring-slate-200"
       }`}
     >
-      <div className="px-3 py-2 border-b border-slate-100 flex items-center justify-between gap-2">
-        <div className="min-w-0">
-          <p className="text-[11px] font-semibold text-slate-500">
-            {isPending ? "Result Waiting" : "Running Battle"}
-          </p>
-
-          <h3 className="truncate text-sm font-bold text-slate-900">
-            {battle?.createdBy?.name || "Player"} VS {battle?.opponent?.name || "Opponent"}
-          </h3>
+      {/* Top band — Playing For | Prize */}
+      <div className="flex items-center justify-between gap-2 border-b border-slate-100 bg-slate-50/80 px-3 py-1.5">
+        <div className="flex min-w-0 items-center gap-1.5">
+          <span className="shrink-0 text-[10px] font-semibold uppercase tracking-wide text-slate-400">
+            Playing For
+          </span>
+          <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-violet-500 to-purple-700 text-[10px] font-black text-white shadow-sm">
+            ₹
+          </span>
+          <span className="truncate text-xs font-bold text-slate-900">{amount}</span>
         </div>
 
-        <div
-          className={`shrink-0 rounded-md px-2 py-0.5 text-[10px] font-bold ${
-            isPending ? "bg-orange-100 text-orange-700" : "bg-green-100 text-green-700"
-          }`}
-        >
-          {isPending ? "Pending" : "Live"}
+        <div className="flex min-w-0 items-center gap-1.5">
+          <span className="shrink-0 text-[10px] font-semibold uppercase tracking-wide text-slate-400">
+            Prize
+          </span>
+          <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-violet-500 to-purple-700 text-[10px] font-black text-white shadow-sm">
+            ₹
+          </span>
+          <span className="truncate text-xs font-bold text-slate-900">{prize}</span>
         </div>
       </div>
 
-      <div className="grid grid-cols-3 items-center gap-2 px-3 py-2.5">
-        <MoneyBlock label="Entry Fee" value={battle?.amount} />
+      {/* Players facing off */}
+      <div className="flex items-center justify-between gap-2 px-4 py-2">
+        <PlayerAvatar name={creatorName} />
 
-        <div className="flex justify-center shrink-0">
+        <div className="flex shrink-0 items-center justify-center">
           {isParticipant ? (
             isPending ? (
-              <button className="rounded-lg bg-orange-500 px-3 py-1.5 text-xs font-black text-white shadow-md shadow-orange-500/20 active:scale-95 uppercase">
+              <button className="rounded-full bg-orange-500 px-3 py-1 text-[10px] font-black uppercase tracking-wide text-white shadow-md shadow-orange-500/20 active:scale-95">
                 Pending
               </button>
             ) : (
-              <button className="rounded-lg bg-indigo-600 px-3.5 py-1.5 text-xs font-black text-white shadow-md shadow-indigo-500/20 active:scale-95 uppercase">
+              <button className="rounded-full bg-gradient-to-r from-indigo-600 to-violet-600 px-4 py-1 text-[10px] font-black uppercase tracking-wide text-white shadow-md shadow-indigo-500/25 active:scale-95">
                 VIEW
               </button>
             )
           ) : (
-            <div className="flex h-8 w-11 items-center justify-center rounded-lg bg-gradient-to-r from-pink-500 via-violet-500 to-indigo-500 text-[11px] font-bold text-white shadow-sm">
-              VS
+            <div className="flex h-8 w-8 items-center justify-center rounded-full bg-[#242b56] shadow-inner ring-2 ring-white/60">
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                className="h-4 w-4 text-white"
+              >
+                <polyline points="14.5 17.5 3 6 3 3 6 3 17.5 14.5" />
+                <line x1="13" x2="19" y1="19" y2="13" />
+                <line x1="16" x2="20" y1="16" y2="20" />
+                <line x1="19" x2="21" y1="21" y2="19" />
+                <polyline points="14.5 6.5 18 3 21 3 21 6 17.5 9.5" />
+                <line x1="5" x2="9" y1="14" y2="18" />
+                <line x1="7" x2="4" y1="17" y2="20" />
+                <line x1="3" x2="5" y1="19" y2="21" />
+              </svg>
             </div>
           )}
         </div>
 
-        <MoneyBlock label="Winning" value={battle?.prize || calculatePrize(battle?.amount)} right />
+        <PlayerAvatar name={opponentName} />
       </div>
+    </div>
+  );
+}
+
+function PlayerAvatar({ name }) {
+  const safeName = String(name || "Player").trim() || "Player";
+
+  return (
+    <div className="flex min-w-0 flex-1 flex-col items-center gap-1">
+      <div className="h-9 w-9 shrink-0 overflow-hidden rounded-full bg-indigo-50 shadow ring-2 ring-white">
+        <img
+          src={`https://api.dicebear.com/7.x/avataaars/svg?seed=${encodeURIComponent(safeName)}`}
+          alt={safeName}
+          loading="lazy"
+          className="h-full w-full object-cover"
+        />
+      </div>
+      <p className="w-full truncate text-center text-[10px] font-bold text-slate-800">
+        {safeName}
+      </p>
     </div>
   );
 }
