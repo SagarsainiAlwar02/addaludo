@@ -38,7 +38,7 @@ const FAKE_OPPONENT_NAMES = [
 ];
 
 const FAKE_BATTLE_AMOUNTS = [
- 2000, 750, 2500, 1000, 1250, 100, 350, 4000, 100, 1450, 3250, 2050, 1500, 600, 2000, 200, 100, 2250, 150, 7000, 5500, 950, 50, 1050
+  2000, 750, 2500, 1000, 1250, 100, 350, 4000, 100, 1450, 3250, 2050, 1500, 600, 2000, 200, 100, 2250, 150, 7000, 5500, 950, 50, 1050
 ];
 
 const randomFrom = (arr) => arr[Math.floor(Math.random() * arr.length)];
@@ -474,25 +474,22 @@ const Battle = () => {
           </div>
 
           <div className="mt-1 rounded-xl bg-black/30 px-3 py-2 text-center text-[11px] font-bold leading-relaxed text-white ring-1 ring-white/10 shadow-inner">
-            ADDA LUDO में आपका स्वागत है, सबसे Fast ⏩ विथड्रॉ है, 👉 मात्र 2-3 Min में, 👈 आपका विश्वास बनाये रखे 🙏 
+            ADDA LUDO में आपका स्वागत है, सबसे Fast ⏩ विथड्रॉ है, 👉 मात्र 2-3 Min में, 👈 आपका विश्वास बनाये रखे 🙏
           </div>
         </div>
+        <div className="w-full flex justify-center">
+          <h2 className="text-base font-bold">Create Battle</h2>
+        </div>
 
-        <div className="mb-5 rounded-xl bg-white p-3 shadow-md ring-1 ring-slate-200">
-          <div className="mb-3 flex items-center justify-between">
-            <div>
-              <h2 className="text-base font-bold">Create Battle</h2>
-              <p className="text-[11px] font-medium text-slate-400">
-              
-              </p>
-            </div>
+        <div className="mb-5 mx-10 rounded-[50px] bg-white shadow-md ring-1 ring-slate-200">
+          {/* <div className="mb-3 flex items-center justify-between">
 
             <button className="rounded-md bg-indigo-600 px-3 py-1.5 text-[11px] font-bold text-white">
               Rules
             </button>
-          </div>
+          </div> */}
 
-          <div className="flex items-center gap-2 rounded-lg bg-slate-100 p-2 ring-1 ring-slate-200">
+          <div className="flex rounded-[50px] items-center gap-2 bg-white p-2 ring-1 ring-slate-200">
             <div className="flex h-9 w-9 items-center justify-center rounded-md bg-white text-base font-semibold shadow-sm">
               ₹
             </div>
@@ -511,7 +508,7 @@ const Battle = () => {
             <button
               disabled={actionLoading}
               onClick={handleCreate}
-              className="rounded-md bg-slate-900 px-4 py-2 text-xs font-bold text-white active:scale-95 disabled:opacity-60"
+              className="rounded-md bg-slate-900 mr-2 px-4 py-2 text-xs font-bold text-white active:scale-95 disabled:opacity-60"
             >
               {actionLoading ? "..." : "Set"}
             </button>
@@ -578,9 +575,9 @@ function EmptyBox({ text }) {
 function OpenCard({ battle, action, calculatePrize }) {
   return (
     <div className="overflow-hidden rounded-xl bg-white shadow-md ring-1 ring-slate-200">
-      <div className="px-3 py-2 border-b border-slate-100 flex items-center justify-between">
+      <div className="bg-gray-200 px-3 py-2 border-b border-slate-100 flex items-center justify-between">
         <div className="flex items-center gap-2">
-          <h3 className="text-[11px] font-semibold text-slate-500">Challenge From</h3>
+          <h3 className="text-[11px] font-semibold text-gray-600">Challenge From</h3>
           <h3 className="truncate text-[12px] font-bold text-slate-900">
             {battle?.createdBy?.name || "Player"}
           </h3>
@@ -619,9 +616,8 @@ function MatchCard({ battle, calculatePrize, onClick, myId }) {
   return (
     <div
       onClick={onClick}
-      className={`cursor-pointer overflow-hidden rounded-xl bg-white shadow-md ring-1 transition active:scale-[0.99] ${
-        isPending ? "ring-orange-200" : "ring-slate-200"
-      }`}
+      className={`cursor-pointer overflow-hidden rounded-xl bg-white shadow-md ring-1 transition active:scale-[0.99] ${isPending ? "ring-orange-200" : "ring-slate-200"
+        }`}
     >
       {/* Top band — Playing For | Prize */}
       <div className="flex items-center justify-between gap-2 border-b border-slate-100 bg-gray-200 px-3 py-1.5">
