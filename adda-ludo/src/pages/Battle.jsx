@@ -492,7 +492,7 @@ const Battle = () => {
           </div> */}
 
           <div className="flex rounded-[50px] items-center gap-2 bg-white p-2 ring-1 ring-slate-200">
-            <div className="flex h-9 w-9 items-center justify-center rounded-md bg-white text-base font-semibold shadow-sm">
+            <div className="flex h-9 w-9 items-center justify-center rounded-md bg-white text-base font-semibold">
               ₹
             </div>
 
