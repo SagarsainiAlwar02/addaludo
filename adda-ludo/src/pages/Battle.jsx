@@ -466,16 +466,18 @@ const Battle = () => {
     <div className="min-h-screen bg-[#eef3ff] px-3 pb-28 pt-14 text-slate-950">
       <div className="mx-auto max-w-md">
         {/* Banner Box */}
-        <div className="mb-4 overflow-hidden rounded-2xl bg-gradient-to-br from-[#111827] via-[#202b65] to-[#06b6d4] p-2 shadow-md">
-          <div className="flex items-center justify-center pt-1 pb-1">
+        <div className="mb-4 mt-2 text-white px-5 py-3 overflow-hidden rounded-lg bg-black shadow-md">
+          {/* <div className="flex items-center justify-center pt-1 pb-1">
             <p className="text-[10px] font-black uppercase tracking-[0.25em] text-cyan-100">
               Adda Ludo
             </p>
-          </div>
+          </div> */}
 
-          <div className="mt-1 rounded-xl bg-black/30 px-3 py-2 text-center text-[11px] font-bold leading-relaxed text-white ring-1 ring-white/10 shadow-inner">
             ADDA LUDO में आपका स्वागत है, सबसे Fast ⏩ विथड्रॉ है, 👉 मात्र 2-3 Min में, 👈 आपका विश्वास बनाये रखे 🙏
-          </div>
+
+          {/* <div className="mt-1 rounded-xl bg-black/30 px-3 py-2 text-center text-[11px] font-bold leading-relaxed text-white ring-1 ring-white/10 shadow-inner">
+            ADDA LUDO में आपका स्वागत है, सबसे Fast ⏩ विथड्रॉ है, 👉 मात्र 2-3 Min में, 👈 आपका विश्वास बनाये रखे 🙏
+          </div> */}
         </div>
         <div className="w-full flex justify-center">
           <h2 className="text-base font-bold">Create Battle</h2>
@@ -530,6 +532,8 @@ const Battle = () => {
           ))}
         </div>
 
+        <div className="h-[3px] rounded-full bg-gray-500 mt-4"></div>
+
         <SectionTitle title="Running Battles" />
 
         <div className="space-y-4">
@@ -555,8 +559,8 @@ const Battle = () => {
 
 function SectionTitle({ title }) {
   return (
-    <div className="mb-2 mt-6 flex items-center justify-start gap-1.5 px-1">
-      <h3 className="text-sm font-black uppercase tracking-wide text-slate-800">
+    <div className="mb-2 mt-3 flex items-center justify-start gap-1.5 px-1">
+      <h3 className="text-[15px] font-black uppercase tracking-wide text-slate-800">
         {title}
       </h3>
       <span className="text-sm">⚔️</span>
