@@ -579,9 +579,9 @@ function OpenCard({ battle, action, calculatePrize }) {
   return (
     <div className="overflow-hidden rounded-xl bg-white shadow-md ring-1 ring-slate-200">
       <div className="px-3 py-2 border-b border-slate-100 flex items-center justify-between">
-        <div>
-          <p className="text-[11px] font-semibold text-slate-500">Challenge From</p>
-          <h3 className="truncate text-sm font-bold text-slate-900">
+        <div className="flex items-center gap-2">
+          <h3 className="text-[11px] font-semibold text-slate-500">Challenge From</h3>
+          <h3 className="truncate text-[12px] font-bold text-slate-900">
             {battle?.createdBy?.name || "Player"}
           </h3>
         </div>
@@ -624,22 +624,22 @@ function MatchCard({ battle, calculatePrize, onClick, myId }) {
       }`}
     >
       {/* Top band — Playing For | Prize */}
-      <div className="flex items-center justify-between gap-2 border-b border-slate-100 bg-slate-50/80 px-3 py-1.5">
+      <div className="flex items-center justify-between gap-2 border-b border-slate-100 bg-gray-200 px-3 py-1.5">
         <div className="flex min-w-0 items-center gap-1.5">
-          <span className="shrink-0 text-[10px] font-semibold uppercase tracking-wide text-slate-400">
+          <span className="shrink-0 text-[10px] font-semibold uppercase tracking-wide text-gray-600">
             Playing For
           </span>
-          <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-violet-500 to-purple-700 text-[10px] font-black text-white shadow-sm">
+          <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-green-500 to-green-700 text-[10px] font-black text-white shadow-sm">
             ₹
           </span>
           <span className="truncate text-xs font-bold text-slate-900">{amount}</span>
         </div>
 
         <div className="flex min-w-0 items-center gap-1.5">
-          <span className="shrink-0 text-[10px] font-semibold uppercase tracking-wide text-slate-400">
+          <span className="shrink-0 text-[10px] font-semibold uppercase tracking-wide text-gray-600">
             Prize
           </span>
-          <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-violet-500 to-purple-700 text-[10px] font-black text-white shadow-sm">
+          <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-green-500 to-green-700 text-[10px] font-black text-white shadow-sm">
             ₹
           </span>
           <span className="truncate text-xs font-bold text-slate-900">{prize}</span>
@@ -647,7 +647,7 @@ function MatchCard({ battle, calculatePrize, onClick, myId }) {
       </div>
 
       {/* Players facing off */}
-      <div className="flex items-center justify-between gap-2 px-4 py-2">
+      <div className="flex items-center justify-between gap-2 px-8 py-2">
         <PlayerAvatar name={creatorName} />
 
         <div className="flex shrink-0 items-center justify-center">
@@ -696,7 +696,7 @@ function PlayerAvatar({ name }) {
   const safeName = String(name || "Player").trim() || "Player";
 
   return (
-    <div className="flex min-w-0 flex-1 flex-col items-center gap-1">
+    <div className="flex min-w-0 flex-col items-center gap-1">
       <div className="h-9 w-9 shrink-0 overflow-hidden rounded-full bg-indigo-50 shadow ring-2 ring-white">
         <img
           src={`https://api.dicebear.com/7.x/avataaars/svg?seed=${encodeURIComponent(safeName)}`}
