@@ -3,7 +3,7 @@ import { useNavigate } from "react-router-dom";
 import api, { getData, getError } from "../api.js";
 import { 
   History, Wallet, Gift, Headphones, LogOut, Pencil, Check, 
-  Trophy, Gamepad2, ShieldCheck, ChevronRight, Phone
+  Trophy, Gamepad2, ShieldCheck, ChevronRight, Phone, User
 } from "lucide-react";
 
 // 5 random characters generator function
@@ -78,77 +78,104 @@ export default function Profile({ onLogout }) {
   };
 
   return (
-    <div className="min-h-screen bg-slate-50 px-3 pb-24 pt-24 font-sans text-slate-800">
-      <div className="mx-auto max-w-[420px]">
+    <div className="min-h-screen bg-slate-900 px-4 pb-24 pt-6 font-sans text-slate-100 flex justify-center items-center">
+      <div className="w-full max-w-[420px] space-y-4">
         
-        {/* Profile Box */}
-        <div className="bg-white rounded-2xl p-4 shadow-sm border-l-4 border-l-indigo-500 flex items-center gap-3 mb-4 transition-all hover:shadow-md">
-          <div className="bg-indigo-100 p-1 rounded-full">
-             <img src={`https://api.dicebear.com/7.x/avataaars/svg?seed=${profile.userName}`} className="h-10 w-10" alt="avatar" />
-          </div>
+        {/* Modern Dark Header / Profile Box */}
+        <div className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-slate-800 via-slate-900 to-indigo-950 p-5 border border-slate-800 shadow-2xl">
+          <div className="absolute -top-10 -right-10 w-32 h-32 bg-indigo-500/10 rounded-full blur-2xl pointer-events-none" />
           
-          <div className="flex-1 min-w-0">
-            {isEditing ? (
-              <div className="flex gap-1.5 items-center">
-                <input 
-                  value={tempName} 
-                  maxLength={15}
-                  onChange={(e) => setTempName(e.target.value)} 
-                  className="w-full bg-slate-100 rounded-lg px-2 py-1 outline-none text-xs font-bold" 
+          <div className="flex items-center gap-4 relative z-10">
+            {/* Avatar Container */}
+            <div className="relative group">
+              <div className="w-14 h-14 rounded-2xl bg-gradient-to-tr from-indigo-500 to-purple-500 p-[2px] shadow-lg shadow-indigo-500/20">
+                <img 
+                  src={`https://api.dicebear.com/7.x/avataaars/svg?seed=${profile.userName}`} 
+                  className="h-full w-full rounded-[14px] bg-slate-900 object-cover" 
+                  alt="avatar" 
                 />
-                <button onClick={saveProfile} className="bg-emerald-500 text-white p-1.5 rounded-lg">
-                  <Check className="w-3.5 h-3.5"/>
-                </button>
               </div>
-            ) : (
-              <div className="flex justify-between items-center">
-                <div>
-                  <h2 className="text-sm font-black text-slate-900 truncate">{profile.userName}</h2>
-                  <p className="text-[10px] text-slate-500 font-bold flex items-center gap-1">
-                    <Phone className="w-2.5 h-2.5"/> {profile.phone || "No phone"}
-                  </p>
+            </div>
+
+            {/* User Info */}
+            <div className="flex-1 min-w-0">
+              {isEditing ? (
+                <div className="flex gap-2 items-center">
+                  <input 
+                    value={tempName} 
+                    maxLength={15}
+                    onChange={(e) => setTempName(e.target.value)} 
+                    className="w-full bg-slate-800/80 border border-indigo-500/50 rounded-xl px-3 py-1.5 outline-none text-xs font-semibold text-white focus:ring-2 focus:ring-indigo-500" 
+                    placeholder="Enter name"
+                  />
+                  <button onClick={saveProfile} className="bg-emerald-500 hover:bg-emerald-600 text-white p-2 rounded-xl transition shadow-lg shadow-emerald-500/20">
+                    <Check className="w-4 h-4"/>
+                  </button>
                 </div>
-                <button onClick={() => setIsEditing(true)} className="p-1.5 bg-slate-100 rounded-full hover:bg-slate-200 transition">
-                  <Pencil className="w-3.5 h-3.5 text-slate-500" />
-                </button>
-              </div>
-            )}
+              ) : (
+                <div className="flex justify-between items-center">
+                  <div>
+                    <h2 className="text-base font-extrabold text-white tracking-wide truncate flex items-center gap-1.5">
+                      {profile.userName}
+                    </h2>
+                    <p className="text-xs text-slate-400 font-medium flex items-center gap-1.5 mt-0.5">
+                      <Phone className="w-3 h-3 text-indigo-400"/> {profile.phone || "No phone linked"}
+                    </p>
+                  </div>
+                  <button 
+                    onClick={() => setIsEditing(true)} 
+                    className="p-2 bg-slate-800/80 hover:bg-slate-700 text-slate-300 rounded-xl border border-slate-700/50 transition active:scale-95"
+                  >
+                    <Pencil className="w-3.5 h-3.5" />
+                  </button>
+                </div>
+              )}
+            </div>
           </div>
         </div>
 
         {/* Stats Grid */}
-        <div className="grid grid-cols-2 gap-3 mb-4">
-          <div className="bg-gradient-to-br from-emerald-50 to-white p-3 rounded-2xl border border-emerald-100 shadow-sm hover:scale-[1.02] transition">
-            <div className="flex items-center gap-1.5 text-emerald-600 mb-1">
-               <Trophy className="w-3 h-3"/>
-               <span className="text-[9px] font-bold uppercase tracking-wider">Total Won</span>
+        <div className="grid grid-cols-2 gap-3">
+          <div className="bg-slate-800/60 backdrop-blur-md p-4 rounded-2xl border border-slate-800 shadow-lg relative overflow-hidden group">
+            <div className="flex items-center gap-2 text-emerald-400 mb-1.5">
+              <div className="p-1.5 bg-emerald-500/10 rounded-lg">
+                <Trophy className="w-4 h-4"/>
+              </div>
+              <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400">Total Won</span>
             </div>
-            <h2 className="text-lg font-black text-emerald-700">₹{profile.totalWon.toLocaleString()}</h2>
+            <h2 className="text-xl font-black text-white">₹{profile.totalWon.toLocaleString()}</h2>
           </div>
-          <div className="bg-gradient-to-br from-blue-50 to-white p-3 rounded-2xl border border-blue-100 shadow-sm hover:scale-[1.02] transition">
-            <div className="flex items-center gap-1.5 text-blue-600 mb-1">
-               <Gamepad2 className="w-3 h-3"/>
-               <span className="text-[9px] font-bold uppercase tracking-wider">Matches</span>
+
+          <div className="bg-slate-800/60 backdrop-blur-md p-4 rounded-2xl border border-slate-800 shadow-lg relative overflow-hidden group">
+            <div className="flex items-center gap-2 text-indigo-400 mb-1.5">
+              <div className="p-1.5 bg-indigo-500/10 rounded-lg">
+                <Gamepad2 className="w-4 h-4"/>
+              </div>
+              <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400">Matches</span>
             </div>
-            <h2 className="text-lg font-black text-blue-700">{profile.matches}</h2>
+            <h2 className="text-xl font-black text-white">{profile.matches}</h2>
           </div>
         </div>
 
         {/* Dynamic KYC Box */}
-        <div className={`rounded-2xl p-4 shadow-sm border mb-4 flex items-center justify-between transition-all ${
-           profile.kycStatus === 'approved' ? 'bg-emerald-50 border-emerald-100' :
-           profile.kycStatus === 'rejected' ? 'bg-red-50 border-red-100' :
-           'bg-indigo-50 border-indigo-100'
+        <div className={`rounded-2xl p-4 border backdrop-blur-md shadow-lg flex items-center justify-between transition-all ${
+           profile.kycStatus === 'approved' ? 'bg-emerald-950/30 border-emerald-500/30' :
+           profile.kycStatus === 'rejected' ? 'bg-rose-950/30 border-rose-500/30' :
+           'bg-indigo-950/30 border-indigo-500/30'
         }`}>
             <div className="flex items-center gap-3">
-                <div className={`p-2 rounded-xl ${profile.kycStatus === 'approved' ? 'bg-emerald-500 text-white' : 'bg-indigo-500 text-white'}`}>
+                <div className={`p-2.5 rounded-xl ${
+                  profile.kycStatus === 'approved' ? 'bg-emerald-500/20 text-emerald-400' : 
+                  profile.kycStatus === 'rejected' ? 'bg-rose-500/20 text-rose-400' :
+                  'bg-indigo-500/20 text-indigo-400'
+                }`}>
                     <ShieldCheck className="w-5 h-5"/>
                 </div>
                 <div>
-                    <p className="text-[9px] font-bold text-slate-500 uppercase tracking-widest">KYC Status</p>
-                    <p className={`text-xs font-black ${
-                        profile.kycStatus === 'approved' ? 'text-emerald-700' :
-                        profile.kycStatus === 'rejected' ? 'text-red-600' : 'text-indigo-700'
+                    <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">KYC Status</p>
+                    <p className={`text-xs font-bold ${
+                        profile.kycStatus === 'approved' ? 'text-emerald-400' :
+                        profile.kycStatus === 'rejected' ? 'text-rose-400' : 'text-indigo-400'
                     }`}>
                         {profile.kycStatus === 'approved' ? 'Verified' : 
                          profile.kycStatus === 'rejected' ? 'Rejected' : 
@@ -158,45 +185,46 @@ export default function Profile({ onLogout }) {
             </div>
             <button
                 onClick={() => navigate("/kyc")}
-                className={`text-[10px] font-bold px-3 py-1.5 rounded-lg border active:scale-95 transition ${
-                    profile.kycStatus === 'approved' ? 'bg-white text-emerald-600 border-emerald-200' :
-                    profile.kycStatus === 'rejected' ? 'bg-red-500 text-white border-red-500' :
-                    'bg-indigo-600 text-white border-indigo-500'
+                className={`text-xs font-bold px-3.5 py-2 rounded-xl transition active:scale-95 shadow-md ${
+                    profile.kycStatus === 'approved' ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/30 hover:bg-emerald-500/20' :
+                    profile.kycStatus === 'rejected' ? 'bg-rose-600 hover:bg-rose-700 text-white shadow-rose-600/20' :
+                    'bg-indigo-600 hover:bg-indigo-500 text-white shadow-indigo-600/20'
                 }`}
             >
                 {profile.kycStatus === 'approved' ? 'View' :
-                 profile.kycStatus === 'rejected' ? 'Retry KYC' : 'Complete Now'}
+                 profile.kycStatus === 'rejected' ? 'Retry' : 'Verify'}
             </button>
         </div>
 
         {/* Menu Items */}
-        <div className="bg-white rounded-2xl p-1.5 shadow-sm border border-slate-100">
+        <div className="bg-slate-800/40 backdrop-blur-md rounded-2xl p-2 border border-slate-800/80 shadow-xl divide-y divide-slate-800/50">
           {[
-            { title: "History", icon: <History />, color: "from-blue-400 to-blue-600", path: "/history" },
-            { title: "My Wallet", icon: <Wallet />, color: "from-emerald-400 to-emerald-600", path: "/wallet" },
-            { title: "Refer & Earn", icon: <Gift />, color: "from-amber-400 to-amber-600", path: "/refer" },
-            { title: "Support", icon: <Headphones />, color: "from-rose-400 to-rose-600", path: "/support" }
+            { title: "History", icon: <History />, color: "from-blue-500 to-cyan-500", path: "/history" },
+            { title: "My Wallet", icon: <Wallet />, color: "from-emerald-500 to-teal-500", path: "/wallet" },
+            { title: "Refer & Earn", icon: <Gift />, color: "from-amber-500 to-orange-500", path: "/refer" },
+            { title: "Support", icon: <Headphones />, color: "from-rose-500 to-pink-500", path: "/support" }
           ].map((item, idx) => (
             <div
               key={idx}
               onClick={() => navigate(item.path)}
-              className="flex items-center gap-3 p-3 hover:bg-slate-50 rounded-xl cursor-pointer transition-all group"
+              className="flex items-center gap-3.5 p-3 hover:bg-slate-800/60 rounded-xl cursor-pointer transition-all group my-0.5"
             >
-              <div className={`w-9 h-9 flex items-center justify-center rounded-xl bg-gradient-to-br ${item.color} text-white shadow-lg shadow-slate-200 group-hover:rotate-6 transition-transform`}>
+              <div className={`w-9 h-9 flex items-center justify-center rounded-xl bg-gradient-to-br ${item.color} text-white shadow-md group-hover:scale-105 transition-transform`}>
                 {React.cloneElement(item.icon, { className: "w-4 h-4" })}
               </div>
-              <span className="flex-1 font-bold text-slate-700 text-xs">{item.title}</span>
-              <ChevronRight className="w-4 h-4 text-slate-300" />
+              <span className="flex-1 font-semibold text-slate-200 text-xs">{item.title}</span>
+              <ChevronRight className="w-4 h-4 text-slate-500 group-hover:text-slate-300 group-hover:translate-x-0.5 transition-all" />
             </div>
           ))}
 
-          <div onClick={handleLogout} className="flex items-center gap-3 p-3 hover:bg-red-50 rounded-xl cursor-pointer transition">
-             <div className="w-9 h-9 flex items-center justify-center rounded-xl bg-gradient-to-br from-slate-700 to-slate-900 text-white shadow-lg">
+          <div onClick={handleLogout} className="flex items-center gap-3.5 p-3 hover:bg-rose-500/10 rounded-xl cursor-pointer transition group mt-0.5">
+             <div className="w-9 h-9 flex items-center justify-center rounded-xl bg-slate-800 border border-slate-700 text-rose-400 shadow-md group-hover:bg-rose-500 group-hover:text-white transition-colors">
                 <LogOut className="w-4 h-4" />
              </div>
-             <span className="flex-1 font-bold text-red-500 text-xs">Logout</span>
+             <span className="flex-1 font-semibold text-rose-400 text-xs">Logout</span>
           </div>
         </div>
+
       </div>
     </div>
   );
