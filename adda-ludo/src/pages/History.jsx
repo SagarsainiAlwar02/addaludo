@@ -1,24 +1,24 @@
 import React, { useEffect, useState, memo } from "react";
 import api, { getData, getError } from "../api.js";
 
-// Fast dynamic styles tracking lookup map
+// Status-wise dynamic styles & border colors
 const STATUS_STYLES = {
   approved: {
     badge: "bg-emerald-100 text-emerald-800 border-emerald-200",
-    cardBg: "bg-gradient-to-r from-emerald-50/30 to-white",
+    cardBg: "bg-gradient-to-r from-emerald-50/20 to-white",
     sideBorder: "border-l-4 border-l-emerald-500",
     prizeColor: "text-emerald-600"
   },
   rejected: {
     badge: "bg-rose-100 text-rose-800 border-rose-200",
-    cardBg: "bg-gradient-to-r from-rose-50/30 to-white",
+    cardBg: "bg-gradient-to-r from-rose-50/20 to-white",
     sideBorder: "border-l-4 border-l-rose-500",
     prizeColor: "text-rose-600"
   },
   cancelled: {
     badge: "bg-slate-100 text-slate-600 border-slate-200",
-    cardBg: "bg-white",
-    sideBorder: "border-l-4 border-l-slate-300",
+    cardBg: "bg-slate-50/50",
+    sideBorder: "border-l-4 border-l-slate-400",
     prizeColor: "text-slate-400"
   },
   result_submitted: {
@@ -31,68 +31,98 @@ const STATUS_STYLES = {
 
 const DEFAULT_STYLE = {
   badge: "bg-blue-100 text-blue-800 border-blue-200",
-  cardBg: "bg-gradient-to-r from-blue-50/20 to-white",
+  cardBg: "bg-white",
   sideBorder: "border-l-4 border-l-blue-500",
   prizeColor: "text-blue-600"
 };
 
-// Memoized Match Row for ultra-fast list rendering
-const BattleRow = memo(({ battle }) => {
+// Compact Match Row Component
+const BattleRow = memo(({ battle, currentUserId }) => {
   const mode = STATUS_STYLES[battle.status] || DEFAULT_STYLE;
 
+  // Outcome Logic (Win / Loss / Cancelled)
+  let resultBadge = null;
+  if (battle.status === "approved" && battle.winner) {
+    const isWinner = battle.winner._id === currentUserId || battle.winner === currentUserId;
+    if (isWinner) {
+      resultBadge = (
+        <span className="bg-emerald-500 text-white text-[9px] font-extrabold px-1.5 py-0.5 rounded shadow-sm">
+          🏆 WON
+        </span>
+      );
+    } else {
+      resultBadge = (
+        <span className="bg-rose-500 text-white text-[9px] font-extrabold px-1.5 py-0.5 rounded shadow-sm">
+          ❌ LOST
+        </span>
+      );
+    }
+  } else if (battle.status === "cancelled") {
+    resultBadge = (
+      <span className="bg-slate-600 text-white text-[9px] font-extrabold px-1.5 py-0.5 rounded shadow-sm">
+        🚫 CANCELLED
+      </span>
+    );
+  }
+
   return (
-    <div className={`rounded-xl border border-gray-150 p-3 shadow-sm transition-all hover:shadow-md ${mode.cardBg} ${mode.sideBorder}`}>
-      {/* Top Details Header Line */}
-      <div className="flex items-center justify-between gap-2">
-        <div className="min-w-0">
-          <h2 className="truncate text-base font-black text-gray-900">
+    <div className={`rounded-lg border border-slate-200/70 p-2.5 shadow-sm transition-all hover:shadow ${mode.cardBg} ${mode.sideBorder}`}>
+      {/* Header Line */}
+      <div className="flex items-center justify-between gap-1.5">
+        <div className="min-w-0 flex items-center gap-1.5">
+          <h2 className="truncate text-xs font-black text-slate-900">
             Battle ₹{battle.amount}
           </h2>
-          <p className="text-[11px] font-bold text-gray-400 tracking-tight">
-            ID: {battle.battleId}
-          </p>
+          <span className="text-[10px] font-bold text-slate-400">
+            #{battle.battleId?.slice(-6)}
+          </span>
         </div>
 
-        <span className={`rounded-md border px-2 py-0.5 text-[10px] font-black uppercase tracking-wider shrink-0 ${mode.badge}`}>
-          {battle.status?.replace("_", " ")}
-        </span>
+        <div className="flex items-center gap-1 shrink-0">
+          {resultBadge}
+          <span className={`rounded px-1.5 py-0.5 text-[9px] font-extrabold uppercase border ${mode.badge}`}>
+            {battle.status?.replace("_", " ")}
+          </span>
+        </div>
       </div>
 
-      {/* Row Minimal Data Elements Grid */}
-      <div className="mt-2.5 grid grid-cols-3 gap-2 border-b border-gray-100 pb-2.5 text-center">
-        <div className="rounded-lg bg-gray-50/80 py-1.5 border border-gray-100/50">
-          <p className="text-[10px] font-bold text-gray-400 uppercase tracking-tight">Entry</p>
-          <h3 className="text-sm font-black text-slate-800">₹{battle.amount}</h3>
+      {/* Grid Stats */}
+      <div className="mt-1.5 grid grid-cols-3 gap-1.5 text-center">
+        <div className="rounded bg-slate-100/70 py-1 border border-slate-200/40">
+          <p className="text-[8px] font-bold text-slate-400 uppercase tracking-tight">Entry</p>
+          <h3 className="text-xs font-black text-slate-800">₹{battle.amount}</h3>
         </div>
 
-        <div className="rounded-lg bg-gray-50/80 py-1.5 border border-gray-100/50">
-          <p className="text-[10px] font-bold text-gray-400 uppercase tracking-tight">Prize</p>
-          <h3 className={`text-sm font-black ${mode.prizeColor}`}>₹{battle.prize}</h3>
+        <div className="rounded bg-slate-100/70 py-1 border border-slate-200/40">
+          <p className="text-[8px] font-bold text-slate-400 uppercase tracking-tight">Prize</p>
+          <h3 className={`text-xs font-black ${mode.prizeColor}`}>₹{battle.prize}</h3>
         </div>
 
-        <div className="rounded-lg bg-gray-50/80 py-1.5 border border-gray-100/50">
-          <p className="text-[10px] font-bold text-gray-400 uppercase tracking-tight">Room Code</p>
-          <h3 className="text-sm font-black text-indigo-600 select-all tracking-wide">
+        <div className="rounded bg-slate-100/70 py-1 border border-slate-200/40">
+          <p className="text-[8px] font-bold text-slate-400 uppercase tracking-tight">Room Code</p>
+          <h3 className="text-xs font-black text-indigo-600 select-all tracking-wide">
             {battle.ludoKingRoomCode || "——"}
           </h3>
         </div>
       </div>
 
-      {/* Bottom Compact Horizontal Player Info Panel */}
-      <div className="mt-2 flex items-center justify-between text-[11px] font-bold text-gray-600">
+      {/* Player Details Horizontal Strip */}
+      <div className="mt-1.5 flex items-center justify-between text-[10px] font-bold text-slate-600">
         <div className="truncate pr-1">
-          <span className="text-gray-400">C:</span> <span className="text-slate-700">{battle.createdBy?.name || "Player"}</span>
-          <span className="mx-1.5 text-gray-300">|</span> 
-          <span className="text-gray-400">O:</span> <span className="text-slate-700">{battle.opponent?.name || "Waiting"}</span>
+          <span className="text-slate-400">C:</span> <span className="text-slate-800">{battle.createdBy?.name || "Player"}</span>
+          <span className="mx-1 text-slate-300">vs</span> 
+          <span className="text-slate-400">O:</span> <span className="text-slate-800">{battle.opponent?.name || "Waiting"}</span>
         </div>
-        <div className="shrink-0 text-right text-gray-400 font-medium">
-          {battle.createdAt ? new Date(battle.createdAt).toLocaleDateString("en-IN", {hour: '2-digit', minute:'2-digit'}) : ""}
+        <div className="shrink-0 text-slate-400 font-semibold text-[9px]">
+          {battle.createdAt ? new Date(battle.createdAt).toLocaleDateString("en-IN", { hour: '2-digit', minute: '2-digit' }) : ""}
         </div>
       </div>
 
+      {/* Winner Name Footer */}
       {battle.winner?.name && (
-        <div className="mt-2 rounded-lg bg-emerald-50 border border-emerald-100 px-2 py-1 text-[11px] font-bold text-emerald-800 flex items-center gap-1.5">
-          <span>🏆</span> <span>Winner: <b>{battle.winner.name}</b></span>
+        <div className="mt-1.5 rounded bg-emerald-50 border border-emerald-200/60 px-2 py-0.5 text-[10px] font-bold text-emerald-800 flex items-center justify-between">
+          <span>Winner: <b>{battle.winner.name}</b></span>
+          <span className="text-[9px] text-emerald-600">Verified</span>
         </div>
       )}
     </div>
@@ -101,6 +131,7 @@ const BattleRow = memo(({ battle }) => {
 
 export default function History() {
   const [battles, setBattles] = useState([]);
+  const [currentUserId, setCurrentUserId] = useState(null);
   const [loading, setLoading] = useState(true);
 
   const fetchHistory = async () => {
@@ -110,6 +141,11 @@ export default function History() {
 
       const res = await api.get("/contests/my-contests");
       const data = getData(res);
+      
+      if (data?.user?._id) {
+        setCurrentUserId(data.user._id);
+      }
+
       const allMatches = (data?.contests || []).map((c) => ({
         ...c,
         battleId: c.contestId,
@@ -136,36 +172,36 @@ export default function History() {
   }, []);
 
   return (
-    <div className="min-h-screen bg-[#f8fafc] px-3 pt-16 pb-24 font-sans">
-      <div className="mx-auto max-w-[480px]">
+    <div className="min-h-screen bg-[#f8fafc] px-2.5 pt-14 pb-20 font-sans">
+      <div className="mx-auto max-w-[420px]">
         
-        {/* Header Block LIGHT Minimalist Banner As Requested */}
-        <div className="mb-3 rounded-2xl bg-gradient-to-br from-slate-50 to-slate-100/80 p-4 text-slate-800 border border-slate-200/60 shadow-sm">
-          <h1 className="text-xl font-black tracking-tight text-slate-900">Match History</h1>
-          <p className="mt-0.5 text-xs font-semibold text-slate-500">
-            Your all recent played battle .
+        {/* Header Block */}
+        <div className="mb-2.5 rounded-xl bg-white p-3 text-slate-800 border border-slate-200/80 shadow-sm">
+          <h1 className="text-base font-black tracking-tight text-slate-900">Match History</h1>
+          <p className="text-[11px] font-medium text-slate-500">
+            Aapki sabhi khele gaye matches ki details.
           </p>
         </div>
 
-        {/* Dynamic Display Logic Flow */}
+        {/* Display Logic */}
         {loading ? (
-          <div className="rounded-xl bg-white p-6 text-center text-sm font-bold text-slate-500 shadow-sm border border-gray-100">
+          <div className="rounded-lg bg-white p-4 text-center text-xs font-bold text-slate-500 shadow-sm border border-slate-100">
             ⏳ Syncing match records...
           </div>
         ) : battles.length === 0 ? (
-          <div className="rounded-xl bg-white p-8 text-center shadow-sm border border-gray-100">
-            <span className="text-3xl">⚔️</span>
-            <h2 className="text-base font-black text-slate-800 mt-2">
+          <div className="rounded-lg bg-white p-6 text-center shadow-sm border border-slate-100">
+            <span className="text-2xl">⚔️</span>
+            <h2 className="text-sm font-black text-slate-800 mt-1">
               No match history found
             </h2>
-            <p className="mt-1 text-xs font-bold text-slate-400">
+            <p className="mt-0.5 text-[11px] font-bold text-slate-400">
               Battle play karne ke baad history yaha show hogi.
             </p>
           </div>
         ) : (
           <div className="space-y-2">
             {battles.map((battle) => (
-              <BattleRow key={battle._id} battle={battle} />
+              <BattleRow key={battle._id} battle={battle} currentUserId={currentUserId} />
             ))}
           </div>
         )}
