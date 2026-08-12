@@ -40,10 +40,19 @@ const DEFAULT_STYLE = {
 const BattleRow = memo(({ battle, currentUserId }) => {
   const mode = STATUS_STYLES[battle.status] || DEFAULT_STYLE;
 
-  // Outcome Logic (Win / Loss / Cancelled)
+  // Correct Win / Loss / Cancelled Badge Logic
   let resultBadge = null;
-  if (battle.status === "approved" && battle.winner) {
-    const isWinner = battle.winner._id === currentUserId || battle.winner === currentUserId;
+
+  if (battle.status === "cancelled") {
+    resultBadge = (
+      <span className="bg-slate-600 text-white text-[9px] font-extrabold px-1.5 py-0.5 rounded shadow-sm">
+        🚫 CANCELLED
+      </span>
+    );
+  } else if (battle.winner) {
+    const winnerId = typeof battle.winner === "object" ? battle.winner._id : battle.winner;
+    const isWinner = winnerId && currentUserId && String(winnerId) === String(currentUserId);
+
     if (isWinner) {
       resultBadge = (
         <span className="bg-emerald-500 text-white text-[9px] font-extrabold px-1.5 py-0.5 rounded shadow-sm">
@@ -57,12 +66,6 @@ const BattleRow = memo(({ battle, currentUserId }) => {
         </span>
       );
     }
-  } else if (battle.status === "cancelled") {
-    resultBadge = (
-      <span className="bg-slate-600 text-white text-[9px] font-extrabold px-1.5 py-0.5 rounded shadow-sm">
-        🚫 CANCELLED
-      </span>
-    );
   }
 
   return (
@@ -139,12 +142,19 @@ export default function History() {
       setLoading(true);
       if (!localStorage.getItem("token")) return;
 
+      // 1. Fetch Profile to get logged in User ID accurately
+      try {
+        const profileRes = await api.get("/user/profile");
+        const profileData = getData(profileRes);
+        const uId = profileData?.user?._id || profileData?._id;
+        if (uId) setCurrentUserId(uId);
+      } catch (e) {
+        console.log("Profile ID fetch error:", e);
+      }
+
+      // 2. Fetch Contests
       const res = await api.get("/contests/my-contests");
       const data = getData(res);
-      
-      if (data?.user?._id) {
-        setCurrentUserId(data.user._id);
-      }
 
       const allMatches = (data?.contests || []).map((c) => ({
         ...c,
