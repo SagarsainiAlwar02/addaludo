@@ -1,799 +1,625 @@
-import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
-import axios from 'axios';
+import React, { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
+import api, { getData, getError } from "../api.js";
 
-const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:5000/api';
+const SERVER_BASE = (import.meta.env.VITE_API_URL || "http://localhost:5000/api").replace(/\/api$/, "");
 
-const WalletPage = ({ adminConfig }) => {
-  const navigate = useNavigate();
+export default function Wallet() {
+  const navigate = useNavigate();
+  const MIN_AMOUNT = 100;
+  const MAX_AMOUNT = 100000;
 
-  // ----------------- WALLET STATES -----------------
-  const [showAddCash, setShowAddCash] = useState(false);
-  const [activeTab, setActiveTab] = useState('deposit'); // 'deposit' or 'withdraw'
-  const [depositCoin, setDepositCoin] = useState(450.00);
-  const [bonusCoin, setBonusCoin] = useState(0.00);
-  const [winningCoin, setWinningCoin] = useState(62053.00);
-  const [transactions, setTransactions] = useState([]);
+  const [wallet, setWallet] = useState({
+    balance: 0,
+    winnings: 0,
+    bonus: 0,
+    locked: 0,
+  });
 
-  // ----------------- DEPOSIT PROCESS STATES -----------------
-  const [depositStep, setDepositStep] = useState(1);
-  const [amount, setAmount] = useState('500');
-  const [isModalOpen, setIsModalOpen] = useState(false);
-  const [utrNumber, setUtrNumber] = useState('');
-  const [selectedFile, setSelectedFile] = useState(null);
-  const [copied, setCopied] = useState(false);
-  const [loading, setLoading] = useState(false);
+  // KYC State Added
+  const [kycStatus, setKycStatus] = useState("not_submitted");
 
-  // Dynamic Payment Settings
-  const [paymentSettings, setPaymentSettings] = useState({
-    upiId: adminConfig?.upiId || '8233725398@mairtel',
-    bankName: adminConfig?.bankName || 'AddaLudo Gaming Pvt Ltd',
-    accountNo: adminConfig?.accountNo || '918237465012',
-    ifsc: adminConfig?.ifsc || 'PYTM0123456'
-  });
+  const [amount, setAmount] = useState("");
+  const [utr, setUtr] = useState("");
+  const [screenshot, setScreenshot] = useState(null);
 
-  // Mobile Viewport Fix (Prevents auto-zooming on mobile devices)
-  useEffect(() => {
-    let meta = document.querySelector('meta[name="viewport"]');
-    if (!meta) {
-      meta = document.createElement('meta');
-      meta.name = 'viewport';
-      document.getElementsByTagName('head')[0].appendChild(meta);
-    }
-    meta.content = 'width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no';
+  const [showAddCash, setShowAddCash] = useState(false);
+  const [showPayment, setShowPayment] = useState(false);
 
-    fetchInitialData();
-  }, []);
+  const [loading, setLoading] = useState(false);
+  const [pageLoading, setPageLoading] = useState(true);
+  const [error, setError] = useState("");
 
-  const fetchInitialData = async () => {
-    try {
-      const token = localStorage.getItem('token');
-      const headers = { Authorization: `Bearer ${token}` };
+  const [deposits, setDeposits] = useState([]);
+  const [withdraws, setWithdraws] = useState([]);
+  const [payment, setPayment] = useState(null);
+  const [timeLeft, setTimeLeft] = useState(300);
+  const [activeHistory, setActiveHistory] = useState("deposit");
+  
+  const [selectedMethod, setSelectedMethod] = useState(""); 
 
-      const settingsRes = await axios.get(`${API_BASE_URL}/payment/settings`, { headers }).catch(() => null);
-      if (settingsRes?.data) {
-        setPaymentSettings((prev) => ({ ...prev, ...settingsRes.data }));
-      }
+  useEffect(() => {
+    if (!localStorage.getItem("token")) navigate("/login");
+  }, [navigate]);
 
-      const txRes = await axios.get(`${API_BASE_URL}/transactions/deposits`, { headers }).catch(() => null);
-      if (txRes?.data) {
-        setTransactions(txRes.data.deposits || txRes.data || []);
-      }
-    } catch (err) {
-      console.error('Error fetching wallet data:', err);
-    }
-  };
+  const loadWallet = async () => {
+    const res = await api.get("/user/profile");
+    const data = getData(res);
+    const w = data?.wallet || {};
+    setWallet({
+      balance: w.balance || 0,
+      winnings: w.winnings || 0,
+      bonus: w.bonus || 0,
+      locked: w.locked || 0,
+    });
+  };
 
-  const handleAddAmount = (val) => {
-    const currentVal = parseInt(amount) || 0;
-    setAmount((currentVal + val).toString());
-  };
+  const loadKycStatus = async () => {
+    try {
+      const res = await api.get("/user/profile");
+      const data = getData(res);
+      setKycStatus(data?.user?.kycStatus || "not_submitted");
+    } catch (err) {
+      console.log("KYC status check error:", getError(err));
+    }
+  };
 
-  const handleCopy = (text) => {
-    navigator.clipboard.writeText(text);
-    setCopied(true);
-    setTimeout(() => setCopied(false), 2000);
-  };
+  const loadDeposits = async () => {
+    try {
+      const res = await api.get("/transactions/deposits");
+      const data = getData(res);
+      setDeposits(data?.deposits || []);
+    } catch (err) {
+      console.log("Deposit load error:", getError(err));
+    }
+  };
 
-  const resetDepositState = () => {
-    setDepositStep(1);
-    setAmount('500');
-    setUtrNumber('');
-    setSelectedFile(null);
-    setIsModalOpen(false);
-    setShowAddCash(false);
-  };
+  const loadWithdraws = async () => {
+    try {
+      const res = await api.get("/transactions/withdraws");
+      const data = getData(res);
+      setWithdraws(data?.withdraws || []);
+    } catch (err) {
+      console.log("Withdraw load error:", getError(err));
+    }
+  };
 
-  const handleDepositSubmit = async (e) => {
-    e.preventDefault();
+  const loadPaymentSettings = async () => {
+    try {
+      const res = await api.get("/payment/settings");
+      const data = getData(res);
+      setPayment(data?.settings || data);
+    } catch (err) {
+      console.log("Payment setting load error:", getError(err));
+    }
+  };
 
-    if (!utrNumber || utrNumber.trim().length !== 12) {
-      alert('Kripya sahi 12-digit UTR Number enter karein!');
-      return;
-    }
-    if (!selectedFile) {
-      alert('Kripya screenshot upload karein!');
-      return;
-    }
+  const init = async () => {
+    try {
+      setPageLoading(true);
+      await Promise.all([
+        loadWallet(),
+        loadKycStatus(), // KYC status loaded here
+        loadDeposits(),
+        loadWithdraws(),
+        loadPaymentSettings(),
+      ]);
+    } catch (err) {
+      setError("Failed to load wallet");
+    } finally {
+      setPageLoading(false);
+    }
+  };
 
-    try {
-      setLoading(true);
-      const token = localStorage.getItem('token');
+  useEffect(() => {
+    init();
+    const refreshWallet = () => init();
+    window.addEventListener("walletUpdated", refreshWallet);
+    return () => window.removeEventListener("walletUpdated", refreshWallet);
+  }, []);
 
-      const formData = new FormData();
-      formData.append('amount', amount);
-      formData.append('utr', utrNumber);
-      formData.append('screenshot', selectedFile);
+  useEffect(() => {
+    if (!showPayment) return;
+    setTimeLeft(300);
+    const interval = setInterval(() => {
+      setTimeLeft((prev) => {
+        if (prev <= 1) {
+          clearInterval(interval);
+          return 0;
+        }
+        return prev - 1;
+      });
+    }, 1000);
+    return () => clearInterval(interval);
+  }, [showPayment]);
 
-      const res = await axios.post(`${API_BASE_URL}/transactions/deposit`, formData, {
-        headers: {
-          'Content-Type': 'multipart/form-data',
-          Authorization: `Bearer ${token}`
-        }
-      });
+  const formatTime = (seconds) => {
+    const m = Math.floor(seconds / 60);
+    const s = seconds % 60;
+    return `${m}:${String(s).padStart(2, "0")}`;
+  };
 
-      if (res.data?.success || res.status === 200) {
-        alert('Payment details submit ho gayi hain! Verification me 5-10 min lagenge.');
-        resetDepositState();
-        fetchInitialData();
-      } else {
-        alert(res.data?.message || 'Submission failed! Try again.');
-      }
-    } catch (err) {
-      console.error('Deposit Error:', err);
-      alert(err.response?.data?.message || 'Payment submission failed. Please try again.');
-    } finally {
-      setLoading(false);
-    }
-  };
+  const copyText = async (text) => {
+    if (!text) return;
+    try {
+      await navigator.clipboard.writeText(String(text));
+      alert("Copied");
+    } catch {
+      alert("Copy failed");
+    }
+  };
 
-  return (
-    <div style={{
-      minHeight: '100vh',
-      backgroundColor: '#f1f5f9',
-      fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
-      paddingBottom: '20px',
-      boxSizing: 'border-box',
-      WebkitTapHighlightColor: 'transparent'
-    }}>
+  const getStatusStyle = (status) => {
+    const s = String(status || "").toLowerCase();
+    if (s === "success" || s === "approved") return { background: "#dcfce7", color: "#166534" };
+    if (s === "rejected" || s === "failed") return { background: "#fee2e2", color: "#991b1b" };
+    return { background: "#fef3c7", color: "#92400e" };
+  };
 
-      {/* ========================================================= */}
-      {/* SCREENSHOT EXACT WALLET UI                                */}
-      {/* ========================================================= */}
-      <div style={{ maxWidth: '420px', margin: '0 auto', padding: '16px' }}>
+  const openAddCash = () => {
+    setError("");
+    setAmount("");
+    setUtr("");
+    setScreenshot(null);
+    setSelectedMethod(""); 
+    setShowAddCash(true);
+    setShowPayment(false);
+    loadPaymentSettings();
+  };
 
-        {/* Top Header */}
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '16px' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-            <button
-              onClick={() => navigate(-1)}
-              style={{
-                width: '38px',
-                height: '38px',
-                borderRadius: '50%',
-                border: 'none',
-                background: '#ffffff',
-                fontSize: '18px',
-                cursor: 'pointer',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                boxShadow: '0 2px 6px rgba(0,0,0,0.06)'
-              }}
-            >
-              ←
-            </button>
-            <h2 style={{ margin: 0, fontSize: '22px', fontWeight: 'bold', color: '#0f172a' }}>Wallet</h2>
-          </div>
-          <span style={{ fontSize: '13px', color: '#64748b', fontWeight: '500' }}>0 online</span>
-        </div>
+  const goToPayment = () => {
+    const addAmount = Number(amount);
+    if (!addAmount) return setError("Please enter amount");
+    if (addAmount < MIN_AMOUNT) return setError("Minimum add cash amount is ₹100");
+    if (addAmount > MAX_AMOUNT) return setError("Maximum add cash amount is ₹1,0,000");
 
-        {/* 1. Deposit Coin Card */}
-        <div style={{
-          backgroundColor: '#ffffff',
-          borderRadius: '16px',
-          padding: '16px',
-          marginBottom: '14px',
-          boxShadow: '0 2px 10px rgba(0,0,0,0.03)'
-        }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '12px' }}>
-            
-            {/* Left Info */}
-            <div style={{ display: 'flex', gap: '12px' }}>
-              <div style={{
-                width: '44px',
-                height: '44px',
-                borderRadius: '12px',
-                backgroundColor: '#2563eb',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                fontSize: '22px'
-              }}>
-                💰
-              </div>
-              <div>
-                <span style={{ fontSize: '13px', color: '#64748b', fontWeight: '600' }}>Deposit Coin</span>
-                <div style={{ fontSize: '20px', fontWeight: '800', color: '#0f172a', margin: '2px 0' }}>
-                  ₹ {depositCoin.toFixed(2)}
-                </div>
-                <div style={{ fontSize: '12px', color: '#d97706', fontWeight: 'bold', display: 'flex', alignItems: 'center', gap: '4px' }}>
-                  🎁 Bonus: ₹ {bonusCoin.toFixed(2)}
-                </div>
-              </div>
-            </div>
+    setError("");
+    setShowAddCash(false);
+    setShowPayment(true);
+  };
 
-            {/* SCREENSHOT 'ADD CASH +' BUTTON */}
-            <button
-              type="button"
-              onClick={() => setShowAddCash(true)}
-              style={{
-                backgroundColor: '#0ea5e9',
-                color: '#ffffff',
-                border: 'none',
-                padding: '10px 18px',
-                borderRadius: '10px',
-                fontWeight: 'bold',
-                fontSize: '14px',
-                cursor: 'pointer',
-                boxShadow: '0 4px 10px rgba(14, 165, 233, 0.3)'
-              }}
-            >
-              Add Cash +
-            </button>
-          </div>
+  const submitDeposit = async () => {
+    const addAmount = Number(amount);
+    if (!addAmount || addAmount < MIN_AMOUNT) return setError("Minimum deposit ₹100 ");
+    if (addAmount > MAX_AMOUNT) return setError("Maximum deposit ₹1,0,0,000 hai");
+    if (!utr.trim()) return setError("Enter UTR no.");
+    if (!screenshot) return setError("Upload Payment Screenshot");
 
-          <p style={{ margin: 0, fontSize: '11px', color: '#94a3b8', lineHeight: '1.4' }}>
-            Use to play Tournaments & Battles. Cannot be withdrawn.
-          </p>
-        </div>
+    try {
+      setLoading(true);
+      setError("");
 
-        {/* 2. Winning Coin Card */}
-        <div style={{
-          backgroundColor: '#ffffff',
-          borderRadius: '16px',
-          padding: '16px',
-          marginBottom: '16px',
-          boxShadow: '0 2px 10px rgba(0,0,0,0.03)'
-        }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '12px' }}>
-            <div style={{ display: 'flex', gap: '12px' }}>
-              <div style={{
-                width: '44px',
-                height: '44px',
-                borderRadius: '12px',
-                backgroundColor: '#22c55e',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                fontSize: '22px'
-              }}>
-                🏆
-              </div>
-              <div>
-                <span style={{ fontSize: '13px', color: '#64748b', fontWeight: '600' }}>Winning Coin</span>
-                <div style={{ fontSize: '20px', fontWeight: '800', color: '#0f172a', margin: '2px 0' }}>
-                  ₹ {winningCoin.toFixed(2)}
-                </div>
-              </div>
-            </div>
+      const formData = new FormData();
+      formData.append("amount", addAmount);
+      formData.append("utr", utr.trim());
+      formData.append("paymentMethod", selectedMethod || "qr");
+      formData.append("screenshot", screenshot);
 
-            <button
-              type="button"
-              onClick={() => alert("KYC Section")}
-              style={{
-                backgroundColor: '#d97706',
-                color: '#ffffff',
-                border: 'none',
-                padding: '10px 14px',
-                borderRadius: '10px',
-                fontWeight: 'bold',
-                fontSize: '13px',
-                cursor: 'pointer',
-                display: 'flex',
-                alignItems: 'center',
-                gap: '4px'
-              }}
-            >
-              Complete KYC 📋
-            </button>
-          </div>
+      const res = await api.post("/transactions/deposit", formData, {
+        headers: { "Content-Type": "multipart/form-data" },
+      });
 
-          <p style={{ margin: 0, fontSize: '11px', color: '#94a3b8', lineHeight: '1.4' }}>
-            Withdrawable to UPI or Bank. Also usable for play.
-          </p>
-        </div>
+      const msg = res.data?.message || "Deposit request submitted";
+      alert(msg);
+      setShowPayment(false);
+      setAmount("");
+      setUtr("");
+      setScreenshot(null);
+      setSelectedMethod("");
+      await Promise.all([loadDeposits(), loadWallet()]);
+    } catch (err) {
+      setError(getError(err));
+    } finally {
+      setLoading(false);
+    }
+  };
 
-        {/* 3. History Tabs */}
-        <div style={{ backgroundColor: '#ffffff', borderRadius: '16px', padding: '16px', boxShadow: '0 2px 10px rgba(0,0,0,0.03)' }}>
-          <div style={{ display: 'flex', gap: '8px', marginBottom: '16px' }}>
-            <button
-              type="button"
-              onClick={() => setActiveTab('deposit')}
-              style={{
-                flex: 1,
-                padding: '10px',
-                borderRadius: '10px',
-                border: 'none',
-                fontWeight: 'bold',
-                fontSize: '13px',
-                cursor: 'pointer',
-                backgroundColor: activeTab === 'deposit' ? '#2563eb' : '#f1f5f9',
-                color: activeTab === 'deposit' ? '#ffffff' : '#64748b'
-              }}
-            >
-              Deposit History
-            </button>
-            <button
-              type="button"
-              onClick={() => setActiveTab('withdraw')}
-              style={{
-                flex: 1,
-                padding: '10px',
-                borderRadius: '10px',
-                border: 'none',
-                fontWeight: 'bold',
-                fontSize: '13px',
-                cursor: 'pointer',
-                backgroundColor: activeTab === 'withdraw' ? '#2563eb' : '#f1f5f9',
-                color: activeTab === 'withdraw' ? '#ffffff' : '#64748b'
-              }}
-            >
-              Withdraw History
-            </button>
-          </div>
+  if (pageLoading) {
+    return <div style={styles.loading}>⏳ Loading Wallet...</div>;
+  }
 
-          {/* History List */}
-          {activeTab === 'deposit' ? (
-            transactions.length === 0 ? (
-              <div style={{ padding: '12px 0', borderBottom: '1px solid #f1f5f9', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                <div>
-                  <div style={{ fontWeight: 'bold', fontSize: '16px', color: '#0f172a' }}>₹200</div>
-                  <div style={{ fontSize: '11px', color: '#94a3b8', marginTop: '2px' }}>UTR: 074099631300</div>
-                  <div style={{ fontSize: '10px', color: '#cbd5e1' }}>7/8/2026, 3:33:53 pm</div>
-                </div>
-                <span style={{ backgroundColor: '#fee2e2', color: '#dc2626', padding: '4px 10px', borderRadius: '6px', fontSize: '12px', fontWeight: 'bold' }}>
-                  rejected
-                </span>
-              </div>
-            ) : (
-              transactions.map((item, idx) => (
-                <div key={idx} style={{ padding: '12px 0', borderBottom: '1px solid #f1f5f9', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                  <div>
-                    <div style={{ fontWeight: 'bold', fontSize: '16px', color: '#0f172a' }}>₹{item.amount}</div>
-                    <div style={{ fontSize: '11px', color: '#94a3b8', marginTop: '2px' }}>UTR: {item.utr || 'N/A'}</div>
-                    <div style={{ fontSize: '10px', color: '#cbd5e1' }}>{item.date || 'Recent'}</div>
-                  </div>
-                  <span style={{
-                    backgroundColor: item.status === 'Approved' ? '#dcfce7' : item.status === 'Rejected' ? '#fee2e2' : '#fef3c7',
-                    color: item.status === 'Approved' ? '#15803d' : item.status === 'Rejected' ? '#dc2626' : '#b45309',
-                    padding: '4px 10px',
-                    borderRadius: '6px',
-                    fontSize: '12px',
-                    fontWeight: 'bold'
-                  }}>
-                    {item.status || 'pending'}
-                  </span>
-                </div>
-              ))
-            )
-          ) : (
-            <div style={{ textAlign: 'center', color: '#94a3b8', fontSize: '13px', padding: '20px 0' }}>No withdraw history found</div>
-          )}
-        </div>
+  const scannerPath = payment?.scannerImage || payment?.scanner?.image || "";
+  const scannerImage = scannerPath ? `${SERVER_BASE}${scannerPath}` : "";
+  const upiId = payment?.upiList?.[0] || "";
+  const bank = payment?.bank || {};
+  const numericAmount = Number(amount || 0);
 
-      </div>
+  return (
+    <div style={styles.page}>
+      <div style={styles.container}>
+        {/* Header Row */}
+        <div style={styles.headerRow}>
+          <button style={styles.backBtn} onClick={() => navigate(-1)}>←</button>
+          <h2 style={styles.title}>Wallet</h2>
+          <span style={styles.online}>0 online</span>
+        </div>
 
-      {/* ========================================================= */}
-      {/* DEPOSIT PAGE OVERLAY (OPENED AFTER CLICKING 'ADD CASH +') */}
-      {/* ========================================================= */}
-      {showAddCash && (
-        <div style={{
-          position: 'fixed',
-          top: 0,
-          left: 0,
-          right: 0,
-          bottom: 0,
-          backgroundColor: '#ffffff',
-          zIndex: 9999,
-          overflowY: 'auto',
-          padding: '16px 12px',
-          boxSizing: 'border-box'
-        }}>
-          <div style={{ width: '100%', maxWidth: '420px', margin: '0 auto' }}>
+        {error && <div style={styles.error}>{error}</div>}
 
-            <button
-              type="button"
-              onClick={() => resetDepositState()}
-              style={{
-                background: '#f1f5f9',
-                border: 'none',
-                padding: '8px 14px',
-                borderRadius: '10px',
-                fontWeight: 'bold',
-                cursor: 'pointer',
-                fontSize: '14px',
-                color: '#0f172a',
-                marginBottom: '16px'
-              }}
-            >
-              ← Back
-            </button>
-            
-            {/* Step 1: Amount */}
-            {depositStep === 1 && (
-              <div>
-                <div style={{
-                  backgroundColor: '#fffbeb',
-                  border: '1px solid #fde68a',
-                  color: '#92400e',
-                  padding: '12px 14px',
-                  borderRadius: '14px',
-                  fontSize: '13px',
-                  fontWeight: '600',
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '8px',
-                  marginBottom: '16px'
-                }}>
-                  <span>👉</span>
-                  <span>जितना Payment add करना है वो अमाउंट भर के Next पर क्लिक करें 🙏</span>
-                </div>
+        {/* --- DEPOSIT CARD --- */}
+        <div style={styles.cardRectangle}>
+          <div style={styles.cardMainInline}>
+            <div style={{ ...styles.iconBoxSmall, background: "linear-gradient(135deg,#2563eb,#06b6d4)" }}>💰</div>
+            <div style={styles.infoFlex}>
+              <p style={styles.label}>Deposit Coin</p>
+              <h1 style={styles.amountText}>₹ {Number(wallet.balance || 0).toFixed(2)}</h1>
+              <p style={{ margin: "2px 0 0", fontSize: "12px", color: "#f59e0b", fontWeight: "700" }}>
+                🎁 Bonus: ₹ {Number(wallet.bonus || 0).toFixed(2)}
+              </p>
+            </div>
+            <div>
+              <button style={styles.addBtnInline} onClick={openAddCash}>
+                Add Cash <span style={styles.plus}>+</span>
+              </button>
+            </div>
+          </div>
+          <p style={styles.desc}>Use to play Tournaments & Battles. Cannot be withdrawn.</p>
+        </div>
 
-                <div style={{
-                  backgroundColor: '#1b496d',
-                  padding: '20px 16px',
-                  borderRadius: '22px',
-                  boxShadow: '0 8px 20px rgba(27, 73, 109, 0.2)',
-                  color: '#ffffff'
-                }}>
-                  <p style={{ margin: '0 0 16px 0', fontSize: '16px', fontWeight: 'bold' }}>
-                    Enter Amount to Add
-                  </p>
-                  
-                  <div style={{ display: 'flex', alignItems: 'center', borderBottom: '2px solid #ffffff', marginBottom: '8px', paddingBottom: '4px' }}>
-                    <span style={{ fontSize: '26px', fontWeight: 'bold', marginRight: '8px' }}>₹</span>
-                    <input
-                      type="number"
-                      value={amount}
-                      onChange={(e) => setAmount(e.target.value)}
-                      style={{
-                        background: 'transparent',
-                        border: 'none',
-                        color: '#ffffff',
-                        fontSize: '26px',
-                        fontWeight: 'bold',
-                        width: '100%',
-                        outline: 'none',
-                        padding: 0
-                      }}
-                    />
-                  </div>
+        {/* --- WINNING CARD WITH DYNAMIC KYC BUTTON --- */}
+        <div style={styles.cardRectangle}>
+          <div style={styles.cardMainInline}>
+            <div style={{ ...styles.iconBoxSmall, background: "linear-gradient(135deg,#16a34a,#86efac)" }}>🏆</div>
+            <div style={styles.infoFlex}>
+              <p style={styles.label}>Winning Coin</p>
+              <h1 style={styles.amountText}>₹ {Number(wallet.winnings || 0).toFixed(2)}</h1>
+            </div>
+            <div>
+              {kycStatus === "approved" ? (
+                <button style={styles.withdrawBtnInline} onClick={() => navigate("/withdraw")}>
+                  Withdraw 🏦
+                </button>
+              ) : (
+                <button style={styles.completeKycBtnInline} onClick={() => navigate("/kyc")}>
+                  Complete KYC 📋
+                </button>
+              )}
+            </div>
+          </div>
+          <p style={styles.desc}>Withdrawable to UPI or Bank. Also usable for play.</p>
+        </div>
 
-                  <p style={{ fontSize: '12px', color: '#cbd5e1', marginBottom: '20px', fontWeight: '600' }}>
-                    Min: ₹100 • Max: ₹100000
-                  </p>
+        {/* History Box Card */}
+        <div style={styles.historyCard}>
+          <div style={styles.historyTabs}>
+            <button onClick={() => setActiveHistory("deposit")} style={{ ...styles.historyTab, ...(activeHistory === "deposit" ? styles.activeHistoryTab : {}) }}>Deposit History</button>
+            <button onClick={() => setActiveHistory("withdraw")} style={{ ...styles.historyTab, ...(activeHistory === "withdraw" ? styles.activeHistoryTab : {}) }}>Withdraw History</button>
+          </div>
+          <HistoryBox
+            empty={activeHistory === "deposit" ? "No deposit request yet." : "No withdraw request yet."}
+            items={activeHistory === "deposit" ? deposits : withdraws}
+            getStatusStyle={getStatusStyle}
+            type={activeHistory === "deposit" ? "deposit" : "withdraw"}
+          />
+        </div>
+      </div>
 
-                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px', marginBottom: '20px' }}>
-                    {[300, 500, 1000, 2000].map((val) => (
-                      <button
-                        key={val}
-                        type="button"
-                        onClick={() => handleAddAmount(val)}
-                        style={{
-                          background: 'rgba(255, 255, 255, 0.12)',
-                          border: '1px solid rgba(255, 255, 255, 0.25)',
-                          color: '#ffffff',
-                          padding: '12px',
-                          borderRadius: '14px',
-                          fontWeight: 'bold',
-                          cursor: 'pointer',
-                          fontSize: '15px',
-                          display: 'flex',
-                          alignItems: 'center',
-                          justifyContent: 'center',
-                          gap: '6px'
-                        }}
-                      >
-                        <span style={{ background: '#f59e0b', color: '#000', width: '18px', height: '18px', borderRadius: '50%', fontSize: '11px', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 'bold' }}>₹</span>
-                        +{val}
-                      </button>
-                    ))}
-                  </div>
+      {/* MODAL 1: ENTER AMOUNT INPUT */}
+      {showAddCash && (
+        <div style={styles.modalOverlay}>
+          <div style={styles.modal}>
+            <button style={styles.closeBtn} onClick={() => setShowAddCash(false)}>×</button>
+            <h2 style={styles.modalTitle}>Add Money</h2>
+            <p style={styles.modalSub}>Minimum ₹100 To Maximum ₹1,0,000</p>
+            <input
+              type="number"
+              value={amount}
+              min={MIN_AMOUNT}
+              max={MAX_AMOUNT}
+              placeholder="Enter Amount"
+              onChange={(e) => setAmount(e.target.value)}
+              style={styles.input}
+            />
+            <div style={styles.depositNoteBox}>
+              <p style={styles.depositNoteLine}><b>NOTE :-</b>Please Enter UTR no Correctly.</p>
+              <p style={styles.depositNoteLine}>Sahi se UTR enter kare Galt UTR fill karne par Payment add nhi hoga</p>
+            </div>
+            <button style={styles.payBtn} onClick={goToPayment}>Next </button>
+          </div>
+        </div>
+      )}
 
-                  <button
-                    type="button"
-                    onClick={() => {
-                      if (Number(amount) < 100) {
-                        alert("Minimum amount ₹100 required!");
-                        return;
-                      }
-                      setDepositStep(2);
-                    }}
-                    style={{
-                      width: '100%',
-                      background: '#5c67f2',
-                      color: '#ffffff',
-                      border: 'none',
-                      padding: '15px',
-                      borderRadius: '14px',
-                      fontSize: '16px',
-                      fontWeight: 'bold',
-                      cursor: 'pointer',
-                      boxShadow: '0 4px 12px rgba(92, 103, 242, 0.3)'
-                    }}
-                  >
-                    Proceed to Pay
-                  </button>
-                </div>
-              </div>
-            )}
+      {/* MODAL 2: DYNAMIC GATEWAY PANEL */}
+      {showPayment && (
+        <div style={styles.paymentPage}>
+          <div style={styles.paymentCard}>
+            
+            {/* Color Marked Premium Header Panel Box */}
+            <div style={styles.headerContainer}>
+              <button style={styles.backArrowStyle} onClick={() => { setShowPayment(false); setShowAddCash(true); }}>←</button>
+              <div style={styles.brandGroupStyle}>
+                <span style={{ fontSize: "18px" }}>⚔️</span> 
+                <span style={styles.logoTextStyle}>AddaLudo</span>
+              </div>
+              <span style={styles.completePaymentTextStyle}>Complete Payment</span>
+            </div>
 
-            {/* Step 2: QR & UPI Payment Details */}
-            {depositStep === 2 && (
-              <div>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
-                  <span style={{ fontSize: '15px', fontWeight: 'bold', color: '#0f172a' }}>
-                    Amount to add: <strong style={{ fontSize: '18px', color: '#1b496d' }}>₹{amount}</strong>
-                  </span>
-                  <button
-                    type="button"
-                    onClick={() => setDepositStep(1)}
-                    style={{
-                      background: '#1b496d',
-                      color: '#ffffff',
-                      border: 'none',
-                      padding: '6px 14px',
-                      borderRadius: '8px',
-                      fontSize: '13px',
-                      fontWeight: 'bold',
-                      cursor: 'pointer'
-                    }}
-                  >
-                    Edit
-                  </button>
-                </div>
+            <div style={styles.paymentBody}>
+              
+              {/* Premium Attractive Styled Amount Box Dashboard */}
+              <div style={styles.amountCardBox}>
+                <p style={styles.payTextStyle}>Pay Amount</p>
+                <h1 style={styles.amountTextStyle}>₹{numericAmount.toFixed(2)}</h1>
+                <div style={styles.timerBoxStyle}>
+                  <span>⏱️</span> Time remaining: <b>{formatTime(timeLeft)}</b>
+                </div>
+              </div>
 
-                <div style={{
-                  backgroundColor: '#0f172a',
-                  color: '#ffffff',
-                  padding: '12px 14px',
-                  borderRadius: '12px',
-                  fontSize: '13px',
-                  fontWeight: '500',
-                  marginBottom: '18px',
-                  lineHeight: '1.4'
-                }}>
-                  Payment सक्सेसफुल होने के बाद स्क्रीनशॉट और UTR नंबर डालके सबमिट करें 🙏
-                </div>
+              {/* DYNAMIC SELECTION MODES WITH COLOR ACTIVE LOOK */}
+              <div style={{ marginBottom: 16, marginTop: 18 }}>
+                <p style={{ fontSize: 13, color: "#64748b", marginBottom: 10, fontWeight: 'bold' }}>Select Payment Mode:</p>
+                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
+                  
+                  {/* ₹100 SE ₹2000 TAK: SCANNER AUR UPI ID BOTH OPTIONS */}
+                  {numericAmount >= 100 && numericAmount <= 2000 && (
+                    <>
+                      <button
+                        type="button"
+                        onClick={() => setSelectedMethod("qr")}
+                        style={selectedMethod === "qr" ? styles.methodBtnActive : styles.methodBtn}
+                      >
+                        QR Scanner
+                      </button>
 
-                <h4 style={{ fontSize: '15px', fontWeight: 'bold', textAlign: 'center', color: '#0f172a', marginBottom: '16px' }}>
-                  नीचे दी हुई UPI Or QR पर भुगतान करें
-                </h4>
+                      <button
+                        type="button"
+                        onClick={() => setSelectedMethod("upi")}
+                        style={selectedMethod === "upi" ? styles.methodBtnActive : styles.methodBtn}
+                      >
+                        UPI ID
+                      </button>
+                    </>
+                  )}
 
-                <div style={{
-                  backgroundColor: '#f8fafc',
-                  border: '1.5px solid #0f172a',
-                  padding: '10px 12px',
-                  borderRadius: '12px',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'space-between',
-                  marginBottom: '20px'
-                }}>
-                  <span style={{ fontSize: '13px', fontWeight: 'bold', color: '#0f172a' }}>UPI ID:</span>
-                  <span style={{ fontSize: '14px', fontWeight: 'bold', color: '#ef4444', wordBreak: 'break-all', margin: '0 6px' }}>{paymentSettings.upiId}</span>
-                  <button
-                    type="button"
-                    onClick={() => handleCopy(paymentSettings.upiId)}
-                    style={{
-                      background: '#0284c7',
-                      color: '#ffffff',
-                      border: 'none',
-                      padding: '6px 14px',
-                      borderRadius: '6px',
-                      fontSize: '12px',
-                      fontWeight: 'bold',
-                      cursor: 'pointer'
-                    }}
-                  >
-                    {copied ? 'Copied' : 'Copy'}
-                  </button>
-                </div>
+                  {/* ₹2000 SE UPER: UPI ID AUR BANK DETAILS BOTH OPTIONS */}
+                  {numericAmount > 2000 && (
+                    <>
+                      <button
+                        type="button"
+                        onClick={() => setSelectedMethod("upi")}
+                        style={selectedMethod === "upi" ? styles.methodBtnActive : styles.methodBtn}
+                      >
+                        UPI ID
+                      </button>
 
-                {Number(amount) <= 5000 ? (
-                  <div style={{ textAlign: 'center', marginBottom: '20px' }}>
-                    <div style={{
-                      background: '#ffffff',
-                      border: '1px solid #e2e8f0',
-                      padding: '12px',
-                      borderRadius: '16px',
-                      display: 'inline-block',
-                      boxShadow: '0 4px 12px rgba(0,0,0,0.05)'
-                    }}>
-                      <img
-                        src={`https://api.qrserver.com/v1/create-qr-code/?size=180x180&data=upi://pay?pa=${paymentSettings.upiId}&am=${amount}`}
-                        alt="Payment QR"
-                        style={{ width: '180px', height: '180px', display: 'block', margin: '0 auto' }}
-                      />
-                    </div>
-                  </div>
-                ) : (
-                  <div style={{
-                    background: '#f8fafc',
-                    border: '1.5px solid #0f172a',
-                    padding: '14px',
-                    borderRadius: '14px',
-                    marginBottom: '20px'
-                  }}>
-                    <p style={{ margin: '0 0 10px 0', fontSize: '12px', fontWeight: 'bold', color: '#0284c7' }}>BANK ACCOUNT DETAILS</p>
-                    <div style={{ marginBottom: '8px', background: '#fff', padding: '8px', borderRadius: '6px', border: '1px solid #e2e8f0' }}>
-                      <small style={{ color: '#64748b', fontSize: '10px' }}>ACCOUNT NAME</small>
-                      <div style={{ fontWeight: 'bold', fontSize: '13px', color: '#0f172a' }}>{paymentSettings.bankName}</div>
-                    </div>
-                    <div style={{ marginBottom: '8px', background: '#fff', padding: '8px', borderRadius: '6px', border: '1px solid #e2e8f0', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                      <div>
-                        <small style={{ color: '#64748b', fontSize: '10px' }}>ACCOUNT NUMBER</small>
-                        <div style={{ fontWeight: 'bold', fontSize: '13px', color: '#0f172a' }}>{paymentSettings.accountNo}</div>
-                      </div>
-                      <button type="button" onClick={() => handleCopy(paymentSettings.accountNo)} style={{ background: '#f1f5f9', border: 'none', padding: '4px 8px', borderRadius: '4px', fontSize: '11px', fontWeight: 'bold' }}>Copy</button>
-                    </div>
-                    <div style={{ background: '#fff', padding: '8px', borderRadius: '6px', border: '1px solid #e2e8f0', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                      <div>
-                        <small style={{ color: '#64748b', fontSize: '10px' }}>IFSC CODE</small>
-                        <div style={{ fontWeight: 'bold', fontSize: '13px', color: '#0f172a' }}>{paymentSettings.ifsc}</div>
-                      </div>
-                      <button type="button" onClick={() => handleCopy(paymentSettings.ifsc)} style={{ background: '#f1f5f9', border: 'none', padding: '4px 8px', borderRadius: '4px', fontSize: '11px', fontWeight: 'bold' }}>Copy</button>
-                    </div>
-                  </div>
-                )}
+                      <button 
+                        type="button" 
+                        onClick={() => setSelectedMethod("bank")}
+                        style={selectedMethod === "bank" ? styles.methodBtnActive : styles.methodBtn}
+                      >
+                        Bank Details
+                      </button>
+                    </>
+                  )}
+                </div>
+              </div>
 
-                <button
-                  type="button"
-                  onClick={() => setIsModalOpen(true)}
-                  style={{
-                    width: '100%',
-                    background: '#22a038',
-                    color: '#ffffff',
-                    border: 'none',
-                    padding: '15px',
-                    borderRadius: '12px',
-                    fontSize: '16px',
-                    fontWeight: 'bold',
-                    cursor: 'pointer',
-                    boxShadow: '0 4px 12px rgba(34, 160, 56, 0.25)'
-                  }}
-                >
-                  Upload Payment Details
-                </button>
-              </div>
-            )}
+              {/* DETAILS DISPLAYER STRUCTURE */}
+              {selectedMethod === "upi" && (
+                upiId ? <CopyRow label="UPI ID" value={upiId} onCopy={copyText} /> : <div style={styles.noPaymentBox}>UPI ID not available</div>
+              )}
 
-            {/* Proof Submission Modal */}
-            {isModalOpen && (
-              <div style={{
-                position: 'fixed',
-                top: 0,
-                left: 0,
-                right: 0,
-                bottom: 0,
-                background: 'rgba(15, 23, 42, 0.65)',
-                backdropFilter: 'blur(3px)',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                padding: '16px',
-                zIndex: 10000
-              }}>
-                <div style={{
-                  background: '#ffffff',
-                  color: '#0f172a',
-                  borderRadius: '20px',
-                  width: '100%',
-                  maxWidth: '340px',
-                  padding: '20px',
-                  position: 'relative',
-                  boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.2)',
-                  boxSizing: 'border-box'
-                }}>
-                  <button
-                    type="button"
-                    onClick={() => setIsModalOpen(false)}
-                    style={{
-                      position: 'absolute',
-                      top: '12px',
-                      right: '12px',
-                      background: '#f1f5f9',
-                      border: 'none',
-                      width: '30px',
-                      height: '30px',
-                      borderRadius: '50%',
-                      fontSize: '14px',
-                      fontWeight: 'bold',
-                      cursor: 'pointer',
-                      color: '#64748b'
-                    }}
-                  >
-                    ✕
-                  </button>
+              {selectedMethod === "qr" && (
+                scannerImage ? (
+                  <div style={styles.qrBox}>
+                    <img src={scannerImage} alt="Payment QR" style={styles.qrImg} />
+                  </div>
+                ) : <div style={styles.noPaymentBox}>QR scanner not available</div>
+              )}
 
-                  <h3 style={{ margin: '0 0 16px 0', textAlign: 'center', fontSize: '16px', fontWeight: 'bold' }}>
-                    Submit Payment Details
-                  </h3>
+              {selectedMethod === "bank" && (
+                <div style={styles.bankDetailContainer}>
+                  {bank?.name && <CopyRow label="Bank Name" value={bank.name} onCopy={copyText} />}
+                  {bank?.accountNumber && <CopyRow label="Account Number" value={bank.accountNumber} onCopy={copyText} />}
+                  {bank?.ifsc && <CopyRow label="IFSC Code" value={bank.ifsc} onCopy={copyText} />}
+                </div>
+              )}
 
-                  <form onSubmit={handleDepositSubmit}>
-                    <div style={{ marginBottom: '12px' }}>
-                      <label style={{ display: 'block', fontSize: '11px', fontWeight: 'bold', color: '#64748b', marginBottom: '4px' }}>AMOUNT</label>
-                      <input
-                        type="text"
-                        value={`₹${amount}`}
-                        disabled
-                        style={{
-                          width: '100%',
-                          padding: '10px 12px',
-                          background: '#f8fafc',
-                          border: '1px solid #cbd5e1',
-                          borderRadius: '8px',
-                          boxSizing: 'border-box',
-                          fontWeight: 'bold',
-                          fontSize: '15px',
-                          color: '#1b496d'
-                        }}
-                      />
-                    </div>
+              {error && <div style={styles.error}>{error}</div>}
 
-                    <div style={{ marginBottom: '12px' }}>
-                      <label style={{ display: 'block', fontSize: '11px', fontWeight: 'bold', color: '#64748b', marginBottom: '4px' }}>12 DIGIT UTR NUMBER</label>
-                      <input
-                        type="text"
-                        maxLength={12}
-                        placeholder="Enter 12 Digit UTR Number"
-                        value={utrNumber}
-                        onChange={(e) => setUtrNumber(e.target.value)}
-                        required
-                        style={{
-                          width: '100%',
-                          padding: '10px 12px',
-                          border: '1px solid #cbd5e1',
-                          borderRadius: '8px',
-                          boxSizing: 'border-box',
-                          outline: 'none',
-                          fontSize: '16px'
-                        }}
-                      />
-                    </div>
+              {/* PROOF UPLOADER FLOW */}
+              {selectedMethod && (
+                <div style={{ marginTop: 15 }}>
+                  
+                  {/* Updated Text Note Box As Requested */}
+                  <div style={styles.noteBox}>
+                   Note:- UPI और Scanner पर पेमेंट न होने पर सपोर्ट पर Contact करे !
+                  </div>
 
-                    <div style={{ marginBottom: '18px' }}>
-                      <label style={{
-                        display: 'block',
-                        background: '#f8fafc',
-                        border: '1.5px dashed #94a3b8',
-                        padding: '14px',
-                        textAlign: 'center',
-                        borderRadius: '8px',
-                        cursor: 'pointer',
-                        fontSize: '12px',
-                        color: '#475569',
-                        fontWeight: 'bold'
-                      }}>
-                        {selectedFile ? selectedFile.name : '📷 Attach Payment Screenshot'}
-                        <input
-                          type="file"
-                          accept="image/*"
-                          onChange={(e) => e.target.files?.[0] && setSelectedFile(e.target.files[0])}
-                          style={{ display: 'none' }}
-                        />
-                      </label>
-                    </div>
+                  <input
+                    type="text"
+                    value={utr}
+                    placeholder="Enter UTR / Transaction ID"
+                    onChange={(e) => setUtr(e.target.value)}
+                    style={styles.input}
+                  />
 
-                    <button
-                      type="submit"
-                      disabled={loading}
-                      style={{
-                        width: '100%',
-                        background: loading ? '#94a3b8' : '#1b496d',
-                        color: '#ffffff',
-                        border: 'none',
-                        padding: '12px',
-                        borderRadius: '8px',
-                        fontWeight: 'bold',
-                        fontSize: '15px',
-                        cursor: loading ? 'not-allowed' : 'pointer'
-                      }}
-                    >
-                      {loading ? 'Submitting...' : 'Submit Payment'}
-                    </button>
-                  </form>
-                </div>
-              </div>
-            )}
+                  <input
+                    type="file"
+                    accept="image/*"
+                    onChange={(e) => setScreenshot(e.target.files?.[0] || null)}
+                    style={styles.fileInput}
+                  />
 
-          </div>
-        </div>
-      )}
+                  {screenshot && <p style={styles.small}>Selected: {screenshot.name}</p>}
 
-    </div>
-  );
+                  <button style={styles.submitBtn} onClick={submitDeposit} disabled={loading}>
+                    {loading ? "Verifying Proof..." : "Submit Payment Proof"}
+                  </button>
+                </div>
+              )}
+
+              {/* Cancel Button */}
+              <button style={styles.cancelBtn} onClick={() => { setShowPayment(false); setSelectedMethod(""); }}>Cancel</button>
+              <div style={styles.paymentInstruction}>
+                👆 ऊपर QR Scanner और UPI ID का ऑप्शन दिया गया है, उस पर दबाये और पेमेंट करे !
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+function CopyRow({ label, value, onCopy }) {
+  return (
+    <div style={styles.copyRow}>
+      <div style={{ minWidth: 0 }}>
+        <p style={styles.copyLabel}>{label}</p>
+        <p style={styles.copyValue}>{value}</p>
+      </div>
+      <button style={styles.copyBtn} onClick={() => onCopy(value)}>Copy</button>
+    </div>
+  );
+}
+
+function HistoryBox({ empty, items, getStatusStyle, type }) {
+  return (
+    <div>
+      {items.length === 0 ? (
+        <p style={styles.desc}>{empty}</p>
+      ) : (
+        items.slice(0, 10).map((item) => (
+          <div key={item._id} style={styles.depositItem}>
+            <div>
+              <b style={{ color: "#0f172a" }}>₹{item.amount}</b>
+              <p style={styles.small}>{type === "deposit" ? `UTR: ${item.utr || "-"}` : `Method: ${item.method || "-"}`}</p>
+              <p style={styles.small}>{item.createdAt ? new Date(item.createdAt).toLocaleString("en-IN") : "-"}</p>
+            </div>
+            <span style={{ ...styles.status, ...getStatusStyle(item.status) }}>{item.status || "pending"}</span>
+          </div>
+        ))
+      )}
+    </div>
+  );
+}
+
+const styles = {
+  page: { minHeight: "100vh", background: "#f1f5f9", color: "#0f172a" },
+  container: { padding: "72px 14px 105px", maxWidth: "480px", margin: "0 auto" },
+  headerRow: { display: "flex", alignItems: "center", gap: "12px", marginBottom: "20px" },
+  backBtn: { width: 42, height: 42, borderRadius: 14, border: "none", background: "#fff", fontSize: 24, fontWeight: 900, boxShadow: "0 4px 12px rgba(0,0,0,0.05)", cursor: "pointer" },
+  title: { flex: 1, margin: 0, fontSize: 27, fontWeight: 900, color: "#0f172a" },
+  online: { color: "#64748b", fontSize: 13, fontWeight: 700 },
+  
+  cardRectangle: { background: "#fff", borderRadius: "12px", padding: "16px", marginBottom: "16px", boxShadow: "0 10px 30px rgba(15,23,42,.03)", border: "1px solid #e2e8f0" },
+  cardMainInline: { display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12 },
+  iconBoxSmall: { width: 50, height: 50, borderRadius: 14, display: "flex", alignItems: "center", justifyContent: "center", color: "#fff", fontSize: 24, flexShrink: 0 },
+  infoFlex: { flex: 1, minWidth: 0 },
+  
+  label: { margin: "0 0 2px", color: "#64748b", fontSize: 13, fontWeight: 800 },
+  amountText: { margin: 0, color: "#0f172a", fontSize: 20, fontWeight: 900 },
+  
+  addBtnInline: { border: "none", background: "linear-gradient(135deg,#2563eb,#06b6d4)", color: "#fff", borderRadius: 10, padding: "10px 14px", fontSize: 14, fontWeight: 900, cursor: "pointer", whiteSpace: "nowrap" },
+  withdrawBtnInline: { border: "1px solid #bbf7d0", background: "#f0fdf4", color: "#166534", borderRadius: 10, padding: "10px 14px", fontSize: 14, fontWeight: 900, cursor: "pointer", whiteSpace: "nowrap" },
+  
+  // Dynamic Complete KYC Button Styling
+  completeKycBtnInline: { border: "none", background: "linear-gradient(135deg, #f59e0b, #d97706)", color: "#fff", borderRadius: 10, padding: "10px 12px", fontSize: 13, fontWeight: 900, cursor: "pointer", whiteSpace: "nowrap", boxShadow: "0 4px 10px rgba(217,119,6,0.2)" },
+
+  plus: { marginLeft: 3, fontSize: 15 },
+  desc: { margin: "10px 0 0", color: "#64748b", fontSize: 12, lineHeight: 1.4 },
+  
+  error: { background: "#fee2e2", color: "#991b1b", padding: 10, borderRadius: 12, marginBottom: 12, fontWeight: 800, fontSize: 13 },
+  loading: { minHeight: "70vh", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 16, color: "#475569" },
+  
+  historyCard: { background: "#fff", borderRadius: 12, padding: 18, boxShadow: "0 18px 45px rgba(15,23,42,.07)", border: "1px solid #e2e8f0" },
+  historyTabs: { display: "flex", gap: "8px", marginBottom: "12px" },
+  historyTab: { flex: 1, border: "none", background: "#f1f5f9", padding: "6px 10px", borderRadius: 8, fontWeight: 800, color: "#64748b", fontSize: "12px", cursor: "pointer", whiteSpace: "nowrap" },
+  activeHistoryTab: { background: "#2563eb", color: "#fff", boxShadow: "0 4px 10px rgba(37,99,235,0.15)" },
+  depositItem: { display: "flex", justifyContent: "space-between", alignItems: "center", padding: "10px 0", borderBottom: "1px solid #f1f5f9" },
+  status: { padding: "4px 8px", borderRadius: 8, fontSize: 12, fontWeight: 900 },
+  small: { fontSize: 11, color: "#94a3b8", margin: "2px 0 0" },
+
+  modalOverlay: { position: "fixed", top: 0, left: 0, right: 0, bottom: 0, background: "rgba(15,23,42,0.3)", backdropFilter: "blur(4px)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 100 },
+  modal: { background: "#fff", width: "100%", maxWidth: "400px", padding: 24, borderRadius: 22, boxShadow: "0 25px 50px -12px rgba(0,0,0,0.1)", position: "relative", margin: "0 12px", border: "1px solid #e2e8f0" },
+  closeBtn: { position: "absolute", top: 12, right: 16, background: "none", border: "none", fontSize: 24, fontWeight: "bold", color: "#94a3b8", cursor: "pointer" },
+  modalTitle: { margin: "0 0 4px", fontSize: 22, fontWeight: 900, color: "#0f172a" },
+  modalSub: { margin: "0 0 16px", fontSize: 12, fontWeight: 700, color: "#64748b" },
+  input: { width: "100%", padding: "12px", borderRadius: "10px", border: "1px solid #cbd5e1", fontSize: "15px", fontWeight: "700", outline: "none", boxSizing: "border-box" },
+  depositNoteBox: { background: "#fffbeb", padding: "12px", borderRadius: "10px", border: "1px solid #fde68a", marginTop: "12px" },
+  depositNoteLine: { fontSize: "11px", margin: "0 0 4px", color: "#b45309", fontWeight: "600", lineHeight: "1.4" },
+  payBtn: { width: "100%", padding: "12px", background: "#2563eb", color: "#fff", border: "none", borderRadius: "10px", fontSize: "15px", fontWeight: "900", marginTop: "14px", cursor: "pointer" },
+
+  paymentPage: { position: "fixed", top: 0, left: 0, right: 0, bottom: 0, background: "#f8fafc", display: "flex", flexDirection: "column", zIndex: 110, overflowY: "auto" },
+  paymentCard: { width: "100%", maxWidth: "480px", margin: "0 auto", padding: "14px", boxSizing: "border-box" },
+  
+  headerContainer: { display: "flex", alignItems: "center", justifyContent: "space-between", background: "linear-gradient(135deg, #1e293b 0%, #0f172a 100%)", padding: "14px 16px", borderRadius: "14px", marginBottom: "16px", boxShadow: "0 4px 15px rgba(15, 23, 42, 0.15)", border: "1px solid rgba(255, 255, 255, 0.05)" },
+  backArrowStyle: { fontSize: "20px", color: "#f8fafc", background: "rgba(255, 255, 255, 0.1)", width: "34px", height: "34px", borderRadius: "50%", display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", border: "none" },
+  brandGroupStyle: { display: "flex", alignItems: "center", gap: "6px", color: "#fff" },
+  logoTextStyle: { fontSize: "20px", fontWeight: "900", background: "linear-gradient(to right, #3b82f6, #60a5fa)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent", letterSpacing: "0.5px" },
+  completePaymentTextStyle: { fontSize: "12px", fontWeight: "800", color: "#34d399", textTransform: "uppercase", backgroundColor: "rgba(52, 211, 153, 0.1)", padding: "4px 10px", borderRadius: "20px", letterSpacing: "0.05em" },
+
+  paymentBody: { width: "100%" },
+  
+  amountCardBox: { 
+    background: "#ffffff", 
+    border: "2px solid #0f172a", 
+    borderRadius: "6px", 
+    padding: "10px 14px", 
+    textAlign: "center", 
+    boxShadow: "0 4px 12px rgba(0,0,0,0.04)" 
+  },
+  payTextStyle: { 
+    fontSize: "12px", 
+    fontWeight: "900", 
+    color: "#64748b", 
+    textTransform: "uppercase", 
+    letterSpacing: "0.05em", 
+    margin: 0 
+  },
+  amountTextStyle: { 
+    fontSize: "26px", 
+    fontWeight: "900", 
+    color: "#0f172a", 
+    letterSpacing: "-0.02em", 
+    marginTop: "2px", 
+    marginBottom: "2px", 
+    margin: 0 
+  },
+  timerBoxStyle: { 
+    display: "inline-flex", 
+    alignItems: "center", 
+    justifyContent: "center", 
+    gap: "4px", 
+    background: "#fee2e2", 
+    color: "#dc2626", 
+    padding: "3px 10px", 
+    borderRadius: "4px", 
+    fontSize: "11px", 
+    fontWeight: "800", 
+    marginTop: "4px", 
+    border: "1px solid #fca5a5" 
+  },
+
+  methodBtn: { background: "#fff", border: "2px solid #cbd5e1", color: "#475569", padding: "12px", borderRadius: "12px", fontSize: "14px", fontWeight: "800", cursor: "pointer" },
+  methodBtnActive: { background: "linear-gradient(135deg, #10b981, #059669)", border: "none", color: "#fff", padding: "12px", borderRadius: "12px", fontSize: "14px", fontWeight: "900", cursor: "pointer", boxShadow: "0 4px 14px rgba(16,185,129,0.3)" },
+  cancelBtn: { width: "100%", border: "1px solid #fca5a5", background: "#fef2f2", color: "#dc2626", padding: "12px", borderRadius: "14px", fontSize: "14px", fontWeight: "900", cursor: "pointer", marginTop: "14px" },
+
+  noPaymentBox: { padding: "16px", background: "#f1f5f9", borderRadius: "12px", textAlign: "center", fontSize: "13px", color: "#64748b", fontWeight: "700" },
+  qrBox: { display: "flex", justifyContent: "center", padding: "14px", background: "#fff", borderRadius: "16px", border: "1px solid #e2e8f0" },
+  qrImg: { width: "200px", height: "200px", objectFit: "contain" },
+  bankDetailContainer: { background: "#fff", padding: "12px", borderRadius: "14px", border: "1px solid #e2e8f0", display: "flex", flexDirection: "column", gap: "10px" },
+  
+  copyRow: { display: "flex", alignItems: "center", justifyContent: "space-between", background: "#f8fafc", padding: "10px 14px", borderRadius: "10px", border: "1px solid #e2e8f0" },
+  copyLabel: { margin: 0, fontSize: "11px", color: "#64748b", fontWeight: "800" },
+  copyValue: { margin: "2px 0 0", fontSize: "14px", color: "#0f172a", fontWeight: "900" },
+  copyBtn: { background: "#2563eb", color: "#fff", border: "none", padding: "6px 12px", borderRadius: "6px", fontSize: "12px", fontWeight: "800", cursor: "pointer" },
+
+  noteBox: { background: "#fff5f5", color: "#c53030", padding: "12px", borderRadius: "10px", fontSize: "12px", fontWeight: "700", marginBottom: "12px", border: "1px solid #feb2b2", lineHeight: "1.4" },
+  fileInput: { width: "100%", marginTop: "10px", fontSize: "13px", fontWeight: "700" }, 
+  submitBtn: { width: "100%", padding: "12px", background: "#10b981", color: "#fff", border: "none", borderRadius: "10px", fontSize: "15px", fontWeight: "900", marginTop: "14px", cursor: "pointer" },
+
+  paymentInstruction: {
+    marginTop: "12px",
+    padding: "12px",
+    background: "#fff8e1",
+    border: "1px solid #facc15",
+    borderRadius: "10px",
+    color: "#92400e",
+    fontSize: "13px",
+    fontWeight: "700",
+    textAlign: "center",
+    lineHeight: "1.5",
+  }
 };
-
-export default WalletPage;
