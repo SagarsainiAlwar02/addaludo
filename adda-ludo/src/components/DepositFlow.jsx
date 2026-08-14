@@ -129,326 +129,345 @@ export default function DepositFlow({ payment, onClose, onSuccess }) {
         .df-card { transition: transform .18s ease, box-shadow .22s ease; }
         .df-card:hover { transform: translateY(-2px); box-shadow: 0 12px 30px rgba(99,102,241,.14) !important; }
 
+        @media (max-width: 420px) {
+          .df-mobile-shell {
+            transform: scale(0.82);
+            transform-origin: top center;
+            width: 100%;
+            max-width: 420px;
+            min-height: 100vh;
+            margin: 0 auto;
+          }
+        }
+
+        @media (max-width: 360px) {
+          .df-mobile-shell {
+            transform: scale(0.74);
+          }
+        }
+
         input[type=number]::-webkit-outer-spin-button,
         input[type=number]::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
         input[type=number] { -moz-appearance: textfield; }
       `}</style>
 
-      {/* Decorative background glows (behind everything) */}
-      <div style={styles.glowTop} />
-      <div style={styles.glowBottom} />
+      <div className="df-mobile-shell" style={styles.mobileShell}>
+        {/* Decorative background glows (behind everything) */}
+        <div style={styles.glowTop} />
+        <div style={styles.glowBottom} />
 
-      {/* Sticky Header */}
-      <div style={styles.header}>
-        <button type="button" onClick={onClose} style={styles.headerIconBtn} aria-label="Close">
-          ✕
-        </button>
-        <div style={styles.brandGroup}>
-          <span style={styles.brandLogo}>⚔️</span>
-          <span style={styles.brandText}>AddaLudo</span>
+        {/* Sticky Header */}
+        <div style={styles.header}>
+          <button type="button" onClick={onClose} style={styles.headerIconBtn} aria-label="Close">
+            ✕
+          </button>
+          <div style={styles.brandGroup}>
+            <span style={styles.brandLogo}>⚔️</span>
+            <span style={styles.brandText}>AddaLudo</span>
+          </div>
+          <span style={styles.stepPill}>{step === 1 ? "1/2" : "2/2"}</span>
         </div>
-        <span style={styles.stepPill}>{step === 1 ? "1/2" : "2/2"}</span>
-      </div>
 
-      {/* Progress bar */}
-      <div style={styles.progressWrap}>
-        <div style={styles.progressTrack}>
-          <div
-            style={{
-              ...styles.progressFill,
-              width: step === 1 ? "50%" : "100%",
-            }}
-          />
+        {/* Progress bar */}
+        <div style={styles.progressWrap}>
+          <div style={styles.progressTrack}>
+            <div
+              style={{
+                ...styles.progressFill,
+                width: step === 1 ? "50%" : "100%",
+              }}
+            />
+          </div>
+          <span style={styles.progressLabel}>
+            {step === 1 ? "Enter Amount" : "Complete Payment"}
+          </span>
         </div>
-        <span style={styles.progressLabel}>
-          {step === 1 ? "Enter Amount" : "Complete Payment"}
-        </span>
-      </div>
 
-      <div style={styles.body}>
-        {/* Inline error banner (kept inside the flow so nothing overlays it) */}
-        {flowError && (
-          <div style={styles.inlineError} onClick={() => setFlowError("")}>
-            <span style={styles.inlineErrorIcon}>⚠️</span>
-            <span style={{ flex: 1 }}>{flowError}</span>
-            <span style={styles.inlineErrorClose}>×</span>
-          </div>
-        )}
-
-        {/* STEP 1: Amount Selection */}
-        {step === 1 && (
-          <div className="df-step" key="step1">
-            {/* Top Notice Banner */}
-            <div style={styles.noticeBanner}>
-              <span style={styles.noticeIcon}>👉</span>
-              <span>जितना Payment add करना है वो अमाउंट भर के Next पर क्लिक करें 🙏</span>
+        <div style={styles.body}>
+          {/* Inline error banner (kept inside the flow so nothing overlays it) */}
+          {flowError && (
+            <div style={styles.inlineError} onClick={() => setFlowError("")}>
+              <span style={styles.inlineErrorIcon}>⚠️</span>
+              <span style={{ flex: 1 }}>{flowError}</span>
+              <span style={styles.inlineErrorClose}>×</span>
             </div>
+          )}
 
-            {/* Dark Blue Main Card */}
-            <div style={styles.amountCard}>
-              <div style={styles.cardGlowTop} />
-              <div style={styles.cardGlowBottom} />
-              <p style={styles.amountTitle}>Enter Amount to Add</p>
-
-              {/* Amount Display */}
-              <div style={styles.amountInputRow}>
-                <span style={styles.rupeeSymbol}>₹</span>
-                <input
-                  type="number"
-                  value={amount}
-                  onChange={(e) => setAmount(e.target.value)}
-                  style={styles.amountInput}
-                />
+          {/* STEP 1: Amount Selection */}
+          {step === 1 && (
+            <div className="df-step" key="step1">
+              {/* Top Notice Banner */}
+              <div style={styles.noticeBanner}>
+                <span style={styles.noticeIcon}>👉</span>
+                <span>जितना Payment add करना है वो अमाउंट भर के Next पर क्लिक करें 🙏</span>
               </div>
 
-              <p style={styles.minMaxHint}>Min: ₹100 • Max: ₹1,00,000</p>
+              {/* Dark Blue Main Card */}
+              <div style={styles.amountCard}>
+                <div style={styles.cardGlowTop} />
+                <div style={styles.cardGlowBottom} />
+                <p style={styles.amountTitle}>Enter Amount to Add</p>
 
-              {/* Quick Add Buttons Grid */}
-              <div style={styles.quickGrid}>
-                {[300, 500, 1000, 2000].map((val) => (
-                  <button
-                    key={val}
-                    type="button"
-                    onClick={() => handleAddAmount(val)}
-                    className="df-chip"
-                    style={styles.quickBtn}
-                  >
-                    <span style={styles.quickCoin}>₹</span>
-                    +{val}
-                  </button>
-                ))}
-              </div>
-
-              {/* Proceed Button */}
-              <button
-                type="button"
-                onClick={() => {
-                  if (numericAmount < 100) {
-                    setFlowError("Minimum deposit ₹100");
-                    return;
-                  }
-                  if (numericAmount > 100000) {
-                    setFlowError("Maximum deposit ₹1,00,000");
-                    return;
-                  }
-                  setFlowError("");
-                  setStep(2);
-                }}
-                className="df-btn"
-                style={styles.proceedBtn}
-              >
-                Proceed to Pay
-                <span style={styles.proceedArrow}>→</span>
-              </button>
-            </div>
-          </div>
-        )}
-
-        {/* STEP 2: Payment Details */}
-        {step === 2 && (
-          <div className="df-step" key="step2">
-            {/* Header Amount & Edit Row */}
-            <div className="df-card" style={styles.summaryCard}>
-              <div>
-                <p style={styles.summaryLabel}>Amount to be added</p>
-                <p style={styles.summaryAmount}>₹{amount}</p>
-              </div>
-              <button
-                type="button"
-                onClick={() => setStep(1)}
-                className="df-btn"
-                style={styles.editBtn}
-              >
-                ✏️ Edit
-              </button>
-            </div>
-
-            {/* Instruction Banner */}
-            <div style={styles.instructionBanner}>
-              <span style={styles.instructionIcon}>💳</span>
-              <span>Payment successfull होने के बाद स्क्रीनशॉट और UTR नंबर डालके सबमिट करें 🙏</span>
-            </div>
-
-            <h3 style={styles.payTitle}>
-              नीचे दी हुई UPI Or QR पर भुगतान करें
-            </h3>
-
-            {/* UPI ID Card */}
-            <div className="df-card" style={styles.upiCard}>
-              <span style={styles.upiBadge}>UPI ID</span>
-              <span style={styles.upiValue}>{upiId || "—"}</span>
-              <button
-                type="button"
-                onClick={() => handleCopy(upiId)}
-                className={copied ? "" : "df-copy"}
-                style={copied ? styles.copyBtnCopied : styles.copyBtn}
-              >
-                {copied ? "✓ Copied" : "Copy"}
-              </button>
-            </div>
-
-            {/* Conditional Display: QR Code (<= 20000) OR Bank Account Details (> 20000) */}
-            {numericAmount <= 20000 ? (
-              <div className="df-card" style={styles.qrCard}>
-                <div style={styles.qrInner}>
-                  {upiId ? (
-                    <img
-                      src={`https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=upi://pay?pa=${upiId}&am=${amount}`}
-                      alt="Payment QR"
-                      style={styles.qrImg}
-                    />
-                  ) : (
-                    <div style={styles.qrFallback}>UPI ID not available</div>
-                  )}
-                </div>
-                <p style={styles.qrCaption}>
-                  📱 Scan this QR with any UPI app
-                  <span style={styles.qrAmount}>Pay ₹{amount}</span>
-                </p>
-              </div>
-            ) : (
-              <div className="df-card" style={styles.bankCard}>
-                <div style={styles.bankHeader}>
-                  <span style={styles.bankHeaderIcon}>🏦</span> Bank Account Details
-                </div>
-                <div style={styles.bankRow}>
-                  <div style={styles.bankInfo}>
-                    <small style={styles.bankLabel}>ACCOUNT NAME</small>
-                    <div style={styles.bankValue}>{bankDetails.name || "—"}</div>
-                  </div>
-                  <button
-                    type="button"
-                    onClick={() => handleCopy(bankDetails.name)}
-                    className="df-copy"
-                    style={styles.bankCopyBtn}
-                  >
-                    Copy
-                  </button>
-                </div>
-                <div style={styles.bankDivider} />
-                <div style={styles.bankRow}>
-                  <div style={styles.bankInfo}>
-                    <small style={styles.bankLabel}>ACCOUNT NUMBER</small>
-                    <div style={styles.bankValue}>{bankDetails.accountNo || "—"}</div>
-                  </div>
-                  <button
-                    type="button"
-                    onClick={() => handleCopy(bankDetails.accountNo)}
-                    className="df-copy"
-                    style={styles.bankCopyBtn}
-                  >
-                    Copy
-                  </button>
-                </div>
-                <div style={styles.bankDivider} />
-                <div style={styles.bankRow}>
-                  <div style={styles.bankInfo}>
-                    <small style={styles.bankLabel}>IFSC CODE</small>
-                    <div style={styles.bankValue}>{bankDetails.ifsc || "—"}</div>
-                  </div>
-                  <button
-                    type="button"
-                    onClick={() => handleCopy(bankDetails.ifsc)}
-                    className="df-copy"
-                    style={styles.bankCopyBtn}
-                  >
-                    Copy
-                  </button>
-                </div>
-              </div>
-            )}
-
-            {/* Green Upload Button */}
-            <button
-              type="button"
-              onClick={() => setIsModalOpen(true)}
-              className="df-btn"
-              style={styles.uploadBtn}
-            >
-              📤 Upload Payment Details
-            </button>
-          </div>
-        )}
-      </div>
-
-      {/* Floating Modal (Top Right Cross Button Included) */}
-      {isModalOpen && (
-        <div className="df-backdrop" style={styles.modalBackdrop}>
-          <div className="df-modal" style={styles.modal}>
-            {/* TOP RIGHT CROSS CANCEL BUTTON */}
-            <button
-              type="button"
-              onClick={() => setIsModalOpen(false)}
-              style={styles.modalCloseBtn}
-              aria-label="Close"
-            >
-              ✕
-            </button>
-
-            <div style={styles.modalIcon}>💸</div>
-            <h3 style={styles.modalTitle}>Submit Payment Details</h3>
-            <p style={styles.modalSub}>Deposit request will be verified by admin</p>
-
-            <form onSubmit={handleSubmit}>
-              <div style={styles.fieldWrap}>
-                <label style={styles.fieldLabel}>AMOUNT</label>
-                <input
-                  type="text"
-                  value={`₹${amount}`}
-                  disabled
-                  style={styles.fieldAmount}
-                />
-              </div>
-
-              <div style={styles.fieldWrap}>
-                <label style={styles.fieldLabel}>12 DIGIT UTR NUMBER</label>
-                <input
-                  type="text"
-                  maxLength={12}
-                  placeholder="Enter 12 Digit UTR Number"
-                  value={utrNumber}
-                  onChange={(e) => setUtrNumber(e.target.value)}
-                  required
-                  className="df-input"
-                  style={styles.fieldInput}
-                />
-              </div>
-
-              <div style={styles.fieldWrap}>
-                <label style={styles.fieldLabel}>PAYMENT SCREENSHOT</label>
-                <label className="df-upload" style={selectedFile ? styles.uploadAreaSelected : styles.uploadArea}>
-                  {selectedFile ? (
-                    <span style={styles.uploadSelected}>
-                      <span style={styles.uploadCheck}>✓</span> {selectedFile.name}
-                    </span>
-                  ) : (
-                    <span style={styles.uploadPlaceholder}>
-                      <span style={styles.uploadIcon}>📷</span>
-                      Upload Payment Screenshot
-                      <small style={styles.uploadHint}>Tap to choose an image</small>
-                    </span>
-                  )}
+                {/* Amount Display */}
+                <div style={styles.amountInputRow}>
+                  <span style={styles.rupeeSymbol}>₹</span>
                   <input
-                    type="file"
-                    accept="image/*"
-                    onChange={(e) => e.target.files?.[0] && setSelectedFile(e.target.files[0])}
-                    style={{ display: "none" }}
+                    type="number"
+                    value={amount}
+                    onChange={(e) => setAmount(e.target.value)}
+                    style={styles.amountInput}
                   />
-                </label>
+                </div>
+
+                <p style={styles.minMaxHint}>Min: ₹100 • Max: ₹1,00,000</p>
+
+                {/* Quick Add Buttons Grid */}
+                <div style={styles.quickGrid}>
+                  {[300, 500, 1000, 2000].map((val) => (
+                    <button
+                      key={val}
+                      type="button"
+                      onClick={() => handleAddAmount(val)}
+                      className="df-chip"
+                      style={styles.quickBtn}
+                    >
+                      <span style={styles.quickCoin}>₹</span>
+                      +{val}
+                    </button>
+                  ))}
+                </div>
+
+                {/* Proceed Button */}
+                <button
+                  type="button"
+                  onClick={() => {
+                    if (numericAmount < 100) {
+                      setFlowError("Minimum deposit ₹100");
+                      return;
+                    }
+                    if (numericAmount > 100000) {
+                      setFlowError("Maximum deposit ₹1,00,000");
+                      return;
+                    }
+                    setFlowError("");
+                    setStep(2);
+                  }}
+                  className="df-btn"
+                  style={styles.proceedBtn}
+                >
+                  Proceed to Pay
+                  <span style={styles.proceedArrow}>→</span>
+                </button>
+              </div>
+            </div>
+          )}
+
+          {/* STEP 2: Payment Details */}
+          {step === 2 && (
+            <div className="df-step" key="step2">
+              {/* Header Amount & Edit Row */}
+              <div className="df-card" style={styles.summaryCard}>
+                <div>
+                  <p style={styles.summaryLabel}>Amount to be added</p>
+                  <p style={styles.summaryAmount}>₹{amount}</p>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setStep(1)}
+                  className="df-btn"
+                  style={styles.editBtn}
+                >
+                  ✏️ Edit
+                </button>
               </div>
 
+              {/* Instruction Banner */}
+              <div style={styles.instructionBanner}>
+                <span style={styles.instructionIcon}>💳</span>
+                <span>Payment successfull होने के बाद स्क्रीनशॉट और UTR नंबर डालके सबमिट करें 🙏</span>
+              </div>
+
+              <h3 style={styles.payTitle}>
+                नीचे दी हुई UPI Or QR पर भुगतान करें
+              </h3>
+
+              {/* UPI ID Card */}
+              <div className="df-card" style={styles.upiCard}>
+                <span style={styles.upiBadge}>UPI ID</span>
+                <span style={styles.upiValue}>{upiId || "—"}</span>
+                <button
+                  type="button"
+                  onClick={() => handleCopy(upiId)}
+                  className={copied ? "" : "df-copy"}
+                  style={copied ? styles.copyBtnCopied : styles.copyBtn}
+                >
+                  {copied ? "✓ Copied" : "Copy"}
+                </button>
+              </div>
+
+              {/* Conditional Display: QR Code (<= 20000) OR Bank Account Details (> 20000) */}
+              {numericAmount <= 20000 ? (
+                <div className="df-card" style={styles.qrCard}>
+                  <div style={styles.qrInner}>
+                    {upiId ? (
+                      <img
+                        src={`https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=upi://pay?pa=${upiId}&am=${amount}`}
+                        alt="Payment QR"
+                        style={styles.qrImg}
+                      />
+                    ) : (
+                      <div style={styles.qrFallback}>UPI ID not available</div>
+                    )}
+                  </div>
+                  <p style={styles.qrCaption}>
+                    📱 Scan this QR with any UPI app
+                    <span style={styles.qrAmount}>Pay ₹{amount}</span>
+                  </p>
+                </div>
+              ) : (
+                <div className="df-card" style={styles.bankCard}>
+                  <div style={styles.bankHeader}>
+                    <span style={styles.bankHeaderIcon}>🏦</span> Bank Account Details
+                  </div>
+                  <div style={styles.bankRow}>
+                    <div style={styles.bankInfo}>
+                      <small style={styles.bankLabel}>ACCOUNT NAME</small>
+                      <div style={styles.bankValue}>{bankDetails.name || "—"}</div>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => handleCopy(bankDetails.name)}
+                      className="df-copy"
+                      style={styles.bankCopyBtn}
+                    >
+                      Copy
+                    </button>
+                  </div>
+                  <div style={styles.bankDivider} />
+                  <div style={styles.bankRow}>
+                    <div style={styles.bankInfo}>
+                      <small style={styles.bankLabel}>ACCOUNT NUMBER</small>
+                      <div style={styles.bankValue}>{bankDetails.accountNo || "—"}</div>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => handleCopy(bankDetails.accountNo)}
+                      className="df-copy"
+                      style={styles.bankCopyBtn}
+                    >
+                      Copy
+                    </button>
+                  </div>
+                  <div style={styles.bankDivider} />
+                  <div style={styles.bankRow}>
+                    <div style={styles.bankInfo}>
+                      <small style={styles.bankLabel}>IFSC CODE</small>
+                      <div style={styles.bankValue}>{bankDetails.ifsc || "—"}</div>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => handleCopy(bankDetails.ifsc)}
+                      className="df-copy"
+                      style={styles.bankCopyBtn}
+                    >
+                      Copy
+                    </button>
+                  </div>
+                </div>
+              )}
+
+              {/* Green Upload Button */}
               <button
-                type="submit"
-                disabled={submitting}
+                type="button"
+                onClick={() => setIsModalOpen(true)}
                 className="df-btn"
-                style={{ ...styles.submitBtn, opacity: submitting ? 0.65 : 1 }}
+                style={styles.uploadBtn}
               >
-                {submitting ? "⏳ Submitting..." : "Submit Payment"}
+                📤 Upload Payment Details
               </button>
-            </form>
-          </div>
+            </div>
+          )}
         </div>
-      )}
+
+        {/* Floating Modal (Top Right Cross Button Included) */}
+        {isModalOpen && (
+          <div className="df-backdrop" style={styles.modalBackdrop}>
+            <div className="df-modal" style={styles.modal}>
+              {/* TOP RIGHT CROSS CANCEL BUTTON */}
+              <button
+                type="button"
+                onClick={() => setIsModalOpen(false)}
+                style={styles.modalCloseBtn}
+                aria-label="Close"
+              >
+                ✕
+              </button>
+
+              <div style={styles.modalIcon}>💸</div>
+              <h3 style={styles.modalTitle}>Submit Payment Details</h3>
+              <p style={styles.modalSub}>Deposit request will be verified by admin</p>
+
+              <form onSubmit={handleSubmit}>
+                <div style={styles.fieldWrap}>
+                  <label style={styles.fieldLabel}>AMOUNT</label>
+                  <input
+                    type="text"
+                    value={`₹${amount}`}
+                    disabled
+                    style={styles.fieldAmount}
+                  />
+                </div>
+
+                <div style={styles.fieldWrap}>
+                  <label style={styles.fieldLabel}>12 DIGIT UTR NUMBER</label>
+                  <input
+                    type="text"
+                    maxLength={12}
+                    placeholder="Enter 12 Digit UTR Number"
+                    value={utrNumber}
+                    onChange={(e) => setUtrNumber(e.target.value)}
+                    required
+                    className="df-input"
+                    style={styles.fieldInput}
+                  />
+                </div>
+
+                <div style={styles.fieldWrap}>
+                  <label style={styles.fieldLabel}>PAYMENT SCREENSHOT</label>
+                  <label className="df-upload" style={selectedFile ? styles.uploadAreaSelected : styles.uploadArea}>
+                    {selectedFile ? (
+                      <span style={styles.uploadSelected}>
+                        <span style={styles.uploadCheck}>✓</span> {selectedFile.name}
+                      </span>
+                    ) : (
+                      <span style={styles.uploadPlaceholder}>
+                        <span style={styles.uploadIcon}>📷</span>
+                        Upload Payment Screenshot
+                        <small style={styles.uploadHint}>Tap to choose an image</small>
+                      </span>
+                    )}
+                    <input
+                      type="file"
+                      accept="image/*"
+                      onChange={(e) => e.target.files?.[0] && setSelectedFile(e.target.files[0])}
+                      style={{ display: "none" }}
+                    />
+                  </label>
+                </div>
+
+                <button
+                  type="submit"
+                  disabled={submitting}
+                  className="df-btn"
+                  style={{ ...styles.submitBtn, opacity: submitting ? 0.65 : 1 }}
+                >
+                  {submitting ? "⏳ Submitting..." : "Submit Payment"}
+                </button>
+              </form>
+            </div>
+          </div>
+        )}
+      </div>
     </div>
   );
 }
@@ -464,8 +483,14 @@ const styles = {
       "linear-gradient(180deg, #020617 0%, #0b1a33 130px, #0f172a 190px, #f8fafc 190px)",
     color: "#0f172a",
     fontFamily: "system-ui, -apple-system, sans-serif",
-    overflowY: "auto",
+    overflow: "hidden",
     zIndex: 9998,
+  },
+  mobileShell: {
+    width: "100%",
+    maxWidth: 420,
+    margin: "0 auto",
+    minHeight: "100vh",
   },
 
   // ---- Decorative glows (kept within the scroll container so they fade
