@@ -233,28 +233,30 @@ function HistoryBox({ empty, items, getStatusStyle, type }) {
 
 const styles = {
   page: { minHeight: "100vh", background: "#f1f5f9", color: "#0f172a" },
-  container: { padding: "68px 10px 96px", maxWidth: "420px", margin: "0 auto", width: "100%", boxSizing: "border-box" },
-  headerRow: { display: "flex", alignItems: "center", gap: "10px", marginBottom: "16px" },
-  backBtn: { width: 38, height: 38, borderRadius: 12, border: "none", background: "#fff", fontSize: 22, fontWeight: 900, boxShadow: "0 4px 12px rgba(0,0,0,0.05)", cursor: "pointer" },
-  title: { flex: 1, margin: 0, fontSize: 24, fontWeight: 900, color: "#0f172a" },
-  online: { color: "#64748b", fontSize: 12, fontWeight: 700 },
+  container: { padding: "72px 14px 105px", maxWidth: "480px", margin: "0 auto" },
+  headerRow: { display: "flex", alignItems: "center", gap: "12px", marginBottom: "20px" },
+  backBtn: { width: 42, height: 42, borderRadius: 14, border: "none", background: "#fff", fontSize: 24, fontWeight: 900, boxShadow: "0 4px 12px rgba(0,0,0,0.05)", cursor: "pointer" },
+  title: { flex: 1, margin: 0, fontSize: 27, fontWeight: 900, color: "#0f172a" },
+  online: { color: "#64748b", fontSize: 13, fontWeight: 700 },
 
-  cardRectangle: { background: "#fff", borderRadius: "12px", padding: "14px", marginBottom: "14px", boxShadow: "0 10px 30px rgba(15,23,42,.03)", border: "1px solid #e2e8f0" },
-  cardMainInline: { display: "flex", alignItems: "center", justifyContent: "space-between", gap: 10 },
-  iconBoxSmall: { width: 46, height: 46, borderRadius: 12, display: "flex", alignItems: "center", justifyContent: "center", color: "#fff", fontSize: 22, flexShrink: 0 },
+  cardRectangle: { background: "#fff", borderRadius: "12px", padding: "16px", marginBottom: "16px", boxShadow: "0 10px 30px rgba(15,23,42,.03)", border: "1px solid #e2e8f0" },
+  cardMainInline: { display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12 },
+  iconBoxSmall: { width: 50, height: 50, borderRadius: 14, display: "flex", alignItems: "center", justifyContent: "center", color: "#fff", fontSize: 24, flexShrink: 0 },
   infoFlex: { flex: 1, minWidth: 0 },
 
-  label: { margin: "0 0 2px", color: "#64748b", fontSize: 12, fontWeight: 800 },
-  amountText: { margin: 0, color: "#0f172a", fontSize: 18, fontWeight: 900 },
+  label: { margin: "0 0 2px", color: "#64748b", fontSize: 13, fontWeight: 800 },
+  amountText: { margin: 0, color: "#0f172a", fontSize: 20, fontWeight: 900 },
 
-  addBtnInline: { border: "none", background: "linear-gradient(135deg,#2563eb,#06b6d4)", color: "#fff", borderRadius: 10, padding: "9px 12px", fontSize: 13, fontWeight: 900, cursor: "pointer", whiteSpace: "nowrap" },
-  withdrawBtnInline: { border: "1px solid #bbf7d0", background: "#f0fdf4", color: "#166534", borderRadius: 10, padding: "9px 12px", fontSize: 13, fontWeight: 900, cursor: "pointer", whiteSpace: "nowrap" },
+  addBtnInline: { border: "none", background: "linear-gradient(135deg,#2563eb,#06b6d4)", color: "#fff", borderRadius: 10, padding: "10px 14px", fontSize: 14, fontWeight: 900, cursor: "pointer", whiteSpace: "nowrap" },
+  withdrawBtnInline: { border: "1px solid #bbf7d0", background: "#f0fdf4", color: "#166534", borderRadius: 10, padding: "10px 14px", fontSize: 14, fontWeight: 900, cursor: "pointer", whiteSpace: "nowrap" },
 
   // Dynamic Complete KYC Button Styling
-  completeKycBtnInline: { border: "none", background: "linear-gradient(135deg, #f59e0b, #d97706)", color: "#fff", borderRadius: 10, padding: "9px 10px", fontSize: 12, fontWeight: 900, cursor: "pointer", whiteSpace: "nowrap", boxShadow: "0 4px 10px rgba(217,119,6,0.2)" },
+  completeKycBtnInline: { border: "none", background: "linear-gradient(135deg, #f59e0b, #d97706)", color: "#fff", borderRadius: 10, padding: "10px 12px", fontSize: 13, fontWeight: 900, cursor: "pointer", whiteSpace: "nowrap", boxShadow: "0 4px 10px rgba(217,119,6,0.2)" },
 
-  plus: { marginLeft: 3, fontSize: 14 },
-  desc: { margin: "10px 0 0", color: "#64748b", fontSize: 11.5, lineHeight: 1.4 },
+  plus: { marginLeft: 3, fontSize: 15 },
+  desc: { margin: "10px 0 0", color: "#64748b", fontSize: 12, lineHeight: 1.4 },
+
+  error: { background: "#fee2e2", color: "#991b1b", padding: 10, borderRadius: 12, marginBottom: 12, fontWeight: 800, fontSize: 13 },
   loading: { minHeight: "70vh", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 16, color: "#475569" },
 
   historyCard: { background: "#fff", borderRadius: 12, padding: 18, boxShadow: "0 18px 45px rgba(15,23,42,.07)", border: "1px solid #e2e8f0" },
