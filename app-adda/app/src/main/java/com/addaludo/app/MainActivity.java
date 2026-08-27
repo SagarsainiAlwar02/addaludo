@@ -14,6 +14,7 @@ import android.view.WindowManager;
 import android.webkit.CookieManager;
 import android.webkit.GeolocationPermissions;
 import android.webkit.ValueCallback;
+import android.webkit.ValueCallback;
 import android.webkit.WebChromeClient;
 import android.webkit.WebResourceError;
 import android.webkit.WebResourceRequest;
@@ -31,6 +32,8 @@ import androidx.swiperefreshlayout.widget.SwipeRefreshLayout;
 public class MainActivity extends Activity {
 
     private WebView webView;
+    private ValueCallback<Uri[]> fileUploadCallback;
+    private static final int FILE_CHOOSER_REQUEST = 100;
     private ProgressBar progressBar;
     private View errorLayout;
     private TextView errorMsg;
@@ -174,6 +177,27 @@ public class MainActivity extends Activity {
                                                            GeolocationPermissions.Callback callback) {
                 callback.invoke(origin, true, false);
             }
+
+            @Override
+            public boolean onShowFileChooser(WebView webView,
+                                             ValueCallback<Uri[]> filePathCallback,
+                                             FileChooserParams fileChooserParams) {
+                // Cancel any previous upload
+                if (fileUploadCallback != null) {
+                    fileUploadCallback.onReceiveValue(null);
+                }
+                fileUploadCallback = filePathCallback;
+
+                // Launch image picker intent
+                Intent intent = fileChooserParams.createIntent();
+                try {
+                    startActivityForResult(intent, FILE_CHOOSER_REQUEST);
+                } catch (Exception e) {
+                    fileUploadCallback = null;
+                    return false;
+                }
+                return true;
+            }
         });
 
         // Enable hardware acceleration for smoother rendering
@@ -277,5 +301,20 @@ public class MainActivity extends Activity {
     // Called from XML onClick for retry button
     public void retryLoading(View view) {
         loadWebsite();
+    }
+
+    @Override
+    protected void onActivityResult(int requestCode, int resultCode, Intent data) {
+        super.onActivityResult(requestCode, resultCode, data);
+        if (requestCode == FILE_CHOOSER_REQUEST) {
+            if (fileUploadCallback != null) {
+                Uri[] results = null;
+                if (resultCode == RESULT_OK && data != null) {
+                    results = new Uri[]{ data.getData() };
+                }
+                fileUploadCallback.onReceiveValue(results);
+                fileUploadCallback = null;
+            }
+        }
     }
 }
