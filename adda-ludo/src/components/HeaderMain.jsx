@@ -107,9 +107,10 @@ export default function HeaderMain() {
         <div className="flex items-center gap-2">
           {showDownload && (
             <a
-              href="/api/app/download"
+              href={`${import.meta.env.VITE_API_URL?.replace(/\/api$/, "") || "http://localhost:5000"}/api/app/download`}
               className="app-dl-btn flex items-center gap-1 rounded-full border border-slate-600 bg-slate-800 px-2 py-1 shadow-md active:scale-95 sm:gap-1.5 sm:px-3"
               title="Download App"
+              target="_blank"
             >
               <i className="fa-solid fa-download app-dl-icon text-[10px] text-emerald-400 sm:text-xs"></i>
               <span className="text-[10px] font-extrabold text-white sm:text-xs">

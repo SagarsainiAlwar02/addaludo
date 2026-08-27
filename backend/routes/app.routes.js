@@ -8,13 +8,37 @@ const __dirname = path.dirname(__filename);
 
 const router = Router();
 
-// Path to the APK file (project root / app-adda / AddaLudo-release.apk)
-const APK_PATH = path.resolve(__dirname, "..", "..", "app-adda", "AddaLudo-release.apk");
+// Find APK: check env var first, then look in app-adda/ relative to backend root
+function findApk() {
+  // 1. Explicit env var
+  if (process.env.APK_PATH && fs.existsSync(process.env.APK_PATH)) {
+    return process.env.APK_PATH;
+  }
+
+  // 2. Try relative to this file: ../../app-adda/AddaLudo-release.apk
+  const candidates = [
+    path.resolve(__dirname, "..", "..", "app-adda", "AddaLudo-release.apk"),
+    path.resolve(__dirname, "..", "app-adda", "AddaLudo-release.apk"),
+    path.resolve(__dirname, "..", "..", "..", "app-adda", "AddaLudo-release.apk"),
+  ];
+
+  for (const p of candidates) {
+    if (fs.existsSync(p)) {
+      console.log("[APK] Found at:", p);
+      return p;
+    }
+  }
+
+  console.error("[APK] Not found. Searched:", candidates);
+  return null;
+}
+
+const APK_PATH = findApk();
 
 // GET /api/app/download — serves the APK file for download
 router.get("/download", (req, res) => {
   try {
-    if (!fs.existsSync(APK_PATH)) {
+    if (!APK_PATH || !fs.existsSync(APK_PATH)) {
       return res.status(404).json({
         success: false,
         error: "APK file not found",
@@ -43,7 +67,7 @@ router.get("/download", (req, res) => {
 // GET /api/app/info — returns APK metadata (size, version) for the frontend
 router.get("/info", (req, res) => {
   try {
-    if (!fs.existsSync(APK_PATH)) {
+    if (!APK_PATH || !fs.existsSync(APK_PATH)) {
       return res.status(404).json({
         success: false,
         error: "APK not found",
