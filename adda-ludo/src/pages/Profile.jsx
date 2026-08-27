@@ -3,7 +3,7 @@ import { useNavigate } from "react-router-dom";
 import api, { getData, getError } from "../api.js";
 import { 
   History, Wallet, Gift, Headphones, LogOut, Pencil, Check, 
-  Trophy, Gamepad2, ShieldCheck, ChevronRight, Phone
+  Trophy, Gamepad2, ShieldCheck, ChevronRight, Phone, Download
 } from "lucide-react";
 
 const generateRandomName = () => {
@@ -227,6 +227,24 @@ export default function Profile({ onLogout }) {
               <ChevronRight className="w-3.5 h-3.5 text-slate-300 group-hover:text-slate-500 group-hover:translate-x-0.5 transition-all" />
             </div>
           ))}
+
+          {(() => {
+            const ua = navigator.userAgent || "";
+            const isApp = /AddaLudo/i.test(ua) || /WebView/i.test(ua) || /wv/i.test(ua);
+            if (isApp) return null;
+            return (
+              <a
+                href={`${import.meta.env.VITE_API_URL?.replace(/\/api$/, "") || "http://localhost:5000"}/api/app/download`}
+                target="_blank"
+                className="flex items-center gap-3 p-2.5 hover:bg-emerald-50 rounded-xl cursor-pointer transition group mt-0.5"
+              >
+                <div className="w-8 h-8 flex items-center justify-center rounded-lg bg-slate-100 text-emerald-500 shadow-sm group-hover:bg-emerald-500 group-hover:text-white transition-colors">
+                  <Download className="w-3.5 h-3.5" />
+                </div>
+                <span className="flex-1 font-bold text-emerald-500 text-xs">Download App</span>
+              </a>
+            );
+          })()}
 
           <div onClick={handleLogout} className="flex items-center gap-3 p-2.5 hover:bg-rose-50 rounded-xl cursor-pointer transition group mt-0.5">
              <div className="w-8 h-8 flex items-center justify-center rounded-lg bg-slate-100 text-rose-500 shadow-sm group-hover:bg-rose-500 group-hover:text-white transition-colors">
