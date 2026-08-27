@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
 import api, { getError } from "../api.js";
+import compressImage from "../utils/compressImage.js";
 
 /**
  * DepositFlow
@@ -78,7 +79,8 @@ export default function DepositFlow({ payment, onClose, onSuccess }) {
       formData.append("amount", numericAmount);
       formData.append("utr", utrNumber.trim());
       formData.append("paymentMethod", numericAmount <= scannerMax ? "qr" : "upi");
-      formData.append("screenshot", selectedFile);
+      const compressedFile = await compressImage(selectedFile);
+      formData.append("screenshot", compressedFile);
 
       const res = await api.post("/transactions/deposit", formData, {
         headers: { "Content-Type": "multipart/form-data" },

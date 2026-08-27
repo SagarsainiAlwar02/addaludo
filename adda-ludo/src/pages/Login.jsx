@@ -205,11 +205,25 @@ export default function Login({ onLogin }) {
                 <input
                   key={index}
                   ref={(el) => (otpRef.current[index] = el)}
-                  style={styles.otpInput}
+                  style={
+                    digit
+                      ? { ...styles.otpInput, borderColor: "#2563eb", boxShadow: "0 0 0 3px rgba(37,99,235,0.15)" }
+                      : styles.otpInput
+                  }
                   value={digit}
                   maxLength={1}
                   onChange={(e) => handleOtpChange(e.target.value, index)}
                   onKeyDown={(e) => handleBackspace(e, index)}
+                  onFocus={(e) => {
+                    e.target.style.borderColor = "#2563eb";
+                    e.target.style.boxShadow = "0 0 0 3px rgba(37,99,235,0.15)";
+                  }}
+                  onBlur={(e) => {
+                    if (!e.target.value) {
+                      e.target.style.borderColor = "#d1d5db";
+                      e.target.style.boxShadow = "none";
+                    }
+                  }}
                   autoComplete="one-time-code"
                 />
               ))}
@@ -362,13 +376,13 @@ const styles = {
 
   otpRow: {
     display: "flex",
-    justifyContent: "space-between",
-    gap: "6px",
+    justifyContent: "center",
+    gap: "10px",
     marginBottom: "25px",
   },
 
   otpInput: {
-    width: "42px",
+    width: "46px",
     height: "58px",
     border: "2px solid #d1d5db",
     borderRadius: "12px",
@@ -376,6 +390,8 @@ const styles = {
     fontSize: "24px",
     fontWeight: "700",
     outline: "none",
+    flex: "0 0 auto",
+    transition: "border-color 0.2s, box-shadow 0.2s",
   },
 
   resend: {
