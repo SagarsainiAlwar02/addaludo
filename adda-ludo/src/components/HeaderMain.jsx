@@ -4,10 +4,16 @@ import { createPortal } from "react-dom";
 import api, { getData, getError } from "../api.js";
 import DepositFlow from "./DepositFlow.jsx";
 
+function isApp() {
+  const ua = navigator.userAgent || "";
+  return /AddaLudo/i.test(ua) || /WebView/i.test(ua) || /wv/i.test(ua);
+}
+
 export default function HeaderMain() {
   const navigate = useNavigate();
   const [balance, setBalance] = useState("0.00");
   const [referBalance, setReferBalance] = useState("0.00");
+  const [showDownload, setShowDownload] = useState(() => !isApp());
 
   // Add Cash (new DepositFlow) state
   const [showAddCash, setShowAddCash] = useState(false);
@@ -75,6 +81,16 @@ export default function HeaderMain() {
   };
 
   return (
+    <>
+    <style>{`
+      @keyframes dlPulse {
+        0%, 100% { color: #34d399; }
+        50% { color: #ffffff; }
+      }
+      .app-dl-icon { animation: dlPulse 2s ease-in-out infinite; }
+      .app-dl-btn { transition: transform 0.15s ease, box-shadow 0.2s ease; }
+      .app-dl-btn:hover { box-shadow: 0 0 12px rgba(52,211,153,0.4); }
+    `}</style>
     <header className="fixed top-0 left-0 right-0 z-40 w-full bg-gradient-to-r from-black via-[#050816] to-black shadow-lg border-b border-slate-800">
       <div className="mx-auto flex h-[58px] w-full max-w-[760px] items-center justify-between px-3 sm:h-[70px] sm:px-4">
         <div
@@ -89,6 +105,19 @@ export default function HeaderMain() {
         </div>
 
         <div className="flex items-center gap-2">
+          {showDownload && (
+            <a
+              href="/api/app/download"
+              className="app-dl-btn flex items-center gap-1 rounded-full border border-slate-600 bg-slate-800 px-2.5 py-1.5 shadow-md active:scale-95 sm:gap-1.5 sm:px-3.5"
+              title="Download App"
+            >
+              <i className="fa-solid fa-download app-dl-icon text-xs text-emerald-400 sm:text-sm"></i>
+              <span className="text-xs font-extrabold text-white sm:text-sm">
+                App
+              </span>
+            </a>
+          )}
+
           <button
             onClick={openAddCash}
             title="Add Cash"
@@ -125,5 +154,6 @@ export default function HeaderMain() {
           document.body
         )}
     </header>
+    </>
   );
 }

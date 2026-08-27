@@ -88,6 +88,7 @@ import contestRoutes from "./routes/contest.routes.js";
 import transactionRoutes from "./routes/transaction.routes.js";
 import adminRoutes from "./routes/admin.routes.js";
 import paymentRoutes from "./routes/payment.routes.js";
+import appRoutes from "./routes/app.routes.js";
 
 app.use("/api/auth", authRoutes);
 app.use("/api/user", userRoutes);
@@ -95,6 +96,7 @@ app.use("/api/contests", contestRoutes);
 app.use("/api/transactions", transactionRoutes);
 app.use("/api/admin", adminRoutes);
 app.use("/api/payment", paymentRoutes);
+app.use("/api/app", appRoutes);
 
 app.get("/api/health", (req, res) => {
   res.json({

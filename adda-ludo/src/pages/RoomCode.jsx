@@ -3,6 +3,7 @@ import { ArrowLeft } from "lucide-react";
 import { useNavigate, useParams } from "react-router-dom";
 import api, { getData, getError } from "../api.js";
 import socket from "../socket.js";
+import compressImage from "../utils/compressImage.js";
 
 function getUserId() {
   try {
@@ -160,7 +161,8 @@ export default function RoomCode() {
       formData.append("result", selectedResult);
 
       if (selectedResult === "win" && screenshot) {
-        formData.append("screenshot", screenshot);
+        const compressedScreenshot = await compressImage(screenshot);
+        formData.append("screenshot", compressedScreenshot);
       }
 
       const res = await api.post(`/contests/result/${battleId}`, formData, {
