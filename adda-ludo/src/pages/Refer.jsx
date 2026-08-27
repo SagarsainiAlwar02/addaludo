@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import api, { getData, getError } from "../api.js";
 
 export default function Refer() {
@@ -8,6 +9,7 @@ export default function Refer() {
   const [loading, setLoading] = useState(true);
   const [copiedCode, setCopiedCode] = useState(false);
   const [copiedLink, setCopiedLink] = useState(false);
+  const navigate = useNavigate();
   const [error, setError] = useState("");
 
   useEffect(() => {
@@ -171,6 +173,17 @@ export default function Refer() {
             </div>
 
           </div>
+
+          {/* Refer History Button */}
+          <div className="mt-3">
+            <button
+              onClick={() => navigate("/refer-history")}
+              className="w-full bg-slate-100 hover:bg-slate-200 py-2.5 rounded-xl font-black text-slate-700 text-sm shadow-sm active:scale-[0.99] transition-transform flex items-center justify-center gap-2 border border-slate-200"
+            >
+              <i className="fa-solid fa-clock-rotate-left text-xs"></i> Refer History
+            </button>
+          </div>
+
         </div>
 
       </div>
