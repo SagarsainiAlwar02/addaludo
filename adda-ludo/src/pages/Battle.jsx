@@ -473,10 +473,10 @@ const Battle = () => {
             </p>
           </div> */}
 
-            ADDA LUDO में आपका स्वागत है, सबसे Fast ⏩ विथड्रॉ है, 👉 मात्र 2-3 Min में, 👈 आपका विश्वास बनाये रखे 🙏
+            ADDA LUDO में आपका स्वागत है, सबसे Fast ⏩ विथड्रॉ है, 👉 मात्र 2-3 Min में, 👈 ADDA LUDO का APP  आ गया है; आप इसे Download कर सकते हैं। आपका विश्वास बनाये रखे 🙏
 
           {/* <div className="mt-1 rounded-xl bg-black/30 px-3 py-2 text-center text-[11px] font-bold leading-relaxed text-white ring-1 ring-white/10 shadow-inner">
-            ADDA LUDO में आपका स्वागत है, सबसे Fast ⏩ विथड्रॉ है, 👉 मात्र 2-3 Min में, 👈 आपका विश्वास बनाये रखे 🙏
+            ADDA LUDO में आपका स्वागत है, सबसे Fast ⏩ विथड्रॉ है, 👉 मात्र 2-3 Min में, 👈 ADDA LUDO का APP  आ गया है; आप इसे Download कर सकते हैं। आपका विश्वास बनाये रखे 🙏
           </div> */}
         </div>
         <div className="w-full flex justify-center">
