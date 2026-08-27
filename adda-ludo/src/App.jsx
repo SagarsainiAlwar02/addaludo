@@ -11,6 +11,7 @@ import Wallet from "./pages/Wallet";
 import Withdraw from "./pages/Withdraw";
 import Profile from "./pages/Profile";
 import Refer from "./pages/Refer";
+import ReferHistory from "./pages/ReferHistory";
 import Support from "./pages/Support";
 import Kyc from "./pages/Kyc";
 import Login from "./pages/Login";
@@ -237,6 +238,7 @@ function App() {
         <Route path="/redeem" element={protectedPage(<Redeem />)} />
 
         <Route path="/refer" element={protectedPage(<Refer />)} />
+        <Route path="/refer-history" element={protectedPage(<ReferHistory />)} />
         <Route path="/support" element={protectedPage(<Support />)} />
         <Route path="/kyc" element={protectedPage(<Kyc />)} />
         <Route path="/profile" element={protectedPage(<Profile onLogout={handleLogout} />)} />

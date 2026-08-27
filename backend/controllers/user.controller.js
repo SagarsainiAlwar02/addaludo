@@ -1,6 +1,7 @@
 import User from "../models/user.js";
 import Wallet from "../models/wallet.js";
 import Contest from "../models/contest.js";
+import Transaction from "../models/transaction.js";
 import asyncHandler from "../utils/asyncHandler.js";
 import { successResponse, badRequestResponse, notFoundResponse } from "../utils/apiResponse.js";
 
@@ -165,4 +166,54 @@ export const submitKyc = asyncHandler(async (req, res) => {
   }
 
   return successResponse(res, { kycStatus: user.kycStatus }, "KYC submitted successfully");
+});
+
+/**
+ * Get referral commission history for the current user.
+ * Each entry shows the referred player's name, commission earned, and
+ * closing referral balance after that credit.
+ * GET /api/user/referral-history
+ */
+export const getReferralHistory = asyncHandler(async (req, res) => {
+  const userId = req.user._id;
+
+  const history = await Transaction.aggregate([
+    { $match: { userId, type: "referral_commission", status: "success" } },
+    { $sort: { createdAt: -1 } },
+    {
+      $lookup: {
+        from: "contests",
+        let: { cid: "$contestId" },
+        pipeline: [
+          { $match: { $expr: { $eq: ["$contestId", "$$cid"] } } },
+          { $project: { winner: 1, players: 1 } },
+        ],
+        as: "contest",
+      },
+    },
+    { $unwind: { path: "$contest", preserveNullAndEmptyArrays: true } },
+    {
+      $lookup: {
+        from: "users",
+        let: { winnerId: "$contest.winner.userId" },
+        pipeline: [
+          { $match: { $expr: { $eq: ["$_id", "$$winnerId"] } } },
+          { $project: { name: 1 } },
+        ],
+        as: "referredUser",
+      },
+    },
+    { $unwind: { path: "$referredUser", preserveNullAndEmptyArrays: true } },
+    {
+      $project: {
+        _id: 1,
+        amount: 1,
+        balanceAfter: 1,
+        createdAt: 1,
+        playerName: { $ifNull: ["$referredUser.name", "Player"] },
+      },
+    },
+  ]);
+
+  return successResponse(res, { history }, "Referral history fetched");
 });
