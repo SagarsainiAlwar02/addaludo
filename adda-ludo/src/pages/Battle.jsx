@@ -38,11 +38,11 @@ const FAKE_OPPONENT_NAMES = [
 ];
 
 const FAKE_BATTLE_AMOUNTS = [
-  1650, 2800, 1200, 850, 4050, 550, 2650, 4500, 100, 1450, 3250, 2050, 1900, 600, 2000, 200, 100, 2250, 150, 3500, 5500, 950, 50, 1050
+  1050, 3000, 800, 1850, 500, 1550, 2650, 4500, 100, 1450, 3250, 2050, 1900, 600, 2000, 200, 100, 2250, 150, 3500, 5500, 950, 50, 1050
 ];
 
 const randomFrom = (arr) => arr[Math.floor(Math.random() * arr.length)];
-const FAKE_RUNNING_AMOUNTS = FAKE_BATTLE_AMOUNTS.slice(0, 20);
+const FAKE_RUNNING_AMOUNTS = FAKE_BATTLE_AMOUNTS.slice(0, 15);
 
 const FAKE_RUNNING_BATTLES = FAKE_RUNNING_AMOUNTS.map((amount, index) => {
   const creatorName = randomFrom(FAKE_PLAYER_NAMES);
