@@ -1,7 +1,7 @@
 # Adda Ludo - Multi-Player Online Ludo Game Platform
 
 A complete full-stack application for playing Ludo online with real-time multiplayer features, wallet management, KYC verification, and battle modes.
-
+.
 ---
 
 ## 📋 Project Overview
